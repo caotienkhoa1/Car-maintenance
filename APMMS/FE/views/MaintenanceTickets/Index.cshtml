@@ -1,0 +1,633 @@
+@{
+    ViewData["Title"] = "Quản lý Phiếu Bảo Dưỡng";      
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-wrench me-2"></i>
+                        Quản lý Phiếu Bảo Dưỡng
+                    </h4>
+                    <div>
+                        <a href="/MaintenanceTickets/Create" class="btn btn-outline-primary" id="createMaintenanceTicketBtn" style="display: none;">
+                            <i class="fas fa-plus me-1"></i>
+                            Tạo phiếu mới
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label for="statusFilter" class="form-label">Trạng thái</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PENDING">Chờ xử lý</option>
+                                <option value="ASSIGNED">Đã gán kỹ thuật viên</option>
+                                <option value="IN_PROGRESS">Đang thực hiện</option>
+                                <option value="COMPLETED">Hoàn thành</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="searchInput" class="form-label">Tìm kiếm</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm theo mã phiếu, xe, khách hàng...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateFrom" class="form-label">Từ ngày</label>
+                            <input type="date" class="form-control" id="dateFrom">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateTo" class="form-label">Đến ngày</label>
+                            <input type="date" class="form-control" id="dateTo">
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Mã phiếu</th>
+                                    <th>Khách hàng</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maintenanceTicketsTableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Info and Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted" id="paginationInfo">
+                            Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> kết quả
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0" id="pagination">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="actionModalLabel">Thao tác phiếu bảo dưỡng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" id="assignTechnicianBtn">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Gán kỹ thuật viên
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="startMaintenanceBtn">
+                        <i class="fas fa-play me-1"></i>
+                        Bắt đầu bảo dưỡng
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="completeMaintenanceBtn">
+                        <i class="fas fa-check me-1"></i>
+                        Hoàn thành
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="viewDetailsBtn">
+                        <i class="fas fa-eye me-1"></i>
+                        Xem chi tiết
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Technician Modal -->
+<div class="modal fade" id="assignTechnicianModal" tabindex="-1" aria-labelledby="assignTechnicianModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignTechnicianModalLabel">Gán kỹ thuật viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="technicianSelect" class="form-label">Chọn kỹ thuật viên</label>
+                    <select class="form-select" id="technicianSelect">
+                        <option value="">Chọn kỹ thuật viên</option>
+                        <!-- Will be loaded dynamically -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmAssignBtn">Gán</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        const API_BASE_URL = '@apiBaseUrl';
+        let currentPage = 1;
+        const pageSize = 10;
+        let currentTicketId = null;
+        let allTickets = []; // Lưu tất cả tickets để phân trang client-side
+        let filteredTickets = []; // Lưu tickets sau khi filter
+        let totalRecords = 0;
+
+        $(document).ready(function() {
+            toggleCreateButtonByRole();
+            loadMaintenanceTickets();
+    
+            // Filter events với debounce cho search
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    applyFilters();
+                }, 500);
+            });
+
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    clearTimeout(searchTimeout);
+                    currentPage = 1;
+                    applyFilters();
+                }
+            });
+
+            $('#statusFilter, #dateFrom, #dateTo').on('change', function() {
+                currentPage = 1;
+                applyFilters();
+            });
+
+            // Action buttons
+            $('#assignTechnicianBtn').on('click', function() {
+                $('#actionModal').modal('hide');
+                loadTechnicians();
+                $('#assignTechnicianModal').modal('show');
+            });
+
+            $('#startMaintenanceBtn').on('click', function() {
+                startMaintenance(currentTicketId);
+            });
+
+            $('#completeMaintenanceBtn').on('click', function() {
+                completeMaintenance(currentTicketId);
+            });
+
+            $('#viewDetailsBtn').on('click', function() {
+                window.location.href = `/MaintenanceTickets/Details/${currentTicketId}`;
+            });
+
+            $('#confirmAssignBtn').on('click', function() {
+                const technicianId = $('#technicianSelect').val();
+                if (technicianId) {
+                    assignTechnician(currentTicketId, technicianId);
+                }
+            });
+        });
+
+        function toggleCreateButtonByRole() {
+            const btn = document.getElementById('createMaintenanceTicketBtn');
+            if (!btn) return;
+
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    // Không có token => ẩn nút
+                    btn.style.display = 'none';
+                    return;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                const roleName = (payload['RoleName'] || payload['role_name'] || '').toString().toUpperCase();
+
+                // Chỉ cho Consulter (roleId = 6) thấy nút tạo phiếu
+                const isConsulter = roleId === 6 || roleName === 'CONSULTER';
+                if (isConsulter) {
+                    btn.style.display = 'inline-block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Error checking role for create maintenance ticket button:', e);
+                btn.style.display = 'none';
+            }
+        }
+
+        function loadMaintenanceTickets() {
+            // ✅ Gọi qua FE controller để tự động filter theo branchId của user đăng nhập
+            const url = `/MaintenanceTickets/ListData?page=1&pageSize=500`;
+
+            // Show loading
+            $('#maintenanceTicketsTableBody').html(`
+                <tr>
+                    <td colspan="4" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include' // Include cookies for session
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                // FE controller trả về { success: true, data: [...] } hoặc trực tiếp data từ backend
+                let tickets = [];
+                if (result && result.success && result.data) {
+                    // Format từ backend API qua FE controller
+                    tickets = result.data;
+                } else if (Array.isArray(result)) {
+                    // Trường hợp trả về trực tiếp array
+                    tickets = result;
+                } else if (result && result.data && Array.isArray(result.data)) {
+                    // Trường hợp có wrapper data
+                    tickets = result.data;
+                }
+                
+                allTickets = tickets;
+                    applyFilters();
+            })
+            .catch(error => {
+                console.error('Error loading maintenance tickets:', error);
+                $('#maintenanceTicketsTableBody').html('<tr><td colspan="4" class="text-center text-danger">Lỗi tải dữ liệu: ' + error.message + '</td></tr>');
+                allTickets = [];
+                filteredTickets = [];
+                totalRecords = 0;
+                updatePagination();
+            });
+        }
+
+        function applyFilters() {
+            const status = $('#statusFilter').val();
+            const search = $('#searchInput').val().trim().toLowerCase();
+            const dateFrom = $('#dateFrom').val();
+            const dateTo = $('#dateTo').val();
+
+            // Bắt đầu với tất cả tickets
+            filteredTickets = [...allTickets];
+
+            // Filter by status
+            if (status) {
+                filteredTickets = filteredTickets.filter(t => t.statusCode === status);
+            }
+
+            // Filter by date range
+            if (dateFrom) {
+                const filterDateFrom = new Date(dateFrom);
+                filterDateFrom.setHours(0, 0, 0, 0);
+                filteredTickets = filteredTickets.filter(t => {
+                    if (!t.createdDate) return false;
+                    const ticketDate = new Date(t.createdDate);
+                    ticketDate.setHours(0, 0, 0, 0);
+                    return ticketDate >= filterDateFrom;
+                });
+            }
+
+            if (dateTo) {
+                const filterDateTo = new Date(dateTo);
+                filterDateTo.setHours(23, 59, 59, 999);
+                filteredTickets = filteredTickets.filter(t => {
+                    if (!t.createdDate) return false;
+                    const ticketDate = new Date(t.createdDate);
+                    ticketDate.setHours(0, 0, 0, 0);
+                    return ticketDate <= filterDateTo;
+                });
+            }
+
+            // Filter by search
+            if (search) {
+                filteredTickets = filteredTickets.filter(t => 
+                    (t.code && t.code.toLowerCase().includes(search)) ||
+                    (t.customerName && t.customerName.toLowerCase().includes(search)) ||
+                    (t.licensePlate && t.licensePlate.toLowerCase().includes(search)) ||
+                    (t.carName && t.carName.toLowerCase().includes(search)) ||
+                    (t.customerPhone && t.customerPhone.includes(search))
+                );
+            }
+
+            // Sort by createdDate (newest first)
+            filteredTickets.sort((a, b) => {
+                const dateA = a.createdDate ? new Date(a.createdDate) : new Date(0);
+                const dateB = b.createdDate ? new Date(b.createdDate) : new Date(0);
+                return dateB - dateA;
+            });
+
+            totalRecords = filteredTickets.length;
+            currentPage = Math.min(currentPage, Math.ceil(totalRecords / pageSize) || 1);
+
+            // Paginate
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedTickets = filteredTickets.slice(startIndex, endIndex);
+
+            displayMaintenanceTickets(paginatedTickets);
+            updatePagination();
+        }
+
+        function displayMaintenanceTickets(tickets) {
+            const tbody = $('#maintenanceTicketsTableBody');
+            tbody.empty();
+
+            if (tickets.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">Không có phiếu bảo dưỡng nào</td></tr>');
+                return;
+            }
+
+            tickets.forEach((ticket, index) => {
+                const statusBadge = getStatusBadge(ticket.statusCode);
+                const createdAt = ticket.createdDate ? 
+                    new Date(ticket.createdDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 
+                    '-';
+                
+                const rowIndex = (currentPage - 1) * pageSize + index + 1;
+                
+                // Hiển thị tên khách hàng với link đến trang details của phiếu bảo dưỡng
+                const customerNameDisplay = ticket.customerName 
+                    ? `<a href="/MaintenanceTickets/Details/${ticket.id}" style="text-decoration: none; color: inherit; cursor: pointer;" onmouseover="this.style.color='#007bff'; this.style.textDecoration='underline';" onmouseout="this.style.color='inherit'; this.style.textDecoration='none';" title="Xem chi tiết phiếu bảo dưỡng">${ticket.customerName}</a>`
+                    : 'N/A';
+                
+                tbody.append(`
+                    <tr>
+                        <td>
+                            <a href="/MaintenanceTickets/Details/${ticket.id}" class="text-dark" style="text-decoration: underline;">
+                                <strong>${ticket.code || 'BD-' + ticket.id}</strong>
+                            </a>
+                        </td>
+                        <td>${customerNameDisplay}</td>
+                        <td>${createdAt}</td>
+                        <td>${statusBadge}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        function getStatusBadge(statusCode) {
+            const statusMap = {
+                'PENDING': { class: 'bg-warning', text: 'Chờ xử lý' },
+                'ASSIGNED': { class: 'bg-info', text: 'Đã gán' },
+                'IN_PROGRESS': { class: 'bg-primary', text: 'Đang thực hiện' },
+                'COMPLETED': { class: 'bg-success', text: 'Hoàn thành' },
+                'CANCELLED': { class: 'bg-danger', text: 'Đã hủy' }
+            };
+            
+            const status = statusMap[statusCode] || { class: 'bg-secondary', text: statusCode };
+            return `<span class="badge ${status.class}">${status.text}</span>`;
+        }
+
+        function showActions(ticketId) {
+            currentTicketId = ticketId;
+            $('#actionModal').modal('show');
+        }
+
+        function loadTechnicians() {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`${API_BASE_URL}/User/technicians`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const select = $('#technicianSelect');
+                select.empty();
+                select.append('<option value="">Chọn kỹ thuật viên</option>');
+                
+                if (data.success && data.data) {
+                    data.data.forEach(tech => {
+                        select.append(`<option value="${tech.id}">${tech.fullName}</option>`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading technicians:', error);
+            });
+        }
+
+        function assignTechnician(ticketId, technicianId) {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`${API_BASE_URL}/MaintenanceTicket/${ticketId}/assign-technician`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ technicianId: technicianId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Gán kỹ thuật viên thành công!', 'success');
+                    $('#assignTechnicianModal').modal('hide');
+                    loadMaintenanceTickets();
+                } else {
+                    showAlert('Lỗi gán kỹ thuật viên: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi gán kỹ thuật viên', 'danger');
+            });
+        }
+
+        function startMaintenance(ticketId) {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`${API_BASE_URL}/MaintenanceTicket/${ticketId}/start`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Bắt đầu bảo dưỡng thành công!', 'success');
+                    $('#actionModal').modal('hide');
+                    loadMaintenanceTickets();
+                } else {
+                    showAlert('Lỗi bắt đầu bảo dưỡng: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi bắt đầu bảo dưỡng', 'danger');
+            });
+        }
+
+        function completeMaintenance(ticketId) {
+            if (confirm('Bạn có chắc chắn muốn hoàn thành phiếu bảo dưỡng này?')) {
+                const token = localStorage.getItem('authToken');
+                
+                fetch(`${API_BASE_URL}/MaintenanceTicket/${ticketId}/complete`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Hoàn thành bảo dưỡng thành công!', 'success');
+                        $('#actionModal').modal('hide');
+                        loadMaintenanceTickets();
+                    } else {
+                        showAlert('Lỗi hoàn thành bảo dưỡng: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Có lỗi xảy ra khi hoàn thành bảo dưỡng', 'danger');
+                });
+            }
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (totalPages <= 1) {
+                pagination.html('<li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li>');
+                updatePaginationInfo();
+                return;
+            }
+
+            // Previous button
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i> Trước
+                    </a>
+                </li>
+            `);
+
+            // Page numbers
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            // First page
+            if (startPage > 1) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+                    </li>
+                `);
+                if (startPage > 2) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+            }
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === currentPage ? 'active' : '';
+                pagination.append(`
+                    <li class="page-item ${active}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>
+                `);
+            }
+
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+                    </li>
+                `);
+            }
+
+            // Next button
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `);
+
+            updatePaginationInfo();
+        }
+
+        function updatePaginationInfo() {
+            const startIndex = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const endIndex = Math.min(currentPage * pageSize, totalRecords);
+            
+            $('#showingFrom').text(startIndex);
+            $('#showingTo').text(endIndex);
+            $('#totalRecords').text(totalRecords);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                applyFilters();
+                // Scroll to top of table
+                $('html, body').animate({
+                    scrollTop: $('.card').offset().top - 20
+                }, 300);
+            }
+        }
+
+        // Expose changePage to global scope for onclick handlers
+        window.changePage = changePage;
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            $('body').append(alertHtml);
+            
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 3000);
+        }
+    </script>

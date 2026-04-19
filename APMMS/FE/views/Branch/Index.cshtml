@@ -1,0 +1,717 @@
+@{
+    ViewData["Title"] = "Danh sách chi nhánh";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-building me-2"></i>Danh sách chi nhánh
+                    </h4>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createBranchModal">
+                        <i class="fas fa-plus me-1"></i>Thêm chi nhánh mới
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    <!-- Search -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm chi nhánh (tên, địa chỉ, số điện thoại)...">
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 60px;">STT</th>
+                                    <th>Tên chi nhánh</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Giá công lao động</th>
+                                    <th>Giám đốc</th>
+                                </tr>
+                            </thead>
+                            <tbody id="branchesTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div id="emptyState" style="display: none;" class="text-center py-5">
+                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Không có chi nhánh nào</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Branch Modal -->
+<div class="modal fade" id="createBranchModal" tabindex="-1" aria-labelledby="createBranchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border-radius: 15px 15px 0 0; border: none; padding: 20px 25px;">
+                <h5 class="modal-title" id="createBranchModalLabel" style="font-weight: 600; font-size: 1.2rem;">
+                    <i class="fas fa-building me-2"></i>
+                    Thêm chi nhánh mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 30px 25px;">
+                <form id="createBranchForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tên chi nhánh <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="createName" name="Name" required 
+                               placeholder="Nhập tên chi nhánh" maxlength="255" />
+                        <div class="invalid-feedback">Vui lòng nhập tên chi nhánh</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="text" class="form-control" id="createPhone" name="Phone" 
+                               placeholder="Nhập số điện thoại (VD: 0912345678)" maxlength="20" 
+                               pattern="^(0[35789])+([0-9]{8})$" />
+                        <small class="form-text text-muted">Số điện thoại phải bắt đầu bằng 0 và có 10 chữ số</small>
+                        <div class="invalid-feedback">Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ</label>
+                        <textarea class="form-control" id="createAddress" name="Address" rows="3" 
+                                  placeholder="Nhập địa chỉ chi nhánh" maxlength="500"></textarea>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Giá công lao động (VND)</label>
+                        <input type="number" class="form-control" id="createLaborRate" name="LaborRate" 
+                               placeholder="Nhập giá công lao động" min="0" step="1000" />
+                        <small class="form-text text-muted">Giá công lao động tính theo VND</small>
+                        <div class="invalid-feedback">Giá công lao động phải là số lớn hơn hoặc bằng 0</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 15px 25px; border-radius: 0 0 15px 15px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="submitCreateBranchBtn" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-save me-2"></i>Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-labelledby="deleteBranchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border-radius: 15px 15px 0 0; border: none; padding: 20px 25px;">
+                <h5 class="modal-title" id="deleteBranchModalLabel" style="font-weight: 600; font-size: 1.2rem;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Xác nhận xóa chi nhánh
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 30px 25px;">
+                <div class="d-flex align-items-start">
+                    <div class="flex-shrink-0">
+                        <div style="width: 50px; height: 50px; background: #fee; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-trash-alt" style="font-size: 24px; color: #dc3545;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p id="deleteBranchMessage" style="margin: 0; font-size: 1rem; line-height: 1.6; color: #495057;"></p>
+                        <div class="alert alert-warning mt-3 mb-0" style="font-size: 0.9rem;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Lưu ý:</strong> Hành động này không thể hoàn tác. Chi nhánh sẽ bị xóa vĩnh viễn khỏi hệ thống.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 15px 25px; border-radius: 0 0 15px 15px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="confirmDeleteBtn" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-trash-alt me-2"></i>Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        let branchesData = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBranches();
+            
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(function() {
+                    filterBranches();
+                }, 300));
+            }
+        });
+
+        async function loadBranches() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showAlert('Vui lòng đăng nhập lại', 'warning');
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/Branch`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    branchesData = result.data;
+                    displayBranches(branchesData);
+                } else {
+                    showAlert('Không thể tải danh sách chi nhánh', 'danger');
+                    document.getElementById('branchesTableBody').innerHTML = 
+                        '<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                showAlert('Lỗi khi tải danh sách chi nhánh: ' + error.message, 'danger');
+                document.getElementById('branchesTableBody').innerHTML = 
+                    '<tr><td colspan="5" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>';
+            }
+        }
+
+        function displayBranches(branches) {
+            const tbody = document.getElementById('branchesTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (!branches || branches.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có chi nhánh nào</td></tr>';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            
+            tbody.innerHTML = branches.map((branch, index) => {
+                const laborRate = branch.laborRate ? 
+                    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(branch.laborRate) : 
+                    'N/A';
+
+                // Lấy tên giám đốc (nếu có)
+                let directorName = 'Chưa có giám đốc';
+                if (branch.director) {
+                    const d = branch.director;
+                    const firstName = d.firstName || d.FirstName || '';
+                    const lastName = d.lastName || d.LastName || '';
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    directorName = fullName || d.username || d.Username || 'N/A';
+                }
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <a href="/Branches/Details/${branch.id}" style="text-decoration: none; color: inherit; font-weight: bold; color: #0d6efd;" 
+                               onmouseover="this.style.textDecoration='underline'" 
+                               onmouseout="this.style.textDecoration='none'">
+                                ${escapeHtml(branch.name || 'N/A')}
+                            </a>
+                        </td>
+                        <td>${escapeHtml(branch.phone || 'N/A')}</td>
+                        <td>${escapeHtml(branch.address || 'N/A')}</td>
+                        <td>${laborRate}</td>
+                        <td>${escapeHtml(directorName)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterBranches() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                displayBranches(branchesData);
+                return;
+            }
+
+            const filtered = branchesData.filter(branch => {
+                const name = (branch.name || '').toLowerCase();
+                const phone = (branch.phone || '').toLowerCase();
+                const address = (branch.address || '').toLowerCase();
+                
+                return name.includes(searchTerm) || 
+                       phone.includes(searchTerm) || 
+                       address.includes(searchTerm);
+            });
+
+            displayBranches(filtered);
+        }
+
+        function viewBranchDetails(id) {
+            const branch = branchesData.find(b => b.id === id);
+            if (!branch) {
+                showAlert('Không tìm thấy chi nhánh', 'warning');
+                return;
+            }
+
+            const laborRate = branch.laborRate ? 
+                new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(branch.laborRate) : 
+                'N/A';
+
+            const detailsHtml = `
+                <div class="mb-3">
+                    <strong><i class="fas fa-building me-2"></i>Tên chi nhánh:</strong>
+                    <p class="ms-4">${escapeHtml(branch.name || 'N/A')}</p>
+                </div>
+                <div class="mb-3">
+                    <strong><i class="fas fa-phone me-2"></i>Số điện thoại:</strong>
+                    <p class="ms-4">${escapeHtml(branch.phone || 'N/A')}</p>
+                </div>
+                <div class="mb-3">
+                    <strong><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ:</strong>
+                    <p class="ms-4">${escapeHtml(branch.address || 'N/A')}</p>
+                </div>
+                <div class="mb-3">
+                    <strong><i class="fas fa-money-bill-wave me-2"></i>Giá công lao động:</strong>
+                    <p class="ms-4">${laborRate}</p>
+                </div>
+            `;
+
+            // Create and show modal
+            const modalHtml = `
+                <div class="modal fade" id="branchDetailsModal" tabindex="-1" aria-labelledby="branchDetailsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="branchDetailsModalLabel">
+                                    <i class="fas fa-building me-2"></i>Chi tiết chi nhánh
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${detailsHtml}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>Đóng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('branchDetailsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('branchDetailsModal'));
+            modal.show();
+
+            // Remove modal from DOM when hidden
+            document.getElementById('branchDetailsModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        let deleteBranchId = null;
+        let deleteBranchName = null;
+
+        function deleteBranch(id, name) {
+            deleteBranchId = id;
+            deleteBranchName = name;
+            
+            // Set message
+            document.getElementById('deleteBranchMessage').innerHTML = 
+                `Bạn có chắc chắn muốn xóa chi nhánh <strong>"${escapeHtml(name)}"</strong>?`;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteBranchModal'));
+            modal.show();
+        }
+
+        // Handle create branch form
+        document.addEventListener('DOMContentLoaded', function() {
+            const submitCreateBtn = document.getElementById('submitCreateBranchBtn');
+            if (submitCreateBtn) {
+                submitCreateBtn.addEventListener('click', async function() {
+                    const form = document.getElementById('createBranchForm');
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
+
+                    // Clear previous errors
+                    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                    form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        if (!token) {
+                            showAlert('Vui lòng đăng nhập lại', 'warning');
+                            window.location.href = '/Auth/Login';
+                            return;
+                        }
+
+                        const payload = {
+                            name: document.getElementById('createName').value.trim(),
+                            phone: document.getElementById('createPhone').value.trim() || null,
+                            address: document.getElementById('createAddress').value.trim() || null,
+                            laborRate: document.getElementById('createLaborRate').value ? parseFloat(document.getElementById('createLaborRate').value) : null
+                        };
+
+                        const response = await fetch(`${API_BASE_URL}/Branch`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        let result;
+                        if (!response.ok) {
+                            try {
+                                result = await response.json();
+                            } catch (parseError) {
+                                const errorText = await response.text();
+                                console.error('Error response:', errorText);
+                                showAlert(`Lỗi ${response.status}: ${errorText || 'Không thể xử lý phản hồi từ server'}`, 'danger');
+                                return;
+                            }
+                        } else {
+                            result = await response.json();
+                        }
+
+                        if (result.success) {
+                            // Reset form first
+                            form.reset();
+                            form.classList.remove('was-validated');
+                            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                            form.querySelectorAll('input, textarea').forEach(el => {
+                                el.setCustomValidity('');
+                            });
+
+                            // Close modal and remove backdrop
+                            const modalElement = document.getElementById('createBranchModal');
+                            const modal = bootstrap.Modal.getInstance(modalElement);
+                            if (modal) {
+                                modal.hide();
+                            }
+                            
+                            // Force remove backdrop if it exists
+                            setTimeout(() => {
+                                const backdrops = document.querySelectorAll('.modal-backdrop');
+                                backdrops.forEach(backdrop => backdrop.remove());
+                                document.body.classList.remove('modal-open');
+                                document.body.style.overflow = '';
+                                document.body.style.paddingRight = '';
+                            }, 100);
+
+                            showAlert('Tạo chi nhánh thành công!', 'success');
+                            
+                            // Reload danh sách sau khi modal đóng
+                            setTimeout(() => {
+                                loadBranches();
+                            }, 200);
+                        } else {
+                            // Clear previous field errors
+                            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                            
+                            // Display validation errors by field
+                            if (result.errors) {
+                                let hasFieldErrors = false;
+                                
+                                // Check if errors is an object with field names as keys
+                                if (typeof result.errors === 'object' && !Array.isArray(result.errors)) {
+                                    Object.keys(result.errors).forEach(fieldName => {
+                                        const fieldErrors = result.errors[fieldName];
+                                        const errorMessages = Array.isArray(fieldErrors) ? fieldErrors : [fieldErrors];
+                                        
+                                        // Map backend field names to frontend IDs
+                                        let fieldId = '';
+                                        if (fieldName.toLowerCase() === 'name') {
+                                            fieldId = 'createName';
+                                        } else if (fieldName.toLowerCase() === 'phone') {
+                                            fieldId = 'createPhone';
+                                        } else if (fieldName.toLowerCase() === 'address') {
+                                            fieldId = 'createAddress';
+                                        } else if (fieldName.toLowerCase() === 'laborrate') {
+                                            fieldId = 'createLaborRate';
+                                        }
+                                        
+                                        if (fieldId) {
+                                            const field = document.getElementById(fieldId);
+                                            if (field) {
+                                                field.classList.add('is-invalid');
+                                                const feedback = field.parentElement.querySelector('.invalid-feedback');
+                                                if (feedback) {
+                                                    feedback.textContent = errorMessages[0];
+                                                }
+                                                hasFieldErrors = true;
+                                            }
+                                        }
+                                    });
+                                }
+                                
+                                // If errorsList exists, show as alerts
+                                if (result.errorsList && Array.isArray(result.errorsList) && result.errorsList.length > 0) {
+                                    result.errorsList.forEach(error => {
+                                        showAlert(error, 'danger');
+                                    });
+                                } else if (Array.isArray(result.errors) && result.errors.length > 0) {
+                                    result.errors.forEach(error => {
+                                        showAlert(error, 'danger');
+                                    });
+                                } else if (!hasFieldErrors && result.message) {
+                                    showAlert(result.message, 'danger');
+                                }
+                            } else if (result.message) {
+                                showAlert(result.message || 'Không thể tạo chi nhánh', 'danger');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error creating branch:', error);
+                        showAlert('Lỗi khi tạo chi nhánh: ' + error.message, 'danger');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                });
+            }
+
+            // Real-time validation for form fields
+            const createName = document.getElementById('createName');
+            const createPhone = document.getElementById('createPhone');
+            const createLaborRate = document.getElementById('createLaborRate');
+
+            if (createName) {
+                createName.addEventListener('input', function() {
+                    if (this.value.trim() === '') {
+                        this.setCustomValidity('Vui lòng nhập tên chi nhánh');
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.setCustomValidity('');
+                        this.classList.remove('is-invalid');
+                    }
+                });
+                createName.addEventListener('blur', function() {
+                    if (this.value.trim() === '') {
+                        this.setCustomValidity('Vui lòng nhập tên chi nhánh');
+                        this.classList.add('is-invalid');
+                    }
+                });
+            }
+
+            if (createPhone) {
+                createPhone.addEventListener('input', function() {
+                    const value = this.value.trim();
+                    if (value !== '') {
+                        const phonePattern = /^(0[35789])+([0-9]{8})$/;
+                        if (!phonePattern.test(value)) {
+                            this.setCustomValidity('Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số');
+                            this.classList.add('is-invalid');
+                        } else {
+                            this.setCustomValidity('');
+                            this.classList.remove('is-invalid');
+                        }
+                    } else {
+                        this.setCustomValidity('');
+                        this.classList.remove('is-invalid');
+                    }
+                });
+                createPhone.addEventListener('blur', function() {
+                    const value = this.value.trim();
+                    if (value !== '') {
+                        const phonePattern = /^(0[35789])+([0-9]{8})$/;
+                        if (!phonePattern.test(value)) {
+                            this.setCustomValidity('Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số');
+                            this.classList.add('is-invalid');
+                        }
+                    }
+                });
+            }
+
+            if (createLaborRate) {
+                createLaborRate.addEventListener('input', function() {
+                    const value = parseFloat(this.value);
+                    if (this.value !== '' && (isNaN(value) || value < 0)) {
+                        this.setCustomValidity('Giá công lao động phải là số lớn hơn hoặc bằng 0');
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.setCustomValidity('');
+                        this.classList.remove('is-invalid');
+                    }
+                });
+                createLaborRate.addEventListener('blur', function() {
+                    const value = parseFloat(this.value);
+                    if (this.value !== '' && (isNaN(value) || value < 0)) {
+                        this.setCustomValidity('Giá công lao động phải là số lớn hơn hoặc bằng 0');
+                        this.classList.add('is-invalid');
+                    }
+                });
+            }
+
+            // Reset form when modal is closed and ensure backdrop is removed
+            const createModal = document.getElementById('createBranchModal');
+            if (createModal) {
+                createModal.addEventListener('hidden.bs.modal', function() {
+                    // Remove any remaining backdrops
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    
+                    // Reset form
+                    const form = document.getElementById('createBranchForm');
+                    if (form) {
+                        form.reset();
+                        form.classList.remove('was-validated');
+                        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                        form.querySelectorAll('input, textarea').forEach(el => {
+                            el.setCustomValidity('');
+                        });
+                    }
+                });
+            }
+
+            // Handle confirm delete button
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', async function() {
+                    if (!deleteBranchId) return;
+
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xóa...';
+
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        if (!token) {
+                            showAlert('Vui lòng đăng nhập lại', 'warning');
+                            window.location.href = '/Auth/Login';
+                            return;
+                        }
+
+                        const response = await fetch(`${API_BASE_URL}/Branch/${deleteBranchId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteBranchModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+
+                        if (result.success) {
+                            showAlert('Xóa chi nhánh thành công', 'success');
+                            loadBranches(); // Reload danh sách
+                        } else {
+                            showAlert(result.message || 'Không thể xóa chi nhánh', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting branch:', error);
+                        showAlert('Lỗi khi xóa chi nhánh: ' + error.message, 'danger');
+                        
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteBranchModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        deleteBranchId = null;
+                        deleteBranchName = null;
+                    }
+                });
+            }
+        });
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}
+

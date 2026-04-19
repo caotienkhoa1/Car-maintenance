@@ -1,0 +1,1277 @@
+@{
+    ViewData["Title"] = "Thông tin chi tiết nhân viên";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    .employee-profile-container {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0;
+    }
+    
+    .employee-avatar-section {
+        background: #f8f9fa;
+        padding: 40px 30px;
+        text-align: center;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .employee-avatar {
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #dee2e6;
+        background: #e9ecef;
+    }
+    
+    .employee-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 20px;
+        color: #212529;
+    }
+    
+    .employee-details-section {
+        background: white;
+        padding: 30px;
+    }
+    
+    .info-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+    
+    .info-tabs .nav-link {
+        color: #6c757d;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .info-tabs .nav-link:hover {
+        color: #495057;
+    }
+    
+    .info-tabs .nav-link.active {
+        color: #212529;
+        border-bottom-color: #212529;
+        font-weight: 500;
+    }
+    
+    .info-field {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .info-field:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 500;
+        flex: 0 0 200px;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        color: #212529;
+        font-weight: 400;
+        flex: 1;
+        text-align: left;
+    }
+    
+    /* Custom Notification Popup */
+    .custom-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        min-width: 350px;
+        max-width: 500px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        border-left: 4px solid #28a745;
+    }
+    
+    .custom-notification.error {
+        border-left-color: #dc3545;
+    }
+    
+    .custom-notification.warning {
+        border-left-color: #ffc107;
+    }
+    
+    .custom-notification.info {
+        border-left-color: #17a2b8;
+    }
+    
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @@keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .custom-notification.hide {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+    
+    .notification-header {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .notification-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.success {
+        background: #d4edda;
+        color: #28a745;
+    }
+    
+    .notification-icon.error {
+        background: #f8d7da;
+        color: #dc3545;
+    }
+    
+    .notification-icon.warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .notification-icon.info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .notification-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .notification-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .notification-close:hover {
+        color: #212529;
+    }
+    
+    .notification-body {
+        padding: 16px 20px;
+        color: #495057;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 4px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .form-field {
+        margin-bottom: 0;
+        padding-bottom: 8px;
+        padding-top: 8px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        min-height: 40px;
+    }
+    
+    .form-field:first-child {
+        padding-top: 0;
+    }
+    
+    .form-field:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #6c757d;
+        flex: 0 0 140px;
+        margin-bottom: 0;
+        font-size: 0.875rem;
+        margin-right: 15px;
+    }
+    
+    .form-label i {
+        margin-right: 6px;
+        color: #6c757d;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 12px;
+        flex: 1;
+        max-width: 350px;
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        background-color: #fff;
+    }
+    
+    .btn-save {
+        background: #007bff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-save:hover {
+        background: #0056b3;
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        color: white;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    .status-badge.active {
+        background: #28a745;
+        color: white;
+    }
+    
+    .status-badge.inactive {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .image-preview-container {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 4px;
+        border: 1px dashed #ced4da;
+    }
+    
+    .image-preview-container img {
+        border-radius: 4px;
+    }
+</style>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/Employees"><i class="fas fa-users me-1"></i>Danh sách nhân viên</a></li>
+        <li class="breadcrumb-item active" id="employeeNameBreadcrumb">-</li>
+    </ol>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="employee-profile-container">
+                <div id="loadingSpinner" class="text-center p-5" style="background: white; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                    <div>
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải thông tin nhân viên...</p>
+                    </div>
+                </div>
+                
+                <div id="employeeDetails" style="display: none;">
+                    <div class="row g-0">
+                        <!-- Left Section: Avatar and Name -->
+                        <div class="col-md-3 employee-avatar-section">
+                            <div class="mb-4">
+                                <img id="employeeAvatar" src="" alt="Avatar" 
+                                     class="employee-avatar"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';">
+                            </div>
+                            <h4 id="employeeFullName" class="employee-name">-</h4>
+                        </div>
+
+                        <!-- Right Section: Tabs and Details -->
+                        <div class="col-md-9 employee-details-section">
+                            <!-- Tabs -->
+                            <ul class="nav nav-tabs info-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#personal" type="button" role="tab" 
+                                            aria-controls="personal" aria-selected="true">
+                                        <i class="fas fa-user me-2"></i>Thông tin cá nhân
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="edit-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#edit" type="button" role="tab" 
+                                            aria-controls="edit" aria-selected="false">
+                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content">
+                                <!-- Personal Information Tab -->
+                                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                                    <h5 class="mb-4" style="color: #212529; font-weight: 600;">Thông tin chi tiết</h5>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="info-field">
+                                                <div class="info-label">Mã nhân viên</div>
+                                                <div class="info-value" id="employeeCode">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Họ và tên</div>
+                                                <div class="info-value" id="employeeName">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Giới tính</div>
+                                                <div class="info-value" id="employeeGender">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Ngày sinh</div>
+                                                <div class="info-value" id="employeeDob">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Số điện thoại</div>
+                                                <div class="info-value" id="employeePhone">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Email</div>
+                                                <div class="info-value" id="employeeEmail">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Địa chỉ</div>
+                                                <div class="info-value" id="employeeAddress">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">CMT/CCCD</div>
+                                                <div class="info-value" id="employeeCitizenId">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Mã số thuế</div>
+                                                <div class="info-value" id="employeeTaxCode">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Tình trạng</div>
+                                                <div class="info-value" id="employeeStatus">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Edit Tab -->
+                                <div class="tab-pane fade" id="edit" role="tabpanel" aria-labelledby="edit-tab">
+                                    <form id="editEmployeeForm">
+                                        <div class="form-field">
+                                            <label for="editFullName" class="form-label">
+                                                <i class="fas fa-user"></i> Họ và tên
+                                            </label>
+                                            <input type="text" class="form-control" id="editFullName">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editPhone" class="form-label">
+                                                <i class="fas fa-phone"></i> Số điện thoại
+                                            </label>
+                                            <input type="tel" class="form-control" id="editPhone">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editGender" class="form-label">
+                                                <i class="fas fa-venus-mars"></i> Giới tính
+                                            </label>
+                                            <select class="form-select" id="editGender">
+                                                <option value="">-- Chọn giới tính --</option>
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                                <option value="Khác">Khác</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editDob" class="form-label">
+                                                <i class="fas fa-calendar-alt"></i> Ngày sinh
+                                            </label>
+                                            <input type="date" class="form-control" id="editDob">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editEmail" class="form-label">
+                                                <i class="fas fa-envelope"></i> Email
+                                            </label>
+                                            <input type="email" class="form-control" id="editEmail">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editAddress" class="form-label">
+                                                <i class="fas fa-map-marker-alt"></i> Địa chỉ
+                                            </label>
+                                            <input type="text" class="form-control" id="editAddress">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editCitizenId" class="form-label">
+                                                <i class="fas fa-id-badge"></i> CMT/CCCD
+                                            </label>
+                                            <input type="text" class="form-control" id="editCitizenId">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editTaxCode" class="form-label">
+                                                <i class="fas fa-receipt"></i> Mã số thuế
+                                            </label>
+                                            <input type="text" class="form-control" id="editTaxCode">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="employeeImageInput" class="form-label">
+                                                <i class="fas fa-image"></i> Ảnh đại diện
+                                            </label>
+                                            <input type="file" class="form-control" id="employeeImageInput" accept="image/*" style="max-width: 350px;">
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end mt-4">
+                                            <button type="submit" class="btn btn-save text-white">
+                                                <i class="fas fa-save me-1"></i> Lưu thông tin
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="alert alert-danger m-3" style="display: none; border-radius: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="errorText">Có lỗi xảy ra khi tải thông tin nhân viên</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize image preview handler
+            initializeImagePreview();
+            
+            const employeeId = getEmployeeIdFromUrl();
+            if (employeeId) {
+                loadEmployeeDetails(employeeId);
+            } else {
+                showError('Không tìm thấy ID nhân viên');
+            }
+        });
+        
+        function initializeImagePreview() {
+            // Handle employee image input (edit form)
+            const employeeImageInput = document.getElementById('employeeImageInput');
+            if (employeeImageInput) {
+                employeeImageInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                            showNotification('Vui lòng chọn file hình ảnh hợp lệ', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            showNotification('Kích thước file không được vượt quá 5MB', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Create preview and update avatar
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const imageDataUrl = event.target.result;
+                            
+                            // Update avatar (left sidebar) - preview only
+                            const employeeAvatar = document.getElementById('employeeAvatar');
+                            if (employeeAvatar) {
+                                employeeAvatar.src = imageDataUrl;
+                            }
+                        };
+                        reader.onerror = function() {
+                            showNotification('Có lỗi xảy ra khi đọc file', 'error');
+                            e.target.value = '';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // No file selected - restore original avatar
+                        const employeeAvatar = document.getElementById('employeeAvatar');
+                        if (employeeAvatar && currentEmployee) {
+                            if (currentEmployee.image) {
+                                employeeAvatar.src = currentEmployee.image;
+                            } else {
+                                // Reset to default placeholder
+                                employeeAvatar.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function getEmployeeIdFromUrl() {
+            // Try to get from ViewBag first (set by controller)
+            const viewBagId = @(ViewBag.EmployeeId ?? 0);
+            if (viewBagId && viewBagId > 0) {
+                return viewBagId.toString();
+            }
+            
+            // Fallback: extract from URL path
+            const path = window.location.pathname;
+            const segments = path.split('/').filter(seg => seg && seg.trim() !== '');
+            const lastSegment = segments[segments.length - 1];
+            
+            // Remove any hash fragments or query parameters
+            let employeeId = lastSegment;
+            if (employeeId) {
+                // Remove hash fragment
+                employeeId = employeeId.split('#')[0];
+                // Remove query parameters
+                employeeId = employeeId.split('?')[0];
+                // Remove any non-numeric characters at the end (like :1)
+                employeeId = employeeId.replace(/[^0-9].*$/, '');
+            }
+            
+            // Validate it's a number
+            const idNum = parseInt(employeeId, 10);
+            if (isNaN(idNum) || idNum <= 0) {
+                console.error('Invalid employee ID from URL:', employeeId);
+                return null;
+            }
+            
+            return idNum.toString();
+        }
+
+        function loadEmployeeDetails(id) {
+            // Validate ID before making request
+            if (!id || id.trim() === '' || isNaN(parseInt(id, 10))) {
+                console.error('Invalid employee ID:', id);
+                showError('ID nhân viên không hợp lệ');
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            fetch(`${API_BASE_URL}/Employee/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // Debug: log data to see structure
+                console.log('Employee data received:', data);
+                
+                // API trả về trực tiếp EmployeeResponseDto
+                if (data && data.id) {
+                    displayEmployeeDetails(data);
+                } else if (data && data.success && data.data) {
+                    displayEmployeeDetails(data.data);
+                } else {
+                    showError('Không tìm thấy thông tin nhân viên');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                showError('Có lỗi xảy ra khi tải thông tin nhân viên: ' + error.message);
+            });
+        }
+
+        let currentEmployee = null;
+        let originalFormData = null;
+
+        function displayEmployeeDetails(employee) {
+            currentEmployee = employee;
+            
+            // Log employee data to debug
+            console.log('Current employee data:', employee);
+            console.log('Employee ID:', employee.id);
+            
+            const fullName = `${(employee.firstName || '')} ${(employee.lastName || '')}`.trim() || '-';
+            
+            // Breadcrumb
+            document.getElementById('employeeNameBreadcrumb').textContent = fullName;
+            
+            // Avatar
+            const avatar = document.getElementById('employeeAvatar');
+            if (employee.image) {
+                avatar.src = employee.image;
+            }
+            
+            // Left section - only name
+            document.getElementById('employeeFullName').textContent = fullName;
+            
+            // Details
+            document.getElementById('employeeCode').textContent = employee.code || '-';
+            document.getElementById('employeeName').textContent = fullName;
+            document.getElementById('employeeGender').textContent = 
+                employee.gender === 'Male' || employee.gender === 'Nam' ? 'Nam' :
+                employee.gender === 'Female' || employee.gender === 'Nữ' ? 'Nữ' : 
+                employee.gender || '-';
+            
+            // Display date of birth (handle both dob and Dob)
+            const dobElement = document.getElementById('employeeDob');
+            if (dobElement) {
+                const dobValue = employee.dob || employee.Dob || employee.dateOfBirth || employee.DateOfBirth;
+                console.log('Date of birth value:', dobValue);
+                
+                if (dobValue) {
+                    try {
+                        const dob = new Date(dobValue);
+                        if (!isNaN(dob.getTime())) {
+                            const formattedDate = dob.toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            });
+                            dobElement.textContent = formattedDate;
+                        } else {
+                            dobElement.textContent = '-';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date:', e, dobValue);
+                        dobElement.textContent = '-';
+                    }
+                } else {
+                    dobElement.textContent = '-';
+                }
+            }
+            
+            document.getElementById('employeePhone').textContent = employee.phone || '-';
+            document.getElementById('employeeEmail').textContent = employee.email || '-';
+            document.getElementById('employeeAddress').textContent = employee.fullAddress || employee.address || '-';
+            document.getElementById('employeeCitizenId').textContent = employee.citizenId || '-';
+            document.getElementById('employeeTaxCode').textContent = employee.taxCode || '-';
+            
+            // Status
+            const isActive = !employee.isDelete;
+            const statusDiv = document.getElementById('employeeStatus');
+            statusDiv.innerHTML = isActive 
+                ? '<span class="status-badge active">Có hiệu lực</span>'
+                : '<span class="status-badge inactive">Không hiệu lực</span>';
+            
+            // Load data into edit form
+            loadEditForm(employee);
+            
+            document.getElementById('employeeDetails').style.display = 'block';
+        }
+
+        function loadEditForm(employee) {
+            // Combine first and last name for display
+            const fullName = `${(employee.firstName || '')} ${(employee.lastName || '')}`.trim();
+
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editPhone').value = employee.phone || '';
+            document.getElementById('editGender').value = 
+                employee.gender === 'Male' || employee.gender === 'Nam' ? 'Nam' :
+                employee.gender === 'Female' || employee.gender === 'Nữ' ? 'Nữ' : 
+                employee.gender || '';
+            
+            // Load date of birth
+            const dobInput = document.getElementById('editDob');
+            if (dobInput) {
+                const dobValue = employee.dob || employee.Dob;
+                if (dobValue) {
+                    try {
+                        const dob = new Date(dobValue);
+                        if (!isNaN(dob.getTime())) {
+                            // Format to YYYY-MM-DD for date input
+                            const year = dob.getFullYear();
+                            const month = String(dob.getMonth() + 1).padStart(2, '0');
+                            const day = String(dob.getDate()).padStart(2, '0');
+                            dobInput.value = `${year}-${month}-${day}`;
+                        } else {
+                            dobInput.value = '';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date for input:', e);
+                        dobInput.value = '';
+                    }
+                } else {
+                    dobInput.value = '';
+                }
+            }
+            
+            document.getElementById('editEmail').value = employee.email || '';
+            document.getElementById('editAddress').value = employee.fullAddress || employee.address || '';
+            document.getElementById('editTaxCode').value = employee.taxCode || '';
+            document.getElementById('editCitizenId').value = employee.citizenId || '';
+
+            // Store original data
+            originalFormData = {
+                fullName: fullName,
+                phone: employee.phone || '',
+                gender: document.getElementById('editGender').value,
+                dob: dobInput ? dobInput.value : '',
+                email: employee.email || '',
+                address: employee.fullAddress || employee.address || '',
+                taxCode: employee.taxCode || '',
+                citizenId: employee.citizenId || ''
+            };
+        }
+
+        function resetEditForm() {
+            if (originalFormData) {
+                document.getElementById('editFullName').value = originalFormData.fullName || '';
+                document.getElementById('editPhone').value = originalFormData.phone;
+                document.getElementById('editGender').value = originalFormData.gender;
+                const dobInput = document.getElementById('editDob');
+                if (dobInput) {
+                    dobInput.value = originalFormData.dob || '';
+                }
+                document.getElementById('editEmail').value = originalFormData.email;
+                document.getElementById('editAddress').value = originalFormData.address;
+                document.getElementById('editTaxCode').value = originalFormData.taxCode;
+                document.getElementById('editCitizenId').value = originalFormData.citizenId;
+                document.getElementById('editImage').value = '';
+                
+                // Restore original avatar image when resetting
+                const employeeAvatar = document.getElementById('employeeAvatar');
+                if (employeeAvatar && currentEmployee && currentEmployee.image) {
+                    employeeAvatar.src = currentEmployee.image;
+                }
+            }
+        }
+
+        // Custom Notification Function
+        function showNotification(message, type = 'success') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.custom-notification');
+            existingNotifications.forEach(notif => {
+                notif.classList.add('hide');
+                setTimeout(() => notif.remove(), 300);
+            });
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `custom-notification ${type}`;
+            
+            const icons = {
+                success: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>',
+                error: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>',
+                warning: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>',
+                info: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451.081.082.381 1.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>'
+            };
+            
+            const titles = {
+                success: 'Thành công',
+                error: 'Lỗi',
+                warning: 'Cảnh báo',
+                info: 'Thông tin'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <div class="notification-icon ${type}">
+                        ${icons[type] || icons.info}
+                    </div>
+                    <h6 class="notification-title">${titles[type] || titles.info}</h6>
+                    <button type="button" class="notification-close" onclick="this.closest('.custom-notification').classList.add('hide'); setTimeout(() => this.closest('.custom-notification').remove(), 300);">&times;</button>
+                </div>
+                <div class="notification-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Append to body
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('hide');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        function showError(message) {
+            showNotification(message, 'error');
+        }
+
+        // Handle edit form submission
+        document.getElementById('editEmployeeForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveEmployeeChanges();
+        });
+
+        // Validation functions
+        function validateUsername(username) {
+            if (!username) return { valid: false, message: 'Tên đăng nhập là bắt buộc.' };
+            if (username.length < 6) {
+                return { valid: false, message: 'Tên đăng nhập phải có ít nhất 6 ký tự.' };
+            }
+            if (username.length > 12) {
+                return { valid: false, message: 'Tên đăng nhập không được vượt quá 12 ký tự.' };
+            }
+            const usernameRegex = /^[a-zA-Z0-9_]+$/;
+            if (!usernameRegex.test(username)) {
+                return { valid: false, message: 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validatePhone(phone) {
+            if (!phone) return { valid: true, message: '' };
+            const phoneClean = phone.replace(/\s+/g, '').replace(/-/g, '');
+            const phoneRegex = /^0[3|5|7|8|9][0-9]{8}$/;
+            if (!phoneRegex.test(phoneClean)) {
+                return { valid: false, message: 'Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateCitizenId(citizenId) {
+            if (!citizenId) return { valid: true, message: '' };
+            const citizenIdClean = citizenId.replace(/\s+/g, '').replace(/-/g, '');
+            const citizenIdRegex = /^[0-9]{12}$/;
+            if (!citizenIdRegex.test(citizenIdClean)) {
+                return { valid: false, message: 'CMT/CCCD phải có đúng 12 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateTaxCode(taxCode) {
+            if (!taxCode) return { valid: true, message: '' };
+            const taxCodeClean = taxCode.replace(/\s+/g, '').replace(/-/g, '');
+            const taxCodeRegex = /^[0-9]{10}$/;
+            if (!taxCodeRegex.test(taxCodeClean)) {
+                return { valid: false, message: 'Mã số thuế phải có đúng 10 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateDOB(dobInput) {
+            if (!dobInput) return { valid: true, message: '' };
+            try {
+                const dobDate = new Date(dobInput + 'T00:00:00');
+                if (isNaN(dobDate.getTime())) {
+                    return { valid: false, message: 'Ngày sinh không hợp lệ.' };
+                }
+                const today = new Date();
+                const age = today.getFullYear() - dobDate.getFullYear();
+                const monthDiff = today.getMonth() - dobDate.getMonth();
+                const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate()) ? age - 1 : age;
+                
+                if (actualAge < 18) {
+                    return { valid: false, message: 'Nhân viên phải đủ 18 tuổi trở lên.' };
+                }
+                if (dobDate > today) {
+                    return { valid: false, message: 'Ngày sinh không được ở tương lai.' };
+                }
+                return { valid: true, message: '' };
+            } catch (e) {
+                return { valid: false, message: 'Ngày sinh không hợp lệ.' };
+            }
+        }
+
+        function saveEmployeeChanges() {
+            if (!currentEmployee) {
+                showError('Không tìm thấy thông tin nhân viên');
+                return;
+            }
+
+            // Validate required fields
+            if (!currentEmployee.username && !currentEmployee.userName) {
+                showError('Không tìm thấy thông tin username của nhân viên');
+                return;
+            }
+            
+            if (!currentEmployee.id) {
+                showError('Không tìm thấy ID nhân viên. Vui lòng làm mới trang và thử lại.');
+                return;
+            }
+
+            // Validate individual fields
+            const phone = document.getElementById('editPhone').value;
+            const phoneValidation = validatePhone(phone);
+            if (!phoneValidation.valid) {
+                showError(phoneValidation.message);
+                document.getElementById('editPhone').focus();
+                return;
+            }
+
+            const citizenId = document.getElementById('editCitizenId').value;
+            const citizenIdValidation = validateCitizenId(citizenId);
+            if (!citizenIdValidation.valid) {
+                showError(citizenIdValidation.message);
+                document.getElementById('editCitizenId').focus();
+                return;
+            }
+
+            const taxCode = document.getElementById('editTaxCode').value;
+            const taxCodeValidation = validateTaxCode(taxCode);
+            if (!taxCodeValidation.valid) {
+                showError(taxCodeValidation.message);
+                document.getElementById('editTaxCode').focus();
+                return;
+            }
+
+            const dobInput = document.getElementById('editDob');
+            if (dobInput && dobInput.value) {
+                const dobValidation = validateDOB(dobInput.value);
+                if (!dobValidation.valid) {
+                    showError(dobValidation.message);
+                    dobInput.focus();
+                    return;
+                }
+            }
+
+            // Split full name into first and last name
+            const fullNameInput = document.getElementById('editFullName').value.trim();
+            const nameParts = fullNameInput.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Format date of birth from input (format: dd-MM-yyyy for backend)
+            let dobFormatted = null;
+            if (dobInput && dobInput.value) {
+                try {
+                    const dobDate = new Date(dobInput.value);
+                    if (!isNaN(dobDate.getTime())) {
+                        const day = String(dobDate.getDate()).padStart(2, '0');
+                        const month = String(dobDate.getMonth() + 1).padStart(2, '0');
+                        const year = dobDate.getFullYear();
+                        dobFormatted = `${day}-${month}-${year}`;
+                    }
+                } catch (e) {
+                    console.error('Error formatting date of birth:', e);
+                }
+            }
+
+            const formData = {
+                username: currentEmployee.username || currentEmployee.userName,
+                password: '', // Empty password - backend should preserve existing password
+                firstName: firstName || null,
+                lastName: lastName || null,
+                email: document.getElementById('editEmail').value || null,
+                phone: phone.replace(/\s+/g, '').replace(/-/g, ''),
+                gender: document.getElementById('editGender').value || null,
+                image: currentEmployee.image || null,
+                dob: dobFormatted,
+                // roleId and branchId are not in response DTO, so we need to fetch them
+                // For now, try to get from response or leave null (backend might preserve existing values)
+                roleId: currentEmployee.roleId || currentEmployee.RoleId || null,
+                branchId: currentEmployee.branchId || currentEmployee.BranchId || null,
+                taxCode: taxCode.replace(/\s+/g, '').replace(/-/g, ''),
+                address: document.getElementById('editAddress').value || null,
+                citizenId: citizenId.replace(/\s+/g, '').replace(/-/g, ''),
+                statusCode: currentEmployee.statusCode || 'ACTIVE'
+            };
+            
+            // Remove null/empty values except username and password (they are required by DTO)
+            // But keep roleId and branchId as null if not available (backend should preserve existing)
+            Object.keys(formData).forEach(key => {
+                if (key !== 'username' && key !== 'password' && key !== 'roleId' && key !== 'branchId' && (formData[key] === null || formData[key] === '')) {
+                    delete formData[key];
+                }
+            });
+            
+            console.log('Sending update request with data:', formData);
+            console.log('Employee ID being updated:', currentEmployee.id);
+
+            const token = localStorage.getItem('authToken');
+            const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+            
+            // Handle image upload if file is selected
+            const imageFile = document.getElementById('employeeImageInput').files[0];
+            
+            // Function to update employee
+            const updateEmployee = (imageUrl = null) => {
+                // Nếu có imageUrl từ upload, cập nhật vào formData
+                if (imageUrl) {
+                    formData.image = imageUrl;
+                }
+                
+                return fetch(`${API_BASE_URL}/Employee/${currentEmployee.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+            };
+
+            // Upload ảnh trước nếu có file được chọn
+            if (imageFile) {
+                // Hiển thị loading state
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang upload ảnh...';
+
+                // Upload ảnh lên Cloudinary
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', imageFile);
+
+                fetch(`${API_BASE_URL}/Employee/${currentEmployee.id}/upload-avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: uploadFormData
+                })
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorMessage = `Upload ảnh thất bại. Status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 400) {
+                                errorMessage = 'File ảnh không hợp lệ. Vui lòng chọn file khác.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(uploadData => {
+                    // Upload thành công, lấy URL ảnh
+                    const imageUrl = uploadData.data?.imageUrl || uploadData.data?.url;
+                    if (!imageUrl) {
+                        throw new Error('Không nhận được URL ảnh từ server');
+                    }
+
+                    // Cập nhật avatar preview ngay lập tức
+                    const employeeAvatar = document.getElementById('employeeAvatar');
+                    if (employeeAvatar) {
+                        employeeAvatar.src = imageUrl;
+                    }
+
+                    // Cập nhật currentEmployee.image để giữ đồng bộ
+                    if (currentEmployee) {
+                        currentEmployee.image = imageUrl;
+                    }
+
+                    // Update button text
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu thông tin...';
+
+                    // Tiếp tục cập nhật employee (ảnh đã được lưu vào DB khi upload, không cần gửi lại)
+                    // Bỏ image khỏi formData vì đã được lưu
+                    delete formData.image;
+                    return updateEmployee();
+                })
+                .then(async response => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 404) {
+                                errorMessage = 'Không tìm thấy nhân viên với ID này. Vui lòng làm mới trang và thử lại.';
+                            } else if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reload employee details
+                    loadEmployeeDetails(currentEmployee.id);
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.style.borderRadius = '10px';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin và ảnh đại diện thành công!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    const detailsSection = document.querySelector('.employee-details-section');
+                    if (detailsSection) {
+                        detailsSection.insertBefore(alertDiv, detailsSection.querySelector('.info-tabs'));
+                    }
+                    
+                    // Switch to personal info tab
+                    const personalTab = document.getElementById('personal-tab');
+                    if (personalTab) {
+                        personalTab.click();
+                    }
+
+                    // Reset image input
+                    document.getElementById('employeeImageInput').value = '';
+
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                })
+                .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                    console.error('Error:', error);
+                    showError('Có lỗi xảy ra: ' + error.message);
+                });
+            } else {
+                // Không có ảnh mới, chỉ cập nhật employee thôi
+                updateEmployee()
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 404) {
+                                errorMessage = 'Không tìm thấy nhân viên với ID này. Vui lòng làm mới trang và thử lại.';
+                            } else if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reload employee details
+                    loadEmployeeDetails(currentEmployee.id);
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.style.borderRadius = '10px';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin thành công!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    const detailsSection = document.querySelector('.employee-details-section');
+                    if (detailsSection) {
+                        detailsSection.insertBefore(alertDiv, detailsSection.querySelector('.info-tabs'));
+                    }
+                    
+                    // Switch to personal info tab
+                    const personalTab = document.getElementById('personal-tab');
+                    if (personalTab) {
+                        personalTab.click();
+                    }
+
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Có lỗi xảy ra khi cập nhật thông tin: ' + error.message);
+                });
+            }
+        }
+    </script>
+}

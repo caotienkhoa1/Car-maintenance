@@ -1,0 +1,471 @@
+@{
+    ViewData["Title"] = "Danh sách hóa đơn";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<style>
+    .invoice-card {
+        border-radius: 1rem;
+        box-shadow: var(--bs-box-shadow-sm);
+    }
+
+    .invoice-card .card-header {
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.06), rgba(111, 66, 193, 0.08));
+        border-bottom: none;
+    }
+
+    .invoice-card table thead {
+        background-color: rgba(13, 110, 253, 0.05);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .invoice-card table tbody tr td {
+        vertical-align: middle;
+        font-size: 0.95rem;
+    }
+
+    .badge-status {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .badge-status.pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #b78000;
+    }
+
+    .badge-status.paid {
+        background: rgba(25, 135, 84, 0.15);
+        color: #157347;
+    }
+
+    .list-empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--bs-secondary);
+    }
+
+    .list-empty-state i {
+        font-size: 2.2rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .search-box {
+        max-width: 260px;
+    }
+
+    .items-per-page {
+        width: 75px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .invoice-card .card-header {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.75rem;
+        }
+
+        .search-box {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card invoice-card">
+                <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center py-3">
+                    <div>
+                        <h4 class="mb-0">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            Danh sách hóa đơn
+                        </h4>
+                        <small class="text-muted">Chỉ hiển thị các phiếu bảo dưỡng đã hoàn thành</small>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="search-box">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Tìm mã, khách hàng...">
+                            </div>
+                        </div>
+                        <select class="form-select form-select-sm" id="statusFilter" style="max-width: 180px;">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="PENDING">Chưa thanh toán</option>
+                            <option value="PAID">Đã thanh toán</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="branchFilter" style="max-width: 200px; display: none;">
+                            <option value="">Tất cả chi nhánh</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">STT</th>
+                                    <th style="width: 200px;">Mã hóa đơn</th>
+                                    <th>Tên khách hàng</th>
+                                    <th class="text-end" style="width: 160px;">Tổng tiền</th>
+                                    <th style="width: 150px;">Ngày tạo</th>
+                                    <th style="width: 150px;">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="receiptTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="emptyState" class="list-empty-state" style="display:none;">
+                        <i class="fas fa-inbox"></i>
+                        <h6 class="fw-semibold mb-1">Chưa có hóa đơn phù hợp</h6>
+                        <p class="mb-0">Hoàn thành phiếu bảo dưỡng để tạo hóa đơn tương ứng.</p>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted" id="paginationInfo">
+                            Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> kết quả
+                        </div>
+                    <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0" id="pagination">
+                        </ul>
+                    </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = '@apiBaseUrl';
+        let receipts = [];
+        let totalRecords = 0;
+        let currentPage = 1;
+        let pageSize = 10;
+        let currentSearch = '';
+        let currentStatus = '';
+        let currentBranchId = '';
+        let isAdminUser = false;
+
+        $(document).ready(function () {
+            attachEvents();
+            loadReceipts();
+        });
+
+        function attachEvents() {
+            initBranchFilterForAdmin();
+
+            let searchTimeout;
+            $('#searchInput').on('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentSearch = $('#searchInput').val().trim();
+                    currentPage = 1;
+                    loadReceipts();
+                }, 300);
+            });
+
+            $('#statusFilter').on('change', function () {
+                currentStatus = $('#statusFilter').val();
+                currentPage = 1;
+                loadReceipts();
+            });
+
+            $('#branchFilter').on('change', function () {
+                currentBranchId = $('#branchFilter').val();
+                currentPage = 1;
+                loadReceipts();
+            });
+        }
+
+        function buildQueryParams() {
+            const params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('pageSize', pageSize);
+            if (currentSearch) params.append('search', currentSearch);
+            if (currentStatus) params.append('statusCode', currentStatus);
+            if (isAdminUser && currentBranchId) params.append('branchId', currentBranchId);
+            return params.toString();
+        }
+
+        async function initBranchFilterForAdmin() {
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (!userInfoStr) return;
+
+                const userInfo = JSON.parse(userInfoStr);
+                const roleId = userInfo.roleId || userInfo.role || userInfo.roleId;
+                const roleName = (userInfo.roleName || userInfo.role || '').toString();
+                const upperRoleName = roleName.toUpperCase();
+                isAdminUser = roleId === 1 || upperRoleName === 'ADMIN';
+
+                if (!isAdminUser) {
+                    return;
+                }
+
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`${API_BASE_URL}/Branch`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.warn('Không thể tải danh sách chi nhánh cho filter hóa đơn.');
+                    return;
+                }
+
+                const result = await response.json();
+                const branches = result.success && Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+
+                const branchFilter = document.getElementById('branchFilter');
+                branchFilter.style.display = 'block';
+                branchFilter.innerHTML = '<option value=\"\">Tất cả chi nhánh</option>';
+
+                branches.forEach(branch => {
+                    const branchId = branch.id || branch.Id;
+                    const branchName = branch.name || branch.Name || 'N/A';
+                    const option = document.createElement('option');
+                    option.value = branchId;
+                    option.textContent = branchName;
+                    branchFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error initializing branch filter:', error);
+            }
+        }
+
+        function loadReceipts() {
+            const token = localStorage.getItem('authToken');
+            toggleLoading(true);
+
+            fetch(`${API_BASE_URL}/TotalReceipt?${buildQueryParams()}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(async response => {
+                    if (!response.ok) {
+                        const message = await response.text();
+                        throw new Error(message || `HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (result.success && result.data) {
+                        receipts = result.data.items || [];
+                        totalRecords = result.data.totalItems ?? receipts.length;
+                        currentPage = result.data.page ?? currentPage;
+                        pageSize = result.data.pageSize ?? pageSize;
+                    } else {
+                        receipts = [];
+                        totalRecords = 0;
+                        showAlert(result.message || 'Không có dữ liệu hóa đơn.', 'warning');
+                    }
+                    renderTable();
+                })
+                .catch(error => {
+                    console.error('loadReceipts error:', error);
+                    receipts = [];
+                    totalRecords = 0;
+                    showAlert('Không thể tải dữ liệu hóa đơn từ máy chủ.', 'danger');
+                    renderTable();
+                })
+                .finally(() => toggleLoading(false));
+        }
+
+        function renderTable() {
+            const tbody = $('#receiptTableBody');
+            tbody.empty();
+
+            if (!receipts.length) {
+                $('#emptyState').show();
+                updatePaginationInfo();
+                renderPagination(0);
+                return;
+            }
+
+            $('#emptyState').hide();
+            receipts.forEach((receipt, index) => {
+                const displayIndex = (currentPage - 1) * pageSize + index + 1;
+                const amount = receipt.amount ?? receipt.finalAmount ?? receipt.subtotal ?? 0;
+                const statusHtml = renderStatusBadge(receipt.statusCode);
+
+                tbody.append(`
+                    <tr>
+                        <td class="text-center">${displayIndex}</td>
+                        <td class="fw-semibold"><a href="/TotalReceipts/Details/${receipt.id}" class="text-dark" style="text-decoration: underline;">${escapeHtml(receipt.code)}</a></td>
+                        <td>${escapeHtml(receipt.customerName || 'N/A')}</td>
+                        <td class="text-end">${formatCurrency(amount)}</td>
+                        <td>${formatDate(receipt.createdAt)}</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `);
+            });
+
+            updatePaginationInfo();
+            renderPagination(totalRecords);
+        }
+
+        function renderPagination(totalItems) {
+            const pagination = $('#pagination');
+            pagination.empty();
+            const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+            if (totalPages <= 1) {
+                pagination.html('<li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li>');
+                updatePaginationInfo();
+                return;
+            }
+
+            // Previous button
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i> Trước
+                    </a>
+                </li>
+            `);
+
+            // Page numbers (show max 5 pages around current)
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            // First page
+            if (startPage > 1) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+                    </li>
+                `);
+                if (startPage > 2) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+            }
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === currentPage ? 'active' : '';
+                pagination.append(`
+                    <li class="page-item ${active}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>
+                `);
+            }
+
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+                    </li>
+                `);
+            }
+
+            // Next button
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `);
+
+            updatePaginationInfo();
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadReceipts();
+            // Scroll to top of table
+            $('.card').get(0)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Expose changePage to global scope for onclick handlers
+        window.changePage = changePage;
+
+        function updatePaginationInfo() {
+            const startIndex = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const endIndex = Math.min(currentPage * pageSize, totalRecords);
+            
+            $('#showingFrom').text(startIndex);
+            $('#showingTo').text(endIndex);
+            $('#totalRecords').text(totalRecords);
+        }
+
+        function renderStatusBadge(statusCode) {
+            const norm = (statusCode || '').toUpperCase();
+            if (norm === 'PAID') {
+                return '<span class="badge-status paid">Đã thanh toán</span>';
+            }
+            return '<span class="badge-status pending">Chưa thanh toán</span>';
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+        }
+
+        function formatDate(value) {
+            if (!value) return '<span class="text-muted">-</span>';
+            const date = new Date(value);
+            if (Number.isNaN(date)) return '<span class="text-muted">-</span>';
+            return `${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        }
+
+        function escapeHtml(str) {
+            return $('<div>').text(str || '').html();
+        }
+
+        function toggleLoading(isLoading) {
+            if (isLoading) {
+                $('#receiptTableBody').html(`
+                    <tr id="loadingRow">
+                        <td colspan="6" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                        </td>
+                    </tr>`);
+                $('#emptyState').hide();
+            } else {
+                $('#loadingRow').remove();
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const id = `alert-${Date.now()}`;
+            const html = `
+                <div id="${id}" class="alert alert-${type} alert-dismissible fade show position-fixed" role="alert"
+                    style="top: 20px; right: 20px; z-index: 9999; min-width: 280px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            $('body').append(html);
+            setTimeout(() => $(`#${id}`).alert('close'), 3000);
+        }
+    </script>
+}

@@ -1,0 +1,676 @@
+@{
+    ViewData["Title"] = "Chi tiết phiếu nhập kho";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Chi tiết phiếu nhập kho</h4>
+                    <a href="/StockIns" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="loadingSpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <div id="contentArea" style="display: none;">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Mã phiếu:</dt>
+                                    <dd class="col-sm-8" id="code">-</dd>
+
+                                    <dt class="col-sm-4">Mã yêu cầu:</dt>
+                                    <dd class="col-sm-8" id="stockInRequestCode">-</dd>
+
+                                    <dt class="col-sm-4">Chi nhánh:</dt>
+                                    <dd class="col-sm-8" id="branchName">-</dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Trạng thái:</dt>
+                                    <dd class="col-sm-8" id="status">-</dd>
+
+                                    <dt class="col-sm-4">Người duyệt:</dt>
+                                    <dd class="col-sm-8" id="approvedByName">-</dd>
+
+                                    <dt class="col-sm-4">Ngày duyệt:</dt>
+                                    <dd class="col-sm-8" id="approvedAt">-</dd>
+
+                                    <dt class="col-sm-4">Ngày tạo:</dt>
+                                    <dd class="col-sm-8" id="createdAt">-</dd>
+
+                                    <dt class="col-sm-4">Người tạo:</dt>
+                                    <dd class="col-sm-8" id="createdByName">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Danh sách linh kiện</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Mã linh kiện</th>
+                                            <th>Tên linh kiện</th>
+                                            <th>Số lượng yêu cầu</th>
+                                            <th>Số lượng thực tế</th>
+                                            <th>Giá nhập</th>
+                                            <th>Giá xuất</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detailsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2" id="actionButtons">
+                            <!-- Buttons sẽ được thêm bằng JavaScript dựa trên trạng thái -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal duyệt phiếu nhập kho -->
+<div class="modal fade" id="approveStockInModal" tabindex="-1" aria-labelledby="approveStockInModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveStockInModalLabel">Duyệt phiếu nhập kho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Vui lòng kiểm tra và cập nhật giá cho các linh kiện trước khi duyệt:</p>
+                <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã linh kiện</th>
+                                        <th>Tên linh kiện</th>
+                                        <th>Số lượng thực tế</th>
+                                        <th>Giá nhập <span class="text-danger">*</span></th>
+                                        <th>Giá xuất <span class="text-danger">*</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approveDetailsTableBody">
+                                </tbody>
+                            </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="confirmApproveBtn">
+                    <i class="fas fa-check"></i> Xác nhận duyệt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="messageModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận -->
+<div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="confirmModalCancelBtn">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmModalOkBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const urlParts = window.location.pathname.split('/');
+            const id = urlParts[urlParts.length - 1];
+            loadStockInDetails(id);
+        });
+
+        function loadStockInDetails(id) {
+            $.ajax({
+                url: `/StockIns/${id}/Data`,
+                method: 'GET',
+                success: function(result) {
+                    console.log('StockIn Details Response:', result);
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        console.log('StockIn Data:', data);
+                        populateDetails(data);
+                        $('#loadingSpinner').hide();
+                        $('#contentArea').show();
+                    } else {
+                        console.error('No data in response:', result);
+                        $('#loadingSpinner').html('<p class="text-danger">Không tìm thấy dữ liệu</p>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading details:', xhr, status, error);
+                    $('#loadingSpinner').html('<p class="text-danger">Lỗi tải dữ liệu: ' + error + '</p>');
+                }
+            });
+        }
+
+        function populateDetails(data) {
+            console.log('Populating details with data:', data);
+            
+            // Xử lý cả camelCase và PascalCase
+            const id = data.id || data.Id || 0;
+            const code = data.code || data.Code || (id ? `PNK${id}` : '-');
+            const stockInRequestCode = data.stockInRequestCode || data.StockInRequestCode || '-';
+            const branchName = data.branchName || data.BranchName || '-';
+            const statusCode = data.statusCode || data.StatusCode || '';
+            const approvedByName = data.approvedByName || data.ApprovedByName || '-';
+            const approvedAt = data.approvedAt || data.ApprovedAt;
+            const createdAt = data.createdAt || data.CreatedAt;
+            const createdByName = data.createdByName || data.CreatedByName || data.createdBy || data.CreatedBy || '-';
+            const details = data.details || data.Details || [];
+            
+            // Debug: Log status code để kiểm tra
+            console.log('StockIn Status Code Debug:', {
+                original: statusCode,
+                normalized: (statusCode || '').trim().toUpperCase(),
+                canApprove: ['PENDING', 'CREATED', 'PENDING_APPROVAL'].includes((statusCode || '').trim().toUpperCase())
+            });
+            
+            $('#code').text(code);
+            $('#stockInRequestCode').text(stockInRequestCode);
+            $('#branchName').text(branchName);
+            $('#createdByName').text(createdByName);
+            
+            let statusClass = 'bg-secondary';
+            let statusText = 'Không xác định';
+            // Xử lý statusCode - normalize về uppercase để so sánh
+            const normalizedStatus = (statusCode || '').trim().toUpperCase();
+            
+            if (normalizedStatus === 'CREATED' || normalizedStatus === 'PENDING' || 
+                normalizedStatus === 'PENDING_APPROVAL' || statusCode === 'Created' || statusCode === 'Pending') {
+                statusClass = 'bg-warning';
+                statusText = 'Chờ duyệt';
+            } else if (normalizedStatus === 'APPROVED') {
+                statusClass = 'bg-success';
+                statusText = 'Đã duyệt';
+            } else if (normalizedStatus === 'COMPLETED') {
+                statusClass = 'bg-info';
+                statusText = 'Hoàn thành';
+            } else if (normalizedStatus === 'CANCELLED' || normalizedStatus === 'CANCELED') {
+                statusClass = 'bg-danger';
+                statusText = 'Đã hủy';
+            } else {
+                // Nếu status không khớp, hiển thị status gốc
+                statusText = statusCode || 'Không xác định';
+            }
+            $('#status').html(`<span class="badge ${statusClass}">${statusText}</span>`);
+
+            $('#approvedByName').text(approvedByName);
+            $('#approvedAt').text(approvedAt ? new Date(approvedAt).toLocaleString('vi-VN') : '-');
+            $('#createdAt').text(createdAt ? new Date(createdAt).toLocaleString('vi-VN') : '-');
+
+            // Render details
+            const tbody = $('#detailsTableBody');
+            tbody.empty();
+            if (details && details.length > 0) {
+                details.forEach(function(detail) {
+                    // Xử lý cả camelCase và PascalCase
+                    const componentCode = detail.componentCode || detail.ComponentCode || detail.componentId || detail.ComponentId || '-';
+                    const componentName = detail.componentName || detail.ComponentName || '-';
+                    const quantity = detail.quantity || detail.Quantity || 0;
+                    const quantityAfterCheck = detail.quantityAfterCheck !== null && detail.quantityAfterCheck !== undefined 
+                        ? detail.quantityAfterCheck 
+                        : (detail.QuantityAfterCheck !== null && detail.QuantityAfterCheck !== undefined ? detail.QuantityAfterCheck : '-');
+                    const importPricePerUnit = detail.importPricePerUnit || detail.ImportPricePerUnit;
+                    const exportPricePerUnit = detail.exportPricePerUnit || detail.ExportPricePerUnit;
+                    
+                    const importPrice = importPricePerUnit ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(importPricePerUnit) : '-';
+                    const exportPrice = exportPricePerUnit ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(exportPricePerUnit) : '-';
+                    
+                    const row = `
+                        <tr>
+                            <td>${componentCode}</td>
+                            <td>${componentName}</td>
+                            <td>${quantity}</td>
+                            <td>${quantityAfterCheck}</td>
+                            <td>${importPrice}</td>
+                            <td>${exportPrice}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.html('<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu</td></tr>');
+            }
+
+            // Hiển thị nút duyệt nếu là Giám đốc chi nhánh và status = PENDING
+            renderActionButtons(id, statusCode, details);
+        }
+
+        function renderActionButtons(stockInId, statusCode, details) {
+            const actionButtons = $('#actionButtons');
+            actionButtons.empty();
+
+            // Lấy roleId và roleName từ JWT token hoặc sessionStorage
+            let roleId = 0;
+            let roleName = '';
+            
+            // Thử lấy từ JWT token trước
+            try {
+                const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    if (payload) {
+                        roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                        roleName = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                                   payload['role'] || 
+                                   payload['RoleName'] || 
+                                   '';
+                        console.log('User role from JWT - RoleId:', roleId, 'RoleName:', roleName);
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing JWT token:', e);
+            }
+            
+            // Fallback về sessionStorage/localStorage nếu không lấy được từ JWT
+            if (!roleId || roleId === 0) {
+                if (localStorage.getItem('RoleId')) {
+                    roleId = parseInt(localStorage.getItem('RoleId') || '0');
+                } else if (sessionStorage.getItem('RoleId')) {
+                    roleId = parseInt(sessionStorage.getItem('RoleId') || '0');
+                }
+            }
+            if (!roleName) {
+                roleName = localStorage.getItem('RoleName') || sessionStorage.getItem('RoleName') || '';
+            }
+            
+            // Chỉ roleId = 2 (Branch Manager - Giám đốc chi nhánh) mới được duyệt
+            const roleNameLower = roleName.toLowerCase();
+            const isBranchManager = roleNameLower.includes('branch manager') || 
+                                   roleNameLower.includes('giám đốc') ||
+                                   roleId === 2;
+            
+            // Xử lý statusCode - chuyển về uppercase để so sánh (xử lý tất cả các case)
+            const normalizedStatusCode = (statusCode || '').trim().toUpperCase();
+            // Có thể duyệt khi status là CREATED hoặc PENDING (xử lý cả các biến thể)
+            const canApprove = normalizedStatusCode === 'PENDING' || 
+                              normalizedStatusCode === 'CREATED' ||
+                              normalizedStatusCode === 'PENDING_APPROVAL';
+            
+            console.log('StockIn Action Buttons Debug:');
+            console.log('  - stockInId:', stockInId);
+            console.log('  - statusCode (original):', statusCode);
+            console.log('  - normalizedStatusCode:', normalizedStatusCode);
+            console.log('  - canApprove:', canApprove);
+            console.log('  - roleId:', roleId);
+            console.log('  - roleName:', roleName);
+            console.log('  - isBranchManager:', isBranchManager);
+            
+            let buttonsHtml = '';
+            
+            // CHỈ BRANCH MANAGER (roleId = 2 - Giám đốc chi nhánh) mới được duyệt
+            const canApproveByRole = isBranchManager && roleId === 2;
+            
+            if (canApproveByRole && canApprove && stockInId > 0) {
+                buttonsHtml = `
+                    <button type="button" class="btn btn-success" onclick="openApproveModal(${stockInId})">
+                        <i class="fas fa-check"></i> Duyệt phiếu nhập kho
+                    </button>
+                `;
+            }
+            
+            if (buttonsHtml) {
+                actionButtons.html(buttonsHtml);
+                console.log('  - Button rendered successfully');
+            } else {
+                console.log('  - Button NOT rendered. Conditions:');
+                console.log('    * canApproveByRole (isBranchManager && roleId === 2):', canApproveByRole);
+                console.log('    * canApprove:', canApprove);
+                console.log('    * stockInId > 0:', stockInId > 0);
+                console.log('    * All conditions met:', canApproveByRole && canApprove && stockInId > 0);
+            }
+        }
+
+        // Biến lưu trữ dữ liệu để gửi khi duyệt
+        let approveStockInData = null;
+
+        function openApproveModal(stockInId) {
+            // Load lại dữ liệu để lấy details mới nhất
+            $.ajax({
+                url: `/StockIns/${stockInId}/Data`,
+                method: 'GET',
+                success: function(result) {
+                    if (result.success && result.data) {
+                        const data = result.data;
+                        const details = data.details || data.Details || [];
+                        const stockInRequestCode = data.stockInRequestCode || data.StockInRequestCode || '';
+                        
+                        // Lưu dữ liệu để dùng khi submit
+                        approveStockInData = {
+                            stockInId: stockInId,
+                            stockInRequestCode: stockInRequestCode,
+                            details: details
+                        };
+                        
+                        // Render details vào modal
+                        const tbody = $('#approveDetailsTableBody');
+                        tbody.empty();
+                        
+                        if (details && details.length > 0) {
+                            details.forEach(function(detail, index) {
+                                const componentCode = detail.componentCode || detail.ComponentCode || '-';
+                                const componentName = detail.componentName || detail.ComponentName || '-';
+                                const quantity = detail.quantity || detail.Quantity || 0;
+                                const quantityAfterCheck = detail.quantityAfterCheck !== null && detail.quantityAfterCheck !== undefined 
+                                    ? detail.quantityAfterCheck 
+                                    : (detail.QuantityAfterCheck !== null && detail.QuantityAfterCheck !== undefined ? detail.QuantityAfterCheck : quantity);
+                                const importPricePerUnit = detail.importPricePerUnit || detail.ImportPricePerUnit || 0;
+                                const exportPricePerUnit = detail.exportPricePerUnit || detail.ExportPricePerUnit || 0;
+                                const vat = detail.vat !== null && detail.vat !== undefined 
+                                    ? detail.vat 
+                                    : (detail.Vat !== null && detail.Vat !== undefined ? detail.Vat : 0);
+                                const componentId = detail.componentId || detail.ComponentId || 0;
+                                
+                                const row = `
+                                    <tr>
+                                        <td>${componentCode}</td>
+                                        <td>${componentName}</td>
+                                        <td>${quantityAfterCheck}</td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control approve-import-price" 
+                                                   data-component-code="${componentCode}"
+                                                   data-component-id="${componentId}"
+                                                   data-component-name="${componentName.replace(/"/g, '&quot;')}"
+                                                   data-quantity="${quantity}"
+                                                   value="${importPricePerUnit}" 
+                                                   min="0" 
+                                                   step="1000" 
+                                                   required>
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                   class="form-control approve-export-price" 
+                                                   data-component-code="${componentCode}"
+                                                   data-component-id="${componentId}"
+                                                   data-component-name="${componentName.replace(/"/g, '&quot;')}"
+                                                   data-quantity="${quantity}"
+                                                   value="${exportPricePerUnit}" 
+                                                   min="0" 
+                                                   step="1000" 
+                                                   required>
+                                        </td>
+                                    </tr>
+                                `;
+                                tbody.append(row);
+                            });
+                            
+                            // Lưu stockInId vào button
+                            $('#confirmApproveBtn').data('stock-in-id', stockInId);
+                            
+                            // Mở modal
+                            $('#approveStockInModal').modal('show');
+                        } else {
+                            showMessage('Cảnh báo', 'Phiếu nhập kho không có linh kiện', 'warning');
+                        }
+                    } else {
+                        showMessage('Lỗi', 'Không thể tải dữ liệu phiếu nhập kho', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading stock-in details:', error);
+                    showMessage('Lỗi', 'Không thể tải dữ liệu phiếu nhập kho', 'error');
+                }
+            });
+        }
+
+        // Xử lý nút xác nhận duyệt
+        $('#confirmApproveBtn').on('click', function() {
+            const stockInId = $(this).data('stock-in-id');
+            if (!stockInId || !approveStockInData) {
+                showMessage('Lỗi', 'Không tìm thấy dữ liệu phiếu nhập kho', 'error');
+                return;
+            }
+
+            // Thu thập dữ liệu từ form
+            const details = [];
+            let hasError = false;
+            $('#approveDetailsTableBody tr').each(function() {
+                if (hasError) return false; // Stop if error found
+                
+                const componentCode = $(this).find('.approve-import-price').data('component-code') || '';
+                const componentId = $(this).find('.approve-import-price').data('component-id') || 0;
+                const componentName = $(this).find('.approve-import-price').data('component-name') || '';
+                const quantity = parseInt($(this).find('.approve-import-price').data('quantity') || '0') || 0;
+                const quantityAfterCheck = parseInt($(this).find('td:eq(2)').text().trim()) || 0;
+                const importPricePerUnit = parseFloat($(this).find('.approve-import-price').val()) || 0;
+                const exportPricePerUnit = parseFloat($(this).find('.approve-export-price').val()) || 0;
+
+                if (importPricePerUnit <= 0 || exportPricePerUnit <= 0) {
+                    showMessage('Lỗi', `Vui lòng nhập giá nhập và giá xuất cho linh kiện ${componentCode}`, 'error');
+                    hasError = true;
+                    return false; // Break loop
+                }
+
+                if (quantityAfterCheck <= 0) {
+                    showMessage('Lỗi', `Số lượng thực tế phải lớn hơn 0 cho linh kiện ${componentCode}`, 'error');
+                    hasError = true;
+                    return false; // Break loop
+                }
+
+                if (!componentName || componentName.trim() === '') {
+                    showMessage('Lỗi', `Tên linh kiện không được để trống cho linh kiện ${componentCode}`, 'error');
+                    hasError = true;
+                    return false; // Break loop
+                }
+
+                if (quantity <= 0) {
+                    showMessage('Lỗi', `Số lượng yêu cầu phải lớn hơn 0 cho linh kiện ${componentCode}`, 'error');
+                    hasError = true;
+                    return false; // Break loop
+                }
+
+                details.push({
+                    componentId: componentId || 0,
+                    componentCode: componentCode || '',
+                    componentName: componentName || '',
+                    quantity: quantity, // Số lượng yêu cầu (bắt buộc)
+                    quantityAfterCheck: quantityAfterCheck, // Số lượng thực tế
+                    importPricePerUnit: importPricePerUnit,
+                    exportPricePerUnit: exportPricePerUnit
+                });
+            });
+
+            if (hasError) {
+                return; // Stop if validation failed
+            }
+
+            if (details.length === 0) {
+                showMessage('Lỗi', 'Không có dữ liệu linh kiện', 'error');
+                return;
+            }
+
+            // Xác nhận trước khi duyệt
+            showConfirm('Bạn có chắc chắn muốn duyệt phiếu nhập kho này?', function() {
+                // Gửi request duyệt với đầy đủ thông tin
+                $.ajax({
+                    url: `/StockIns/${stockInId}/Approve`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        id: stockInId,
+                        stockInRequestCode: approveStockInData.stockInRequestCode || '',
+                        details: details
+                    }),
+                    success: function(result) {
+                        // Đóng modal
+                        $('#approveStockInModal').modal('hide');
+                        // Xóa backdrop
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                        
+                        if (result && result.success) {
+                            showMessage('Thành công', 'Duyệt phiếu nhập kho thành công. Đã cập nhật kho và giá linh kiện.', 'success', function() {
+                                location.reload();
+                            });
+                        } else {
+                            const errorMsg = result?.message || 'Không thể duyệt phiếu nhập kho';
+                            showMessage('Lỗi', errorMsg, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        // Đóng modal
+                        $('#approveStockInModal').modal('hide');
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
+                        
+                        let errorMsg = error;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                });
+            });
+        });
+
+        function showMessage(title, message, type, callback) {
+            // Đóng tất cả modal đang mở trước
+            cleanupModals();
+
+            const modal = $('#messageModal');
+            const header = $('#messageModalHeader');
+            const titleEl = $('#messageModalTitle');
+            const textEl = $('#messageModalText');
+            const okBtn = $('#messageModalOkBtn');
+
+            titleEl.text(title);
+            textEl.text(message);
+
+            // Set màu sắc theo type
+            header.removeClass('bg-success bg-danger bg-warning bg-primary');
+            okBtn.removeClass('btn-success btn-danger btn-warning');
+            
+            if (type === 'success') {
+                header.addClass('bg-success text-white');
+                okBtn.addClass('btn-success');
+            } else if (type === 'error') {
+                header.addClass('bg-danger text-white');
+                okBtn.addClass('btn-danger');
+            } else if (type === 'warning') {
+                header.addClass('bg-warning text-dark');
+                okBtn.addClass('btn-warning');
+            } else {
+                header.addClass('bg-primary text-white');
+            }
+
+            // Xóa callback cũ và thêm callback mới
+            modal.off('hidden.bs.modal');
+            if (callback) {
+                modal.on('hidden.bs.modal', function() {
+                    callback();
+                });
+            }
+
+            // Hiển thị modal
+            modal.modal('show');
+        }
+
+        function showConfirm(message, onConfirm) {
+            // Đóng tất cả modal đang mở trước
+            cleanupModals();
+
+            const modal = $('#confirmModal');
+            const textEl = $('#confirmModalText');
+            const okBtn = $('#confirmModalOkBtn');
+            const cancelBtn = $('#confirmModalCancelBtn');
+
+            textEl.text(message);
+
+            // Xóa event handlers cũ
+            okBtn.off('click');
+            cancelBtn.off('click');
+
+            // Thêm event handlers mới
+            okBtn.on('click', function() {
+                const modalInstance = bootstrap.Modal.getInstance(modal[0]);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                cleanupModals();
+                if (onConfirm) {
+                    onConfirm();
+                }
+            });
+
+            cancelBtn.on('click', function() {
+                const modalInstance = bootstrap.Modal.getInstance(modal[0]);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                cleanupModals();
+            });
+
+            // Hiển thị modal
+            modal.modal('show');
+        }
+
+        function cleanupModals() {
+            // Đóng tất cả modal
+            $('.modal').modal('hide');
+            
+            // Xóa backdrop và reset body styles
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                $('body').css('overflow', '');
+                $('body').css('padding-right', '');
+            }, 300);
+        }
+    </script>
+}
+

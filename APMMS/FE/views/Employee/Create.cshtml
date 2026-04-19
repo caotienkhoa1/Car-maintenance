@@ -1,0 +1,616 @@
+@{
+    ViewData["Title"] = "Tạo nhân viên";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    /* Custom Notification Popup */
+    .custom-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        min-width: 350px;
+        max-width: 500px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        border-left: 4px solid #28a745;
+    }
+    
+    .custom-notification.error {
+        border-left-color: #dc3545;
+    }
+    
+    .custom-notification.warning {
+        border-left-color: #ffc107;
+    }
+    
+    .custom-notification.info {
+        border-left-color: #17a2b8;
+    }
+    
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @@keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .custom-notification.hide {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+    
+    .notification-header {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .notification-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.success {
+        background: #d4edda;
+        color: #28a745;
+    }
+    
+    .notification-icon.error {
+        background: #f8d7da;
+        color: #dc3545;
+    }
+    
+    .notification-icon.warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .notification-icon.info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .notification-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .notification-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .notification-close:hover {
+        color: #212529;
+    }
+    
+    .notification-body {
+        padding: 16px 20px;
+        color: #495057;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Tạo nhân viên</h4>
+                    <button type="button" class="btn-close" onclick="window.location.href='/Employees'" aria-label="Close"></button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Left Section: Avatar -->
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <img id="avatarPreview" 
+                                     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='60'%3E👤%3C/text%3E%3C/svg%3E" 
+                                     alt="Avatar" 
+                                     class="rounded-circle" 
+                                     style="width: 150px; height: 150px; object-fit: cover; background-color: #e0e0e0; border: 3px solid #dee2e6;" />
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('avatarUpload').click()">
+                                <i class="fas fa-upload"></i> Tải ảnh lên
+                            </button>
+                            <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="previewAvatar(this)" />
+                        </div>
+
+                        <!-- Right Section: Form -->
+                        <div class="col-md-8">
+                            <h6 class="mb-3">Thông tin nhân viên</h6>
+                            <form id="employeeForm">
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="username" class="form-label">Tài khoản<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="username" name="username" placeholder="VD: employee" minlength="6" maxlength="12" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="password" class="form-label">Mật khẩu<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="password" class="form-control" id="password" name="password" minlength="6" maxlength="12" required="required" placeholder="VD: Employee123">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="fullName" class="form-label">Họ và tên<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="fullName" name="fullName" placeholder="VD: Nguyễn Nhân Viên" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="dob" class="form-label">Ngày sinh<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="date" class="form-control" id="dob" name="dob" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="gender" class="form-label">Giới tính</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <select class="form-select" id="gender" name="gender">
+                                            <option value="">Giới tính</option>
+                                            <option value="Nam">Nam</option>
+                                            <option value="Nữ">Nữ</option>
+                                            <option value="Khác">Khác</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="phone" class="form-label">Điện thoại<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="VD: 0396xxxxxx" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="email" class="form-label">Email<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="VD: employee@gmail.com" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="citizenId" class="form-label">CMT/CCCD<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="citizenId" name="citizenId" placeholder="VD: xxxxxxxxxx (12 số)" maxlength="12" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="address" class="form-label">Địa chỉ<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <textarea class="form-control" id="address" name="address" rows="3" placeholder="VD: 11 Ngõ ABC, Đường DEF, Huyện GHI, Tỉnh KLM, Thành phố NOU" required="required"></textarea>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="taxCode" class="form-label">Mã số thuế<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="taxCode" name="taxCode" placeholder="VD: xxxxxxxxxx (10 số)" maxlength="10" required="required">
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-4">
+                                        <label for="roleId" class="form-label">Chức vụ<span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <select class="form-select" id="roleId" name="roleId" required="required">
+                                            <option value="">Chức vụ</option>
+                                            <option value="3">Kế toán</option>
+                                            <option value="4">Kỹ thuật viên</option>
+                                            <option value="5">Thủ kho</option>
+                                            <option value="6">Tư vấn viên</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="col-md-12 d-flex justify-content-end gap-2">
+                                        <a href="/Employees" class="btn btn-secondary">Đóng</a>
+                                        <button type="submit" class="btn btn-outline-primary">
+                                            <i class="fas fa-plus"></i> Tạo nhân viên
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Custom Notification Function
+        function showNotification(message, type = 'success') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.custom-notification');
+            existingNotifications.forEach(notif => {
+                notif.classList.add('hide');
+                setTimeout(() => notif.remove(), 300);
+            });
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `custom-notification ${type}`;
+            
+            const icons = {
+                success: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>',
+                error: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>',
+                warning: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>',
+                info: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451.081.082.381 1.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>'
+            };
+            
+            const titles = {
+                success: 'Thành công',
+                error: 'Lỗi',
+                warning: 'Cảnh báo',
+                info: 'Thông tin'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <div class="notification-icon ${type}">
+                        ${icons[type] || icons.info}
+                    </div>
+                    <h6 class="notification-title">${titles[type] || titles.info}</h6>
+                    <button type="button" class="notification-close" onclick="this.closest('.custom-notification').classList.add('hide'); setTimeout(() => this.closest('.custom-notification').remove(), 300);">&times;</button>
+                </div>
+                <div class="notification-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Append to body
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('hide');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('employeeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createEmployee();
+            });
+        });
+
+        // Avatar preview function
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showNotification('Vui lòng chọn file hình ảnh hợp lệ', 'warning');
+                    input.value = '';
+                    return;
+                }
+                
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Kích thước file không được vượt quá 5MB', 'warning');
+                    input.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.onerror = function() {
+                    showNotification('Có lỗi xảy ra khi đọc file', 'error');
+                    input.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Validation functions
+        function validateUsername(username) {
+            if (!username) return { valid: false, message: 'Tên đăng nhập là bắt buộc.' };
+            if (username.length < 6) {
+                return { valid: false, message: 'Tên đăng nhập phải có ít nhất 6 ký tự.' };
+            }
+            if (username.length > 12) {
+                return { valid: false, message: 'Tên đăng nhập không được vượt quá 12 ký tự.' };
+            }
+            const usernameRegex = /^[a-zA-Z0-9_]+$/;
+            if (!usernameRegex.test(username)) {
+                return { valid: false, message: 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validatePhone(phone) {
+            if (!phone) return { valid: true, message: '' };
+            const phoneClean = phone.replace(/\s+/g, '').replace(/-/g, '');
+            const phoneRegex = /^0[3|5|7|8|9][0-9]{8}$/;
+            if (!phoneRegex.test(phoneClean)) {
+                return { valid: false, message: 'Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateCitizenId(citizenId) {
+            if (!citizenId) return { valid: true, message: '' };
+            const citizenIdClean = citizenId.replace(/\s+/g, '').replace(/-/g, '');
+            const citizenIdRegex = /^[0-9]{12}$/;
+            if (!citizenIdRegex.test(citizenIdClean)) {
+                return { valid: false, message: 'CMT/CCCD phải có đúng 12 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateTaxCode(taxCode) {
+            if (!taxCode) return { valid: true, message: '' };
+            const taxCodeClean = taxCode.replace(/\s+/g, '').replace(/-/g, '');
+            const taxCodeRegex = /^[0-9]{10}$/;
+            if (!taxCodeRegex.test(taxCodeClean)) {
+                return { valid: false, message: 'Mã số thuế phải có đúng 10 chữ số.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function validateDOB(dobInput) {
+            if (!dobInput) return { valid: true, message: '' };
+            try {
+                const dobDate = new Date(dobInput + 'T00:00:00');
+                if (isNaN(dobDate.getTime())) {
+                    return { valid: false, message: 'Ngày sinh không hợp lệ.' };
+                }
+                const today = new Date();
+                const age = today.getFullYear() - dobDate.getFullYear();
+                const monthDiff = today.getMonth() - dobDate.getMonth();
+                const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate()) ? age - 1 : age;
+                
+                if (actualAge < 18) {
+                    return { valid: false, message: 'Nhân viên phải đủ 18 tuổi trở lên.' };
+                }
+                if (dobDate > today) {
+                    return { valid: false, message: 'Ngày sinh không được ở tương lai.' };
+                }
+                return { valid: true, message: '' };
+            } catch (e) {
+                return { valid: false, message: 'Ngày sinh không hợp lệ.' };
+            }
+        }
+
+        function validatePassword(password) {
+            if (!password) return { valid: false, message: 'Mật khẩu là bắt buộc.' };
+            if (password.length < 6) {
+                return { valid: false, message: 'Mật khẩu phải có ít nhất 6 ký tự.' };
+            }
+            if (password.length > 12) {
+                return { valid: false, message: 'Mật khẩu không được vượt quá 12 ký tự.' };
+            }
+            return { valid: true, message: '' };
+        }
+
+        function createEmployee() {
+            const form = document.getElementById('employeeForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Validate individual fields
+            const username = document.getElementById('username').value;
+            const usernameValidation = validateUsername(username);
+            if (!usernameValidation.valid) {
+                showNotification(usernameValidation.message, 'error');
+                document.getElementById('username').focus();
+                return;
+            }
+
+            const phone = document.getElementById('phone').value;
+            const phoneValidation = validatePhone(phone);
+            if (!phoneValidation.valid) {
+                showNotification(phoneValidation.message, 'error');
+                document.getElementById('phone').focus();
+                return;
+            }
+
+            const citizenId = document.getElementById('citizenId').value;
+            const citizenIdValidation = validateCitizenId(citizenId);
+            if (!citizenIdValidation.valid) {
+                showNotification(citizenIdValidation.message, 'error');
+                document.getElementById('citizenId').focus();
+                return;
+            }
+
+            const taxCode = document.getElementById('taxCode').value;
+            const taxCodeValidation = validateTaxCode(taxCode);
+            if (!taxCodeValidation.valid) {
+                showNotification(taxCodeValidation.message, 'error');
+                document.getElementById('taxCode').focus();
+                return;
+            }
+
+            const dobInput = document.getElementById('dob').value;
+            const dobValidation = validateDOB(dobInput);
+            if (!dobValidation.valid) {
+                showNotification(dobValidation.message, 'error');
+                document.getElementById('dob').focus();
+                return;
+            }
+
+            const password = document.getElementById('password').value;
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.valid) {
+                showNotification(passwordValidation.message, 'error');
+                document.getElementById('password').focus();
+                return;
+            }
+
+            // Split full name into first and last name
+            const fullName = document.getElementById('fullName').value.trim();
+            const nameParts = fullName.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Format dob from YYYY-MM-DD to dd-MM-yyyy
+            let formattedDob = null;
+            if (dobInput) {
+                const date = new Date(dobInput + 'T00:00:00');
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                formattedDob = `${day}-${month}-${year}`;
+            }
+
+            const formData = {
+                username: username,
+                password: password,
+                firstName: firstName,
+                lastName: lastName,
+                email: document.getElementById('email').value,
+                phone: phone.replace(/\s+/g, '').replace(/-/g, ''),
+                gender: document.getElementById('gender').value || null,
+                dob: formattedDob,
+                citizenId: citizenId.replace(/\s+/g, '').replace(/-/g, ''),
+                address: document.getElementById('address').value || null,
+                roleId: parseInt(document.getElementById('roleId').value),
+                taxCode: taxCode.replace(/\s+/g, '').replace(/-/g, ''),
+                image: '', // Will be handled separately if needed
+                branchId: null // Can be set from current user context if needed
+            };
+
+            // Handle image upload if file is selected
+            const imageFile = document.getElementById('avatarUpload').files[0];
+            if (imageFile) {
+                // TODO: Upload image to server first, then get URL
+                // For now, we'll create without image
+                showNotification('Tính năng upload ảnh đang được phát triển. Nhân viên sẽ được tạo không có ảnh.', 'info');
+            }
+
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                showNotification('Bạn cần đăng nhập để thực hiện thao tác này. Vui lòng đăng nhập lại.', 'warning');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo...';
+
+            const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+            fetch(`${API_BASE_URL}/Employee`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(async response => {
+                const responseData = await response.json().catch(() => ({}));
+                
+                if (!response.ok) {
+                    // Extract error message from response
+                    let errorMessage = 'Đã xảy ra lỗi khi tạo nhân viên.';
+                    
+                    if (responseData.message) {
+                        errorMessage = responseData.message;
+                    } else if (responseData.errors && Array.isArray(responseData.errors)) {
+                        errorMessage = responseData.errors.join(', ');
+                    } else if (responseData.error) {
+                        errorMessage = responseData.error;
+                    } else if (response.status === 400) {
+                        errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+                    } else if (response.status === 401) {
+                        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                    } else if (response.status === 403) {
+                        errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                    } else if (response.status === 500) {
+                        errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+                    }
+                    
+                    console.error('Error response:', responseData);
+                    throw new Error(errorMessage);
+                }
+                
+                return responseData;
+            })
+            .then(data => {
+                showNotification('Nhân viên đã được tạo thành công!', 'success');
+                // Redirect after 1.5 seconds
+                setTimeout(() => {
+                    window.location.href = '/Employees';
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Lỗi khi tạo nhân viên: ' + error.message, 'error');
+            })
+            .finally(() => {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+        }
+    </script>
+}

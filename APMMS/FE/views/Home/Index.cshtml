@@ -1,0 +1,443 @@
+@{
+    ViewData["Title"] = "Trang chủ";
+
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-background">
+        <div class="hero-overlay"></div>
+    </div>
+    
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="hero-brand">APMMS</span>
+                    </h1>
+                    <h2 class="hero-subtitle">
+                        HỆ THỐNG QUẢN LÝ PHỤ TÙNG & BẢO DƯỠNG Ô TÔ
+                    </h2>
+                    <p class="hero-description">
+                        Giải pháp toàn diện cho việc quản lý xe, phụ tùng và lịch bảo dưỡng. 
+                        Tối ưu hóa quy trình, tiết kiệm thời gian và chi phí.
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image">
+                    <div class="truck-container">
+                        <div class="truck">
+                            <div class="truck-cab"></div>
+                            <div class="truck-trailer"></div>
+                            <div class="truck-wheels">
+                                <div class="wheel"></div>
+                                <div class="wheel"></div>
+                                <div class="wheel"></div>
+                                <div class="wheel"></div>
+                            </div>
+                        </div>
+                        <div class="road-lines"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Feedback Management Section -->
+<section id="feedback" class="feedback-section py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>
+                            Quản lý Phản hồi
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Lọc theo đánh giá:</label>
+                                <select class="form-select">
+                                    <option value="">Tất cả đánh giá</option>
+                                    <option value="5">5 sao</option>
+                                    <option value="4">4 sao</option>
+                                    <option value="3">3 sao</option>
+                                    <option value="2">2 sao</option>
+                                    <option value="1">1 sao</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Feedback List -->
+                        <div id="feedbackList">
+                            <!-- Dữ liệu sẽ được load từ API -->
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Login Modal -->
+@await Html.PartialAsync("~/views/Auth/Login.cshtml")
+
+@section Scripts {
+    <script>
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        $(document).ready(function() {
+            console.log('Home page loaded, jQuery version:', $.fn.jquery);
+            
+            // Test if form exists
+            console.log('Login form exists:', $('#loginForm').length > 0);
+            console.log('Username input exists:', $('#username').length > 0);
+            console.log('Password input exists:', $('#password').length > 0);
+            
+            // Manual form binding for testing
+            $('#loginForm').off('submit').on('submit', function(e) {
+                console.log('Manual form submit handler triggered');
+                e.preventDefault();
+                
+                const username = $('#username').val();
+                const password = $('#password').val();
+                
+                console.log('Manual handler - Username:', username);
+                console.log('Manual handler - Password length:', password ? password.length : 0);
+                
+                if (!username || !password) {
+                    showAlert('Vui lòng nhập đầy đủ thông tin đăng nhập', 'warning');
+                    return false;
+                }
+                
+                // Call the existing handleLogin function
+                handleLogin();
+                return false;
+            });
+        });
+
+  
+  
+const apiBase = '@ViewBag.ApiBaseUrl';
+let currentPage = 1;
+let pageSize = 5;
+let currentRatingFilter = '';
+let currentUserId = '@ViewBag.CurrentUserId';
+
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => { if(alertDiv.parentNode) alertDiv.remove(); }, 3000);
+}
+
+$(document).ready(function() {
+
+    loadFeedback();
+
+    $('.form-select').on('change', function() {
+        currentRatingFilter = $(this).val();
+        currentPage = 1;
+        loadFeedback();
+    });
+
+    // Load feedback từ API
+    function loadFeedback() {
+        let url = `${apiBase}/Feedback?page=${currentPage}&pageSize=${pageSize}`;
+        if(currentRatingFilter) url += `&rating=${currentRatingFilter}`;
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(data) {
+                renderFeedback(data.items || []);
+                renderPagination(data.totalPages || 1);
+                renderNewFeedbackForm();
+            },
+            error: function() {
+                $('#feedbackList').html(`<p class="text-danger">Không thể tải dữ liệu feedback!</p>`);
+            }
+        });
+    }
+
+    // Render feedback
+    function renderFeedback(list) {
+        list = list.filter(f => f.parentId == null);
+        if(!list.length) { $('#feedbackList').html('<p class="text-muted">Chưa có phản hồi nào.</p>'); return; }
+
+        let html = '';
+        list.forEach(item => {
+            const stars = "★".repeat(item.rating) + "☆".repeat(5 - item.rating);
+            const avatar = item.image ? `<img src="${item.image}" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">`
+                                      : `<i class="fas fa-user-circle fa-2x me-2 text-secondary"></i>`;
+            const actionButtons = (currentUserId && parseInt(currentUserId) === item.userId)
+                ? `<div class="mt-2">
+                        <button class="btn btn-sm btn-warning edit-feedback">Sửa</button>
+                        <button class="btn btn-sm btn-danger delete-feedback">Xóa</button>
+                   </div>` : '';
+
+            html += `
+            <div class="card mb-3" data-id="${item.id}" data-rating="${item.rating}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            ${avatar}
+                            <div>
+                                <h6 class="mb-1">${item.userName ?? 'Người dùng'}</h6>
+                                <div class="text-warning mb-1">${stars}</div>
+                                <small class="text-muted">Phiếu bảo dưỡng #${item.maintenanceTicketId ?? '--'}</small>
+                            </div>
+                        </div>
+                        <small class="text-muted">${formatDate(item.createdAt)}</small>
+                    </div>
+                    <p class="mb-2 feedback-comment">${item.comment}</p>
+                    <button class="btn btn-sm btn-link view-replies">Xem trả lời</button>
+                    <div class="replies mt-2"></div>
+                    <div class="reply-form mt-2" style="display:none;">
+                        <textarea class="form-control mb-1" placeholder="Viết trả lời..."></textarea>
+                        <button class="btn btn-sm btn-primary submit-reply">Gửi</button>
+                    </div>
+                    ${actionButtons}
+                </div>
+            </div>`;
+        });
+
+        $('#feedbackList').html(html);
+    }
+
+    // Render khung viết feedback mới
+    function renderNewFeedbackForm() {
+        if(!currentUserId) return;
+        const html = `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6>Viết phản hồi mới</h6>
+                    <textarea id="newFeedbackComment" class="form-control mb-2" placeholder="Nhập phản hồi..."></textarea>
+                    <select id="newFeedbackRating" class="form-select mb-2">
+                        <option value="5">5 sao</option>
+                        <option value="4">4 sao</option>
+                        <option value="3">3 sao</option>
+                        <option value="2">2 sao</option>
+                        <option value="1">1 sao</option>
+                    </select>
+                    <button id="submitNewFeedback" class="btn btn-primary btn-sm">Gửi phản hồi</button>
+                </div>
+            </div>`;
+        $('#feedbackList').append(html);
+    }
+
+    // Pagination
+    function renderPagination(totalPages) {
+        if(totalPages <= 1) return;
+        let html = `<nav><ul class="pagination">`;
+        for(let i=1;i<=totalPages;i++){
+            html += `<li class="page-item ${i===currentPage?'active':''}"><a class="page-link" href="#">${i}</a></li>`;
+        }
+        html += `</ul></nav>`;
+        $('#feedbackList').append(html);
+
+        $('.pagination a').click(function(e){
+            e.preventDefault();
+            currentPage = parseInt($(this).text());
+            loadFeedback();
+        });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleString("vi-VN");
+    }
+
+    // --- Event: Xem reply ---
+    $(document).on('click', '.view-replies', function() {
+        const card = $(this).closest('.card');
+        const id = card.data('id');
+        const container = card.find('.replies');
+        const replyForm = card.find('.reply-form');
+        replyForm.toggle();
+
+        if(container.is(':empty')){
+            $.get(`${apiBase}/Feedback/${id}/replies`, function(data){
+                if(data.length === 0) container.html('<small class="text-muted">Chưa có trả lời nào.</small>');
+                else {
+                    let replyHtml = '';
+                    data.forEach(r=>{
+                        const avatar = r.image ? `<img src="${r.image}" class="rounded-circle me-2" style="width:30px;height:30px;object-fit:cover;">`
+                                               : `<i class="fas fa-user-circle fa-1x me-2 text-secondary"></i>`;
+                        replyHtml += `<div class="d-flex align-items-center mb-1">
+                                        ${avatar}
+                                        <div>
+                                            <small><strong>${r.userName ?? 'Người dùng'}</strong> - ${formatDate(r.createdAt)}</small>
+                                            <p class="mb-0">${r.comment}</p>
+                                        </div>
+                                      </div>`;
+                    });
+                    container.html(replyHtml);
+                }
+            });
+        }
+    });
+
+    // --- Event: Gửi reply ---
+    $(document).on('click', '.submit-reply', function() {
+        if(!currentUserId) { showAlert('Bạn phải đăng nhập để trả lời', 'warning'); return; }
+        const card = $(this).closest('.card');
+        const id = card.data('id');
+        const textarea = card.find('textarea');
+        const comment = textarea.val().trim();
+        if(!comment) return;
+
+        const payload = { comment: comment, parentId: id, userId: parseInt(currentUserId) };
+        $.ajax({
+            url: `${apiBase}/Feedback`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function() {
+                showAlert('Đã gửi trả lời!', 'success');
+                textarea.val('');
+                card.find('.replies').empty();
+                card.find('.reply-form').hide();
+            },
+            error: function(){ showAlert('Gửi trả lời thất bại!', 'danger'); }
+        });
+    });
+
+    // --- Event: Gửi feedback mới ---
+    $(document).on('click', '#submitNewFeedback', function(){
+        if(!currentUserId) { showAlert('Bạn phải đăng nhập để gửi phản hồi', 'warning'); return; }
+        const comment = $('#newFeedbackComment').val().trim();
+        const rating = parseInt($('#newFeedbackRating').val());
+        if(!comment){ showAlert('Nhập nội dung phản hồi', 'warning'); return; }
+
+        $.ajax({
+            url: `${apiBase}/Feedback`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ comment, rating, userId: parseInt(currentUserId) }),
+            success: function() {
+                showAlert('Đã gửi phản hồi!', 'success');
+                $('#newFeedbackComment').val('');
+                loadFeedback();
+            },
+            error: function(){ showAlert('Gửi phản hồi thất bại!', 'danger'); }
+        });
+    });
+
+    // --- Event: Xóa feedback ---
+    $(document).on('click', '.delete-feedback', function(){
+        const card = $(this).closest('.card');
+        const id = card.data('id');
+        if(!confirm('Bạn có chắc muốn xóa phản hồi này và tất cả trả lời liên quan?')) return;
+
+        $.ajax({
+            url: `${apiBase}/Feedback/${id}/delete-with-replies`,
+            type: 'DELETE',
+            success: function(){
+                showAlert('Đã xóa phản hồi!', 'success');
+                card.remove();
+            },
+            error: function(){ showAlert('Xóa thất bại!', 'danger'); }
+        });
+    });
+
+    // --- Event: Sửa feedback ---
+    $(document).on('click', '.edit-feedback', function(){
+        const card = $(this).closest('.card');
+        const commentEl = card.find('.feedback-comment');
+        const oldComment = commentEl.text();
+        const oldRating = card.data('rating') || 5;
+
+        commentEl.replaceWith(`
+            <textarea class="form-control mb-2 edit-comment">${oldComment}</textarea>
+            <select class="form-select mb-2 edit-rating">
+                <option value="5" ${oldRating===5?'selected':''}>5 sao</option>
+                <option value="4" ${oldRating===4?'selected':''}>4 sao</option>
+                <option value="3" ${oldRating===3?'selected':''}>3 sao</option>
+                <option value="2" ${oldRating===2?'selected':''}>2 sao</option>
+                <option value="1" ${oldRating===1?'selected':''}>1 sao</option>
+            </select>
+            <button class="btn btn-sm btn-success save-feedback">Lưu</button>
+            <button class="btn btn-sm btn-secondary cancel-edit">Hủy</button>
+        `);
+    });
+
+    // --- Event: Hủy sửa ---
+    $(document).on('click', '.cancel-edit', function(){
+        const card = $(this).closest('.card');
+        const textarea = card.find('.edit-comment');
+        const oldComment = textarea.val();
+        textarea.nextAll().remove();
+        textarea.replaceWith(`<p class="mb-2 feedback-comment">${oldComment}</p>`);
+    });
+
+    // --- Event: Lưu feedback ---
+            $(document).on('click', '.save-feedback', function () {
+                const card = $(this).closest('.card');
+                const id = card.data('id');
+                const newComment = card.find('.edit-comment').val().trim();
+                const newRating = parseInt(card.find('.edit-rating').val());
+
+                if (!newComment) { showAlert('Nội dung phản hồi không được rỗng', 'warning'); return; }
+
+                // Lấy feedback hiện tại
+                $.get(`${apiBase}/Feedback/${id}`, function (existing) {
+                    // Tạo object giữ nguyên các trường cũ, chỉ update comment + rating
+                    const payload = {
+                        id: existing.id,
+                        userId: existing.userId,
+                        parentId: existing.parentId,
+                        maintenanceTicketId: existing.maintenanceTicketId,
+                        createdAt: existing.createdAt,
+                        comment: newComment,
+                        rating: newRating
+                    };
+
+                    $.ajax({
+                        url: `${apiBase}/Feedback/${id}`,
+                        type: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify(payload),
+                        success: function () {
+                            showAlert('Đã cập nhật phản hồi!', 'success');
+                            card.find('.edit-comment, .edit-rating, .save-feedback, .cancel-edit').remove();
+                            card.find('.card-body').prepend(`<p class="mb-2 feedback-comment">${newComment}</p>`);
+                            card.data('rating', newRating);
+                            loadFeedback();
+                        },
+                        error: function () { showAlert('Cập nhật thất bại!', 'danger'); }
+                    });
+                });
+            });
+
+
+});
+//////
+    </script>
+}

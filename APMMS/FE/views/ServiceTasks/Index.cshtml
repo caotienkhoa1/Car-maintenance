@@ -1,0 +1,280 @@
+@{
+    ViewData["Title"] = "Danh sách nhiệm vụ";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>
+                        Danh sách nhiệm vụ
+                    </h4>
+                    <!-- ✅ Không cho tạo nhiệm vụ từ đây, phải tạo từ phiếu bảo dưỡng -->
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm nhiệm vụ...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PENDING">Chờ thực hiện</option>
+                                <option value="IN_PROGRESS">Đang thực hiện</option>
+                                <option value="DONE">Hoàn thành</option>
+                                <option value="CANCELLED">Hủy bỏ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Mã nhiệm vụ</th>
+                                    <th>Tên nhiệm vụ</th>
+                                    <th>Phiếu bảo dưỡng</th>
+                                    <th>Khách hàng / Xe</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="serviceTasksTable">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        let currentTechnicianId = null;
+        
+        $(document).ready(function() {
+            // Lấy technician ID từ token
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    // ✅ Lấy user ID (nameidentifier) - đây là ID của technician đang đăng nhập
+                    const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+                    // Parse và validate ID - loại bỏ bất kỳ ký tự không phải số nào
+                    const idStr = String(userId).replace(/[^0-9]/g, '');
+                    currentTechnicianId = parseInt(idStr, 10);
+                    
+                    // Validate ID
+                    if (isNaN(currentTechnicianId) || currentTechnicianId <= 0) {
+                        console.error('Invalid technician ID from token:', userId);
+                        currentTechnicianId = null;
+                    } else {
+                        console.log('Loaded technician ID:', currentTechnicianId);
+                    }
+                } catch (e) {
+                    console.error('Error parsing token:', e);
+                    currentTechnicianId = null;
+                }
+            }
+            
+            loadServiceTasks();
+            
+            // Filter events
+            $('#searchInput, #statusFilter').on('input change', function() {
+                loadServiceTasks();
+            });
+        });
+        
+        function loadServiceTasks() {
+            const status = $('#statusFilter').val();
+            const search = $('#searchInput').val().toLowerCase();
+            
+            // Lấy token
+            const token = localStorage.getItem('authToken');
+            
+            // ✅ QUAN TRỌNG: Luôn load theo technician ID nếu có
+            // Status filter sẽ được áp dụng ở client-side
+            let url = currentTechnicianId 
+                ? `${API_BASE_URL}/ServiceTask/by-technician/${currentTechnicianId}`
+                : `${API_BASE_URL}/ServiceTask`;
+            
+            fetch(url, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let tasks = data.data || [];
+                    
+                    // Client-side filter by status nếu có chọn
+                    if (status) {
+                        tasks = tasks.filter(task => task.statusCode === status);
+                    }
+                    
+                    // Client-side filter by search
+                    if (search) {
+                        tasks = tasks.filter(task => 
+                            (task.taskName && task.taskName.toLowerCase().includes(search)) ||
+                            (task.description && task.description.toLowerCase().includes(search)) ||
+                            (task.customerName && task.customerName.toLowerCase().includes(search)) ||
+                            (task.carName && task.carName.toLowerCase().includes(search)) ||
+                            (task.maintenanceTicketCode && task.maintenanceTicketCode.toLowerCase().includes(search)) ||
+                            (`ST${task.id}`.toLowerCase().includes(search))
+                        );
+                    }
+                    
+                    displayServiceTasks(tasks);
+                } else {
+                    $('#serviceTasksTable').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $('#serviceTasksTable').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
+            });
+        }
+        
+        function displayServiceTasks(tasks) {
+            const tbody = $('#serviceTasksTable');
+            tbody.empty();
+            
+            if (tasks.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Không có nhiệm vụ nào</p>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+            
+            tasks.forEach(task => {
+                const statusBadge = getTaskStatusBadge(task.statusCode);
+                
+                // ✅ Kiểm tra task có được gán cho technician hiện tại không
+                const isAssignedToCurrentTech = currentTechnicianId && (
+                    (task.technicians && Array.isArray(task.technicians) &&
+                        task.technicians.some(t => Number(t.technicianId) === Number(currentTechnicianId))) ||
+                    (task.technicianId && Number(task.technicianId) === Number(currentTechnicianId))
+                );
+                
+                // ✅ Kiểm tra maintenance ticket đã bắt đầu chưa
+                // Ticket đã bắt đầu nếu: statusCode là 'IN_PROGRESS' hoặc có startTime
+                const isTicketStarted = task.maintenanceTicketStatus === 'IN_PROGRESS' || 
+                                       task.maintenanceTicketStartTime !== null && task.maintenanceTicketStartTime !== undefined;
+                
+                // ✅ Chỉ hiển thị nút bắt đầu/hoàn thành nếu:
+                // 1. Task được gán cho technician hiện tại
+                // 2. Maintenance ticket đã bắt đầu
+                const canStartTask = isAssignedToCurrentTech && isTicketStarted && task.statusCode === 'PENDING';
+                const canCompleteTask = isAssignedToCurrentTech && isTicketStarted && task.statusCode === 'IN_PROGRESS';
+                
+                tbody.append(`
+                    <tr>
+                        <td><strong>ST${task.id}</strong></td>
+                        <td>${escapeHtml(task.taskName || 'N/A')}</td>
+                        <td><strong>${task.maintenanceTicketCode || `MT${task.maintenanceTicketId}`}</strong></td>
+                        <td>${escapeHtml(task.customerName || 'N/A')}${task.carName ? `<br><small class="text-muted"><i class="fas fa-car me-1"></i>${escapeHtml(task.carName)}</small>` : ''}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="/MaintenanceTickets/Details/${task.maintenanceTicketId}" class="btn btn-sm btn-outline-info" title="Xem chi tiết phiếu">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                ${canStartTask ? `
+                                    <button class="btn btn-sm btn-outline-primary" onclick="updateTaskStatusFromList(${task.id}, 'IN_PROGRESS')" title="Bắt đầu">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                ` : ''}
+                                ${canCompleteTask ? `
+                                    <button class="btn btn-sm btn-outline-success" onclick="updateTaskStatusFromList(${task.id}, 'DONE')" title="Hoàn thành">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+        
+        function getTaskStatusBadge(statusCode) {
+            const statusMap = {
+                'PENDING': { class: 'bg-warning', text: 'Chờ' },
+                'IN_PROGRESS': { class: 'bg-primary', text: 'Đang làm' },
+                'DONE': { class: 'bg-success', text: 'Hoàn thành' },
+                'COMPLETED': { class: 'bg-success', text: 'Hoàn thành' },
+                'CANCELLED': { class: 'bg-danger', text: 'Hủy' }
+            };
+            
+            const status = statusMap[statusCode] || { class: 'bg-secondary', text: statusCode };
+            return `<span class="badge ${status.class}">${status.text}</span>`;
+        }
+        
+        function updateTaskStatusFromList(taskId, newStatus) {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`${API_BASE_URL}/ServiceTask/${taskId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({ statusCode: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật trạng thái thành công!', 'success');
+                    loadServiceTasks();
+                } else {
+                    showAlert('Lỗi: ' + (data.message || 'Không thể cập nhật'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra', 'danger');
+            });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('body').append(alertHtml);
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 3000);
+        }
+        
+        function deleteServiceTask(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
+                // Implement delete logic
+                console.log('Delete service task:', id);
+            }
+        }
+    </script>
+}

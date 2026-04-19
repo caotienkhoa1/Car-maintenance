@@ -1,0 +1,696 @@
+@{
+    ViewData["Title"] = "Chi tiết linh kiện";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+@inject IConfiguration Configuration
+@{
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Components">Danh sách các linh kiện</a></li>
+            <li class="breadcrumb-item active" id="breadcrumbName" aria-current="page">-</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0 fw-bold" style="font-size: 1.75rem; color: #212529;">Thông tin chi tiết linh kiện</h2>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Panel: Image and Component Name -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body d-flex flex-column align-items-center justify-content-center" style="min-height: 400px; background: #ffffff; padding: 2rem;">
+                    <div id="imageLoading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                    <div id="imageContainer" style="display: none; width: 100%; text-align: center; margin-bottom: 2rem;">
+                        <img id="componentImageLarge" src="" alt="Component Image" style="max-width: 100%; max-height: 320px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); object-fit: contain; display: none;">
+                    </div>
+                    <div id="imagePlaceholder" style="display: none; width: 100%; text-align: center; margin-bottom: 2rem;">
+                        <i class="fas fa-image" style="font-size: 8rem; opacity: 0.5; color: #6c757d;"></i>
+                    </div>
+                    <h1 class="text-center fw-bold text-dark mt-3" id="componentNameLarge" style="font-size: 2.5rem; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </h1>
+                </div>
+            </div>
+                </div>
+                    
+        <!-- Right Panel: Tabs -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="componentTabs" role="tablist" style="border-bottom: 2px solid #dee2e6;">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-semibold" id="intro-tab" data-bs-toggle="tab" data-bs-target="#intro" type="button" role="tab" aria-controls="intro" aria-selected="true" style="font-size: 1rem; padding: 12px 20px;">
+                                Giới thiệu
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false" style="font-size: 1rem; padding: 12px 20px;">
+                                Cài đặt
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tabs Content -->
+                    <div class="tab-content" id="componentTabContent">
+                        <!-- Tab: Giới thiệu -->
+                        <div class="tab-pane fade show active" id="intro" role="tabpanel" aria-labelledby="intro-tab">
+                            <div id="introLoading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                            <div id="introContent" style="display: none;">
+                                <h5 class="mb-4 fw-bold" style="font-size: 1.2rem; color: #212529;">Thông tin chi tiết</h5>
+                                <dl class="row mb-0" style="font-size: 1.05rem;">
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Tên</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentName" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Mã</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentCode" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Số lượng tối thiểu</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentMinimumQuantity" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Số Lượng</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentQuantity" style="font-size: 1.1rem; color: #212529;">
+                                        <span id="componentQuantityValue">-</span>
+                                        <span id="componentLowStockWarning" class="badge bg-warning text-dark ms-2" style="display: none;" title="Sắp hết hàng">Sắp hết hàng</span>
+                                    </dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Giá nhập</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentPurchasePrice" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Giá xuất</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="componentUnitPrice" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Tình trạng</dt>
+                                    <dd class="col-sm-8 mb-3" id="componentStatus" style="font-size: 1.1rem;">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    
+                        <!-- Tab: Cài đặt -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                            <div id="settingsLoading" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                            <div id="settingsContent" style="display: none;">
+                                <h5 class="mb-4 fw-bold" style="font-size: 1.2rem; color: #212529;">Chỉnh sửa thông tin</h5>
+                                <form id="editComponentForm">
+                                    <input type="hidden" id="editComponentId" name="id">
+                                    
+                                    <div class="row mb-3">
+                                        <label class="col-md-4 col-lg-3 col-form-label fw-semibold">Hình ảnh</label>
+                                        <div class="col-md-8 col-lg-9">
+                                            <div class="pt-2">
+                                                <input type="file" id="editComponentImageFile" name="imageFile" accept="image/*" style="display: none;">
+                                                <input type="hidden" id="editComponentImageUrl" name="imageUrl">
+                                                <label for="editComponentImageFile" class="btn btn-outline-primary btn-sm me-2">
+                                                    <i class="fa fa-upload me-1"></i> Tải lên
+                                                </label>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearEditImage()">
+                                                    <i class="fa fa-trash me-1"></i> Xóa
+                                                </button>
+                                                <div id="editImagePreviewContainer" class="mt-2" style="display: none;">
+                                                    <img id="editImagePreview" src="" alt="Preview" style="display: none; max-width: 200px; max-height: 200px; border: 1px solid #dee2e6; border-radius: 4px; padding: 5px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label class="col-md-4 col-lg-3 col-form-label fw-semibold">Tên <span class="text-danger">*</span></label>
+                                        <div class="col-md-8 col-lg-9">
+                                            <input type="text" class="form-control" id="editComponentName" name="name" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label class="col-md-4 col-lg-3 col-form-label fw-semibold">Mã</label>
+                                        <div class="col-md-8 col-lg-9">
+                                            <input type="text" class="form-control" id="editComponentCode" name="code">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label class="col-md-4 col-lg-3 col-form-label fw-semibold">Số lượng tối thiểu</label>
+                                        <div class="col-md-8 col-lg-9">
+                                            <input type="number" class="form-control" id="editComponentMinimumQuantity" name="minimumQuantity" min="0" value="0">
+                                        </div>
+                                    </div>
+                                    
+                    
+                                    <div class="d-flex justify-content-end gap-2 mt-4">
+                                        <button type="button" class="btn btn-secondary" id="cancelEditBtn">
+                                            <i class="fas fa-times me-1"></i>Hủy
+                                        </button>
+                                        <button type="submit" class="btn btn-outline-primary" id="saveEditBtn">
+                                            <i class="fas fa-save me-1"></i>Lưu thay đổi
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+</div>
+
+@section Scripts {
+    <style>
+        /* Cải thiện tab navigation */
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #495057;
+            border-bottom-color: #dee2e6;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            font-weight: 600;
+            border-bottom-color: #0d6efd;
+            background-color: transparent;
+        }
+        
+        /* Cải thiện breadcrumb */
+        .breadcrumb {
+            font-size: 1rem;
+        }
+        .breadcrumb-item a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        .breadcrumb-item.active {
+            color: #6c757d;
+            font-weight: 500;
+        }
+    </style>
+    <script>
+        const apiBaseUrl = '@apiBaseUrl';
+        let currentComponentId = null;
+        let currentComponentData = null;
+
+        let isWarehouse = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            currentComponentId = getComponentIdFromUrl();
+            if (currentComponentId) {
+                loadComponentDetails(currentComponentId);
+            } else {
+                showError('Không tìm thấy ID linh kiện');
+            }
+            
+            // Setup edit form
+            setupEditForm();
+
+            // Enforce permission: only Warehouse (roleId=5 or role name WAREHOUSE) can edit
+            enforceWarehousePermission();
+        });
+
+        function getComponentIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        function enforceWarehousePermission() {
+            try {
+                const token = getAuthToken();
+                if (!token) {
+                    setReadOnlyMode(true);
+                    return;
+                }
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const roleId = parseInt(payload['RoleId'] || payload['role_id'] || payload['roleId'] || '0');
+                const roleName = (payload['RoleName'] || payload['role_name'] || payload['role'] || '').toString().toUpperCase();
+                isWarehouse = roleId === 5 || roleName === 'WAREHOUSE';
+                setReadOnlyMode(!isWarehouse);
+            } catch (err) {
+                console.error('Cannot parse role', err);
+                setReadOnlyMode(true);
+            }
+        }
+
+        function setReadOnlyMode(readOnly) {
+            const inputs = document.querySelectorAll('#settingsContent input, #settingsContent button, #settingsContent select, #settingsContent textarea');
+            inputs.forEach(el => {
+                if (el.id === 'saveEditBtn' || el.id === 'cancelEditBtn') {
+                    el.disabled = readOnly;
+                } else {
+                    el.readOnly = readOnly;
+                    el.disabled = readOnly;
+                }
+            });
+
+            // Hide upload/delete buttons if read-only
+            const uploadLabel = document.querySelector('label[for="editComponentImageFile"]');
+            const deleteBtn = document.querySelector('button[onclick="clearEditImage()"]');
+            if (uploadLabel) uploadLabel.style.display = readOnly ? 'none' : '';
+            if (deleteBtn) deleteBtn.style.display = readOnly ? 'none' : '';
+
+            if (readOnly) {
+                const note = document.getElementById('warehouseOnlyNote');
+                if (!note) {
+                    const container = document.getElementById('settingsContent');
+                    if (container) {
+                        const div = document.createElement('div');
+                        div.id = 'warehouseOnlyNote';
+                        div.className = 'alert alert-warning mb-3';
+                        div.textContent = 'Chỉ Thủ kho mới được chỉnh sửa linh kiện.';
+                        container.insertBefore(div, container.firstChild);
+                    }
+                }
+            } else {
+                const note = document.getElementById('warehouseOnlyNote');
+                if (note && note.parentNode) note.parentNode.removeChild(note);
+            }
+        }
+
+        async function loadComponentDetails(id) {
+            try {
+                const response = await fetch(`/Components/GetDetails/${id}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                const data = await response.json();
+                    
+                    if (data.success && data.data) {
+                    currentComponentData = data.data;
+                        displayComponentDetails(data.data);
+                    populateEditForm(data.data);
+                    } else {
+                        showError('Lỗi khi tải thông tin: ' + (data.message || 'Không có dữ liệu'));
+                    }
+            } catch (error) {
+                    console.error('Error:', error);
+                    showError('Có lỗi xảy ra khi tải thông tin linh kiện: ' + error.message);
+            }
+        }
+
+        function displayComponentDetails(component) {
+            // Update breadcrumb
+            document.getElementById('breadcrumbName').textContent = component.name || '-';
+            
+            // Update image and name on left
+            const imageLoading = document.getElementById('imageLoading');
+            const imageContainer = document.getElementById('imageContainer');
+            const imagePlaceholder = document.getElementById('imagePlaceholder');
+            const componentImageLarge = document.getElementById('componentImageLarge');
+            const componentNameLarge = document.getElementById('componentNameLarge');
+            
+            imageLoading.style.display = 'none';
+            
+            if (component.imageUrl) {
+                componentImageLarge.src = component.imageUrl;
+                imageContainer.style.display = 'block';
+                imagePlaceholder.style.display = 'none';
+                componentImageLarge.style.display = 'block';
+            } else {
+                imageContainer.style.display = 'none';
+                imagePlaceholder.style.display = 'block';
+                componentImageLarge.style.display = 'none';
+            }
+            
+            componentNameLarge.textContent = component.name || '-';
+            componentNameLarge.style.display = 'block';
+            
+            // Update intro tab content (an element may be missing if UI is adjusted)
+            const nameEl = document.getElementById('componentName');
+            const codeEl = document.getElementById('componentCode');
+            const minQtyEl = document.getElementById('componentMinimumQuantity');
+            if (nameEl) nameEl.textContent = component.name || '-';
+            if (codeEl) codeEl.textContent = component.code || '-';
+            if (minQtyEl) minQtyEl.textContent = component.minimumQuantity || '-';
+            
+            // Kiểm tra cảnh báo "Sắp hết hàng"
+            const quantityStock = component.quantityStock || 0;
+            const minimumQuantity = component.minimumQuantity || 0;
+            const isLowStock = minimumQuantity > 0 && quantityStock <= minimumQuantity;
+            
+            const qtyValueEl = document.getElementById('componentQuantityValue');
+            const warningBadge = document.getElementById('componentLowStockWarning');
+            if (qtyValueEl) qtyValueEl.textContent = quantityStock;
+            if (warningBadge) {
+            if (isLowStock) {
+                warningBadge.style.display = 'inline-block';
+                warningBadge.title = `Sắp hết hàng (Tồn kho: ${quantityStock}, Tối thiểu: ${minimumQuantity})`;
+            } else {
+                warningBadge.style.display = 'none';
+                }
+            }
+            
+            const purchasePrice = component.purchasePrice 
+                ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.purchasePrice)
+                : '-';
+            const unitPrice = component.unitPrice 
+                ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.unitPrice)
+                : '-';
+            const purchaseEl = document.getElementById('componentPurchasePrice');
+            const unitPriceEl = document.getElementById('componentUnitPrice');
+            if (purchaseEl) purchaseEl.textContent = purchasePrice;
+            if (unitPriceEl) unitPriceEl.textContent = unitPrice;
+            
+            let statusBadge = '<span class="badge bg-secondary">Không xác định</span>';
+            if (component.statusCode === 'ACTIVE') {
+                statusBadge = '<span class="badge bg-success">Đang hoạt động</span>';
+            } else if (component.statusCode === 'OUT_OF_STOCK') {
+                statusBadge = '<span class="badge bg-secondary">Không hoạt động</span>';
+            }
+            const statusEl = document.getElementById('componentStatus');
+            if (statusEl) statusEl.innerHTML = statusBadge;
+            
+            // Show intro content
+            document.getElementById('introLoading').style.display = 'none';
+            document.getElementById('introContent').style.display = 'block';
+        }
+
+        function populateEditForm(component) {
+            const editComponentId = document.getElementById('editComponentId');
+            const editComponentName = document.getElementById('editComponentName');
+            const editComponentCode = document.getElementById('editComponentCode');
+            const editComponentMinimumQuantity = document.getElementById('editComponentMinimumQuantity');
+            const editComponentImageUrl = document.getElementById('editComponentImageUrl');
+            const editImagePreview = document.getElementById('editImagePreview');
+            const editImagePreviewContainer = document.getElementById('editImagePreviewContainer');
+            const settingsLoading = document.getElementById('settingsLoading');
+            const settingsContent = document.getElementById('settingsContent');
+            
+            if (editComponentId) editComponentId.value = component.id || '';
+            if (editComponentName) editComponentName.value = component.name || '';
+            if (editComponentCode) editComponentCode.value = component.code || '';
+            if (editComponentMinimumQuantity) editComponentMinimumQuantity.value = component.minimumQuantity || 0;
+            if (editComponentImageUrl) editComponentImageUrl.value = component.imageUrl || '';
+            
+            if (component.imageUrl && editImagePreview) {
+                editImagePreview.src = component.imageUrl;
+                if (editImagePreviewContainer) {
+                editImagePreviewContainer.style.display = 'block';
+                }
+            }
+            
+            // Show settings content
+            if (settingsLoading) settingsLoading.style.display = 'none';
+            if (settingsContent) settingsContent.style.display = 'block';
+        }
+
+        function clearEditImage() {
+            document.getElementById('editComponentImageFile').value = '';
+            document.getElementById('editComponentImageUrl').value = '';
+            document.getElementById('editImagePreviewContainer').style.display = 'none';
+        }
+
+        function setupEditForm() {
+            const form = document.getElementById('editComponentForm');
+            if (!form) {
+                console.warn('editComponentForm not found');
+                return;
+            }
+            
+            const imageFileInput = document.getElementById('editComponentImageFile');
+            if (imageFileInput) {
+                // Handle image file change
+                imageFileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        uploadImageToCloudinary(file);
+                    } else {
+                        const previewContainer = document.getElementById('editImagePreviewContainer');
+                        if (previewContainer) {
+                            previewContainer.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            // Handle form submit
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitEditForm();
+            });
+            
+            // Handle cancel button
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    if (currentComponentData) {
+                        populateEditForm(currentComponentData);
+                    }
+                });
+            }
+        }
+
+        function getAuthToken() {
+            const fromLocalStorage = localStorage.getItem('authToken');
+            if (fromLocalStorage) return fromLocalStorage;
+            
+            // Fallback: try cookie (server also stores authToken there)
+            const match = document.cookie.match(new RegExp('(^| )authToken=([^;]+)'));
+            if (match) return decodeURIComponent(match[2]);
+            
+            // Fallback: sessionStorage (in case login flow used it)
+            const fromSession = sessionStorage.getItem('authToken');
+            if (fromSession) return fromSession;
+            
+            return null;
+        }
+
+        async function uploadImageToCloudinary(file) {
+            const token = getAuthToken();
+            if (!token) {
+                alert('Vui lòng đăng nhập lại');
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Kích thước file không được vượt quá 5MB');
+                document.getElementById('editComponentImageFile').value = '';
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Vui lòng chọn file ảnh');
+                document.getElementById('editComponentImageFile').value = '';
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewSrc = e.target.result;
+                const editPreview = document.getElementById('editImagePreview');
+                if (editPreview) {
+                    editPreview.src = previewSrc;
+                }
+
+                // Hiển thị ngay ảnh vừa chọn ở panel bên trái để người dùng thấy
+                const componentImageLarge = document.getElementById('componentImageLarge');
+                const imageContainer = document.getElementById('imageContainer');
+                const imagePlaceholder = document.getElementById('imagePlaceholder');
+                if (componentImageLarge && imageContainer && imagePlaceholder) {
+                    componentImageLarge.src = previewSrc;
+                    imageContainer.style.display = 'block';
+                    imagePlaceholder.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload to Cloudinary
+            try {
+                const uploadUrl = `${apiBaseUrl}/Image/upload-temp`;
+                console.log('[uploadImageToCloudinary] Uploading to', uploadUrl);
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('folder', 'component-images');
+                
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success && data.data && data.data.url) {
+                    const imageUrl = data.data.url;
+                    document.getElementById('editComponentImageUrl').value = imageUrl;
+                    // Lưu lại vào dữ liệu hiện tại để khi lưu sẽ mang theo
+                    if (currentComponentData) {
+                        currentComponentData.imageUrl = imageUrl;
+                    }
+                    // Cập nhật ngay ảnh hiển thị bên trái theo URL Cloudinary (không dùng base64)
+                    const componentImageLarge = document.getElementById('componentImageLarge');
+                    const imageContainer = document.getElementById('imageContainer');
+                    const imagePlaceholder = document.getElementById('imagePlaceholder');
+                    if (componentImageLarge && imageContainer && imagePlaceholder) {
+                        componentImageLarge.src = imageUrl;
+                        componentImageLarge.style.display = 'block';
+                        imageContainer.style.display = 'block';
+                        imagePlaceholder.style.display = 'none';
+                    }
+                    const editPreview = document.getElementById('editImagePreview');
+                    if (editPreview) {
+                        editPreview.src = imageUrl;
+                    }
+                    console.log('Image uploaded to Cloudinary:', imageUrl);
+            } else {
+                    const message = data?.message || `Không thể upload ảnh (status ${response.status})`;
+                    throw new Error(message);
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                alert('Lỗi upload ảnh: ' + (error?.message || 'Failed to fetch'));
+                document.getElementById('editComponentImageFile').value = '';
+                document.getElementById('editImagePreviewContainer').style.display = 'none';
+                document.getElementById('editComponentImageUrl').value = '';
+            }
+        }
+
+        async function submitEditForm() {
+            const form = document.getElementById('editComponentForm');
+            const saveBtn = document.getElementById('saveEditBtn');
+            const originalText = saveBtn.innerHTML;
+            
+            // Validate
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Disable button
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+            
+            try {
+                const componentId = document.getElementById('editComponentId').value;
+                if (!componentId) {
+                    throw new Error('Không tìm thấy ID linh kiện');
+                }
+                
+                // Nếu input trống nhưng preview đang có src, lấy src
+                const imgUrlInput = document.getElementById('editComponentImageUrl');
+                const previewSrc = document.getElementById('componentImageLarge')?.src || '';
+                const finalImageUrl = (imgUrlInput && imgUrlInput.value.trim()) 
+                    || (previewSrc && !previewSrc.includes('base64') ? previewSrc : '')
+                    || (currentComponentData && currentComponentData.imageUrl) 
+                    || null;
+                
+                const payload = {
+                    // Dùng PascalCase để khớp DTO backend (case-insensitive nhưng an toàn hơn)
+                    Name: document.getElementById('editComponentName').value.trim(),
+                    Code: document.getElementById('editComponentCode').value.trim() || null,
+                    MinimumQuantity: parseInt(document.getElementById('editComponentMinimumQuantity').value) || 0,
+                    ImageUrl: finalImageUrl,
+                    // giữ nguyên trạng thái hiện có, tránh bị null => "Không xác định"
+                    StatusCode: (currentComponentData && currentComponentData.statusCode) ? currentComponentData.statusCode : 'ACTIVE'
+                };
+                console.log('[submitEditForm] Payload imageUrl:', payload.ImageUrl);
+                
+                console.log('Updating component with payload:', payload);
+                
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    throw new Error('No auth token found');
+                }
+                
+                // Call FE controller Update action
+                const response = await fetch(`/Components/Update/${componentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Backend error response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: data
+                    });
+                    
+                    const errorMessage = data.message || data.error || `Lỗi ${response.status}: ${response.statusText}`;
+                    throw new Error(errorMessage);
+                }
+                
+                if (data.success) {
+                    // Reset button state
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                    
+                    // Show success message
+                    showAlert('Cập nhật linh kiện thành công!', 'success');
+                    
+                    // Reload component details
+                    await loadComponentDetails(componentId);
+                } else {
+                    throw new Error(data.message || 'Không thể cập nhật linh kiện');
+                }
+            } catch (error) {
+                console.error('Error updating component:', error);
+                const errorMessage = error.message || 'Có lỗi xảy ra khi cập nhật linh kiện';
+                showAlert('Lỗi: ' + errorMessage, 'danger');
+                
+                // Reset button
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}

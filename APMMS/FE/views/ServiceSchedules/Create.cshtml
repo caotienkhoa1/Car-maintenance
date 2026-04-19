@@ -1,0 +1,1032 @@
+@{
+    ViewData["Title"] = "Đặt lịch hẹn mới";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>
+                        Đặt lịch hẹn mới
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="scheduleForm">
+                        <!-- Chọn loại khách hàng -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <label class="form-label fw-bold mb-3">Loại khách hàng <span class="text-danger">*</span></label>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="customerType" id="existingCustomer" value="existing" checked>
+                                            <label class="form-check-label" for="existingCustomer">
+                                                <i class="fas fa-user me-2"></i>Khách hàng có sẵn
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="customerType" id="newCustomer" value="new">
+                                            <label class="form-check-label" for="newCustomer">
+                                                <i class="fas fa-user-plus me-2"></i>Khách hàng mới (gọi điện đặt lịch)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form cho khách hàng có sẵn -->
+                        <div id="existingCustomerForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="customerSearch" class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="customerSearch" 
+                                                   placeholder="Tìm kiếm khách hàng (nhập tên, email, số điện thoại)..."
+                                                   autocomplete="off">
+                                            <input type="hidden" id="userId" value="">
+                                            <div id="customerDropdown" class="customer-dropdown" style="display: none;">
+                                                <div id="customerList" class="customer-list"></div>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">Tìm kiếm và chọn khách hàng đặt lịch</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="carId" class="form-label">Xe <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="carId">
+                                            <option value="">Chọn xe (chọn khách hàng trước)</option>
+                                        </select>
+                                        <small class="form-text text-muted">Chọn xe cần bảo dưỡng</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form cho khách hàng mới -->
+                        <div id="newCustomerForm" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="guestName" placeholder="Nhập họ và tên khách hàng">
+                                        <small class="form-text text-muted">Tên đầy đủ của khách hàng</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestPhone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                        <input type="tel" class="form-control" id="guestPhone" placeholder="Nhập số điện thoại">
+                                        <small class="form-text text-muted">Số điện thoại liên hệ</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="guestEmail" placeholder="Nhập email (tùy chọn)">
+                                        <small class="form-text text-muted">Email của khách hàng (nếu có)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestCarName" class="form-label">Tên xe <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="guestCarName" placeholder="Ví dụ: Honda Civic">
+                                        <small class="form-text text-muted">Tên xe cần bảo dưỡng</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestCarModel" class="form-label">Model xe</label>
+                                        <input type="text" class="form-control" id="guestCarModel" placeholder="Ví dụ: 2020">
+                                        <small class="form-text text-muted">Model/năm sản xuất</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="guestLicensePlate" class="form-label">Biển số xe</label>
+                                        <input type="text" class="form-control" id="guestLicensePlate" placeholder="Ví dụ: 30A-12345">
+                                        <small class="form-text text-muted">Biển số xe (nếu có)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serviceCategoryId" class="form-label">Dịch vụ <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="serviceCategoryId" required>
+                                        <option value="">Chọn dịch vụ</option>
+                                    </select>
+                                    <small class="form-text text-muted">Chọn loại dịch vụ cần đặt lịch</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchId" class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="branchId" required>
+                                        <option value="">Chọn chi nhánh</option>
+                                    </select>
+                                    <input type="hidden" id="branchIdHidden" value="">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Ngày và giờ hẹn <span class="text-danger">*</span></label>
+                                    <div class="row g-2">
+                                        <div class="col-5">
+                                            <input type="date" class="form-control" id="scheduledDate" required>
+                                        </div>
+                                        <div class="col-3">
+                                            <select class="form-select" id="scheduledHour" required>
+                                                <option value="">Giờ</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <select class="form-select" id="scheduledMinute" required>
+                                                <option value="">Phút</option>
+                                            </select>
+                                    </div>
+                                    </div>
+                                    <small class="form-text text-muted">Chọn ngày, giờ và phút muốn đặt lịch (Giờ làm việc: 7:00 - 17:45)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Lịch hẹn phải được đặt ít nhất 1 ngày trước thời điểm hẹn.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/ServiceSchedules" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>
+                                Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Đặt lịch
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .customer-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+        
+        .customer-list {
+            padding: 0;
+        }
+        
+        .customer-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .customer-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .customer-item:last-child {
+            border-bottom: none;
+        }
+        
+        .customer-item.selected {
+            background-color: #e7f3ff;
+        }
+        
+        .customer-name {
+            font-weight: 500;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        
+        .customer-email {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .customer-phone {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .no-results {
+            padding: 15px;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+    <script>
+        // Đảm bảo API_BASE_URL được định nghĩa global
+        window.API_BASE_URL = '@apiBaseUrl';
+        const API_BASE_URL = window.API_BASE_URL;
+        
+        // Lưu danh sách users để search
+        let allUsers = [];
+        
+        console.log('📋 Script section loaded, API_BASE_URL:', API_BASE_URL);
+
+        // Định nghĩa hàm loadServiceCategories trong global scope NGAY LẬP TỨC
+        window.loadServiceCategories = function loadServiceCategories() {
+            console.log('🔄 [loadServiceCategories] Function called');
+            const token = localStorage.getItem('authToken');
+            const select = $('#serviceCategoryId');
+            
+            console.log('🔍 [loadServiceCategories] Looking for #serviceCategoryId, found:', select.length);
+            
+            if (!select.length) {
+                console.error('❌ [loadServiceCategories] Service category select element not found! Retrying in 500ms...');
+                setTimeout(function() {
+                    window.loadServiceCategories();
+                }, 500);
+                return;
+            }
+            
+            console.log('🔄 [loadServiceCategories] Loading service categories...');
+            console.log('📡 [loadServiceCategories] API_BASE_URL:', API_BASE_URL);
+            console.log('📡 [loadServiceCategories] Full URL:', `${API_BASE_URL}/ServiceCategory`);
+            
+            select.prop('disabled', false);
+            select.prop('required', true);
+            select.html('<option value="">-- Đang tải danh sách dịch vụ --</option>');
+            
+            const url = `${API_BASE_URL}/ServiceCategory`;
+            console.log('🌐 [loadServiceCategories] Making fetch request to:', url);
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                console.log('📥 [loadServiceCategories] Response status:', response.status, response.statusText);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ [loadServiceCategories] HTTP error:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('📦 [loadServiceCategories] Response data:', result);
+                const categories = result.success && Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+                console.log('✅ [loadServiceCategories] Categories found:', categories.length);
+                console.log('📋 [loadServiceCategories] Categories array:', categories);
+                
+                // Clear và thêm option mặc định
+                select.empty();
+                select.append('<option value="">-- Chọn dịch vụ --</option>');
+                
+                if (!categories.length) {
+                    console.warn('⚠️ [loadServiceCategories] No categories found');
+                    select.append('<option value="">-- Không có dịch vụ nào --</option>');
+                    return;
+                }
+                
+                // Thêm từng option
+                categories.forEach((category, index) => {
+                    // Chỉ hiển thị tên dịch vụ, không hiển thị description
+                    const optionText = category.name || 'N/A';
+                    const optionValue = category.id;
+                    console.log(`  [${index}] Adding option: value="${optionValue}", text="${optionText}"`);
+                    const option = $('<option></option>').attr('value', optionValue).text(optionText);
+                    select.append(option);
+                });
+                
+                const totalOptions = select.find('option').length;
+                console.log('✅ [loadServiceCategories] Service categories loaded successfully!');
+                console.log('📊 [loadServiceCategories] Total options in select:', totalOptions);
+                console.log('📋 [loadServiceCategories] Select element:', select[0]);
+                console.log('📋 [loadServiceCategories] Select HTML length:', select.html().length);
+                
+                // Force trigger change event để đảm bảo UI update
+                select.trigger('change');
+            })
+            .catch(error => {
+                console.error('❌ [loadServiceCategories] Error:', error);
+                console.error('❌ [loadServiceCategories] Error stack:', error.stack);
+                select.empty();
+                select.append('<option value="">-- Lỗi tải danh sách dịch vụ --</option>');
+            });
+        };
+        
+        console.log('✅ loadServiceCategories function defined, type:', typeof window.loadServiceCategories);
+
+        // Đảm bảo hàm được gọi ngay cả khi document ready chưa chạy
+        function initializeForm() {
+            console.log('📋 Initialize form, API_BASE_URL:', API_BASE_URL);
+            console.log('🔍 Checking for #serviceCategoryId...');
+            const testSelect = $('#serviceCategoryId');
+            console.log('  Found:', testSelect.length, 'element(s)');
+            if (testSelect.length) {
+                console.log('  Element exists:', testSelect[0]);
+            }
+            
+            loadUsers();
+            loadEmployeeBranch(); // Load branch của nhân viên đang đăng nhập
+            window.loadServiceCategories(); // Gọi ngay lập tức
+        }
+
+        $(document).ready(function() {
+            console.log('📋 Document ready, initializing form...');
+            initializeForm();
+            
+            // Đảm bảo phần chọn loại khách hàng luôn hiển thị
+            $('input[name="customerType"]').closest('.card').show();
+            
+            // Set min date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const minDateStr = tomorrow.toISOString().split('T')[0];
+            $('#scheduledDate').attr('min', minDateStr);
+            
+            // Populate giờ làm việc từ 7 đến 17
+            const hourSelect = $('#scheduledHour');
+            for (let hour = 7; hour <= 17; hour++) {
+                const hourStr = hour.toString().padStart(2, '0');
+                hourSelect.append(`<option value="${hourStr}">${hourStr}</option>`);
+            }
+            
+            // Populate phút: 00, 15, 30, 45
+            const minuteSelect = $('#scheduledMinute');
+            const minutes = ['00', '15', '30', '45'];
+            minutes.forEach(minute => {
+                minuteSelect.append(`<option value="${minute}">${minute}</option>`);
+            });
+
+            // Khởi tạo trạng thái ban đầu
+            const initialCustomerType = $('input[name="customerType"]:checked').val();
+            if (initialCustomerType === 'existing') {
+                $('#existingCustomerForm').show();
+                $('#newCustomerForm').hide();
+                $('#customerSearch').prop('required', true);
+                $('#carId').prop('required', true);
+            } else {
+                $('#existingCustomerForm').hide();
+                $('#newCustomerForm').show();
+                $('#guestName').prop('required', true);
+                $('#guestPhone').prop('required', true);
+                $('#guestCarName').prop('required', true);
+            }
+
+            // Toggle giữa form khách hàng có sẵn và khách hàng mới
+            $('input[name="customerType"]').on('change', function() {
+                const customerType = $(this).val();
+                console.log('Customer type changed to:', customerType);
+                if (customerType === 'existing') {
+                    $('#existingCustomerForm').show();
+                    $('#newCustomerForm').hide();
+                    // Set required cho form khách hàng có sẵn
+                    $('#customerSearch').prop('required', true);
+                    $('#carId').prop('required', true);
+                    // Remove required cho form khách hàng mới
+                    $('#guestName').prop('required', false);
+                    $('#guestPhone').prop('required', false);
+                    $('#guestCarName').prop('required', false);
+                } else {
+                    $('#existingCustomerForm').hide();
+                    $('#newCustomerForm').show();
+                    // Remove required cho form khách hàng có sẵn
+                    $('#customerSearch').prop('required', false);
+                    $('#carId').prop('required', false);
+                    // Set required cho form khách hàng mới
+                    $('#guestName').prop('required', true);
+                    $('#guestPhone').prop('required', true);
+                    $('#guestCarName').prop('required', true);
+                }
+            });
+
+            // Xử lý tìm kiếm khách hàng
+            let searchTimeout;
+            $('#customerSearch').on('input', function() {
+                const query = $(this).val();
+                
+                // Clear timeout trước đó
+                clearTimeout(searchTimeout);
+                
+                // Nếu xóa hết text, reset selection
+                if (!query || query.trim() === '') {
+                    $('#userId').val('');
+                    $('#customerDropdown').hide();
+                    $('#carId').html('<option value="">Chọn xe (chọn khách hàng trước)</option>');
+                    return;
+                }
+                
+                // Debounce search để tránh search quá nhiều lần
+                searchTimeout = setTimeout(function() {
+                    const results = searchCustomers(query);
+                    displayCustomerResults(results);
+                }, 300);
+            });
+            
+            // Hiển thị dropdown khi focus vào input
+            $('#customerSearch').on('focus', function() {
+                const query = $(this).val();
+                if (query && query.trim() !== '') {
+                    const results = searchCustomers(query);
+                    displayCustomerResults(results);
+                }
+            });
+            
+            // Đóng dropdown khi click outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#customerSearch, #customerDropdown').length) {
+                    $('#customerDropdown').hide();
+                }
+            });
+            
+            // Xử lý khi xóa selection
+            $('#customerSearch').on('keydown', function(e) {
+                // Nếu nhấn Escape, đóng dropdown
+                if (e.key === 'Escape') {
+                    $('#customerDropdown').hide();
+                }
+                // Nếu xóa hết và nhấn Backspace/Delete, reset
+                if ((e.key === 'Backspace' || e.key === 'Delete') && $(this).val() === '') {
+                    $('#userId').val('');
+                    $('#carId').html('<option value="">Chọn xe (chọn khách hàng trước)</option>');
+                }
+            });
+
+            $('#scheduleForm').on('submit', function(e) {
+                e.preventDefault();
+                createSchedule();
+            });
+        });
+
+        function loadUsers() {
+            const token = localStorage.getItem('authToken');
+            // Load tất cả users với pageSize lớn để có đủ dữ liệu cho search
+            fetch(`${API_BASE_URL}/AutoOwner?page=1&pageSize=10000`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    allUsers = result.data.map(user => ({
+                        id: user.id,
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        email: user.email || '',
+                        phone: user.phone || ''
+                    }));
+                    console.log('Loaded users:', allUsers.length);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+            });
+        }
+        
+        // Hàm tìm kiếm khách hàng
+        function searchCustomers(query) {
+            if (!query || query.trim() === '') {
+                return [];
+            }
+            
+            const searchTerm = query.toLowerCase().trim();
+            return allUsers.filter(user => {
+                const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+                const email = (user.email || '').toLowerCase();
+                const phone = (user.phone || '').toLowerCase();
+                
+                return fullName.includes(searchTerm) || 
+                       email.includes(searchTerm) || 
+                       phone.includes(searchTerm);
+            });
+        }
+        
+        // Hiển thị dropdown với kết quả tìm kiếm
+        function displayCustomerResults(results) {
+            const dropdown = $('#customerDropdown');
+            const list = $('#customerList');
+            
+            list.empty();
+            
+            if (results.length === 0) {
+                list.html('<div class="no-results">Không tìm thấy khách hàng nào</div>');
+                dropdown.show();
+                return;
+            }
+            
+            results.forEach(user => {
+                const fullName = `${user.firstName} ${user.lastName}`.trim() || 'N/A';
+                const item = $(`
+                    <div class="customer-item" data-user-id="${user.id}">
+                        <div class="customer-name">${fullName}</div>
+                        ${user.email ? `<div class="customer-email">📧 ${user.email}</div>` : ''}
+                        ${user.phone ? `<div class="customer-phone">📞 ${user.phone}</div>` : ''}
+                    </div>
+                `);
+                
+                item.on('click', function() {
+                    selectCustomer(user);
+                });
+                
+                list.append(item);
+            });
+            
+            dropdown.show();
+        }
+        
+        // Chọn khách hàng
+        function selectCustomer(user) {
+            const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email || 'N/A';
+            $('#customerSearch').val(fullName);
+            $('#userId').val(user.id);
+            $('#customerDropdown').hide();
+            
+            // Load cars cho user đã chọn
+            if (user.id) {
+                loadCarsByUserId(user.id);
+            }
+        }
+
+        function loadCarsByUserId(userId) {
+            const token = localStorage.getItem('authToken');
+            console.log('Loading cars for userId:', userId);
+            
+            fetch(`${API_BASE_URL}/CarOfAutoOwner/user/${userId}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Cars response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Cars response data:', result);
+                const select = $('#carId');
+                select.html('<option value="">Chọn xe</option>');
+                
+                // Xử lý response có thể là array trực tiếp hoặc object có data
+                let cars = [];
+                if (Array.isArray(result)) {
+                    cars = result;
+                } else if (result.success && Array.isArray(result.data)) {
+                    cars = result.data;
+                } else if (result.data && Array.isArray(result.data)) {
+                    cars = result.data;
+                }
+                
+                if (cars.length > 0) {
+                    cars.forEach(car => {
+                        const label = `${car.carName || 'N/A'} - ${car.licensePlate || 'N/A'}`;
+                        select.append(`<option value="${car.id}">${label}</option>`);
+                    });
+                    console.log(`Loaded ${cars.length} cars`);
+                } else {
+                    console.log('No cars found for this user');
+                    select.append('<option value="">Không có xe nào</option>');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading cars:', error);
+                const select = $('#carId');
+                select.html('<option value="">Lỗi khi tải danh sách xe</option>');
+            });
+        }
+
+        // Load branch của nhân viên đang đăng nhập và set vào dropdown
+        function loadEmployeeBranch() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.error('No token found');
+                return;
+            }
+            
+            // Lấy thông tin nhân viên hiện tại
+            fetch(`${API_BASE_URL}/EmployeeProfile/my-profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Employee profile response:', result);
+                // Xử lý response có thể là object trực tiếp hoặc wrap trong success/data
+                const employee = result.data || result;
+                const branchId = employee.branchId || employee.BranchId;
+                
+                if (branchId) {
+                    // Load tất cả branches để tìm branch name
+                    fetch(`${API_BASE_URL}/Branch`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        const select = $('#branchId');
+                        select.empty();
+                        
+                        if (result.success && result.data) {
+                            // Tìm branch của nhân viên
+                            const employeeBranch = result.data.find(b => b.id === branchId);
+                            
+                            if (employeeBranch) {
+                                // Thêm option cho branch của nhân viên
+                                select.append(`<option value="${employeeBranch.id}">${employeeBranch.name || 'N/A'}</option>`);
+                                select.val(branchId);
+                                
+                                // Lưu branchId vào hidden input để đảm bảo giá trị được gửi đi
+                                $('#branchIdHidden').val(branchId);
+                                
+                                // Disable dropdown để không cho chỉnh sửa
+                                select.prop('disabled', true);
+                                select.css('background-color', '#e9ecef');
+                                select.css('cursor', 'not-allowed');
+                                
+                                console.log('Branch set to:', employeeBranch.name, 'and disabled');
+                            } else {
+                                console.warn('Branch not found in list');
+                                select.append('<option value="">Không tìm thấy chi nhánh</option>');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading branches:', error);
+                    });
+                } else {
+                    console.warn('Employee has no branch assigned');
+                    const select = $('#branchId');
+                    select.append('<option value="">Nhân viên chưa được gán chi nhánh</option>');
+                    select.prop('disabled', true);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading employee profile:', error);
+                // Fallback: load tất cả branches nếu không lấy được profile
+                loadBranches();
+            });
+        }
+        
+        // Hàm load tất cả branches (fallback)
+        function loadBranches() {
+            const token = localStorage.getItem('authToken');
+            fetch(`${API_BASE_URL}/Branch`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    const select = $('#branchId');
+                    result.data.forEach(branch => {
+                        select.append(`<option value="${branch.id}">${branch.name || 'N/A'}</option>`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading branches:', error);
+            });
+        }
+
+        function loadServiceCategories() {
+            console.log('🔄 [loadServiceCategories] Function called');
+            const token = localStorage.getItem('authToken');
+            const select = $('#serviceCategoryId');
+            
+            console.log('🔍 [loadServiceCategories] Looking for #serviceCategoryId, found:', select.length);
+            
+            if (!select.length) {
+                console.error('❌ [loadServiceCategories] Service category select element not found! Retrying in 500ms...');
+                setTimeout(function() {
+                    loadServiceCategories();
+                }, 500);
+                return;
+            }
+            
+            console.log('🔄 [loadServiceCategories] Loading service categories...');
+            console.log('📡 [loadServiceCategories] API_BASE_URL:', API_BASE_URL);
+            console.log('📡 [loadServiceCategories] Full URL:', `${API_BASE_URL}/ServiceCategory`);
+            
+            select.prop('disabled', false);
+            select.prop('required', true);
+            select.html('<option value="">-- Đang tải danh sách dịch vụ --</option>');
+            
+            const url = `${API_BASE_URL}/ServiceCategory`;
+            console.log('🌐 [loadServiceCategories] Making fetch request to:', url);
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                console.log('📥 [loadServiceCategories] Response status:', response.status, response.statusText);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ [loadServiceCategories] HTTP error:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('📦 [loadServiceCategories] Response data:', result);
+                const categories = result.success && Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+                console.log('✅ [loadServiceCategories] Categories found:', categories.length);
+                console.log('📋 [loadServiceCategories] Categories array:', categories);
+                
+                // Clear và thêm option mặc định
+                select.empty();
+                select.append('<option value="">-- Chọn dịch vụ --</option>');
+                
+                if (!categories.length) {
+                    console.warn('⚠️ [loadServiceCategories] No categories found');
+                    select.append('<option value="">-- Không có dịch vụ nào --</option>');
+                    return;
+                }
+                
+                // Thêm từng option
+                categories.forEach((category, index) => {
+                    // Chỉ hiển thị tên dịch vụ, không hiển thị description
+                    const optionText = category.name || 'N/A';
+                    const optionValue = category.id;
+                    console.log(`  [${index}] Adding option: value="${optionValue}", text="${optionText}"`);
+                    const option = $('<option></option>').attr('value', optionValue).text(optionText);
+                    select.append(option);
+                });
+                
+                const totalOptions = select.find('option').length;
+                console.log('✅ [loadServiceCategories] Service categories loaded successfully!');
+                console.log('📊 [loadServiceCategories] Total options in select:', totalOptions);
+                console.log('📋 [loadServiceCategories] Select element:', select[0]);
+                console.log('📋 [loadServiceCategories] Select HTML length:', select.html().length);
+                
+                // Force trigger change event để đảm bảo UI update
+                select.trigger('change');
+            })
+            .catch(error => {
+                console.error('❌ [loadServiceCategories] Error:', error);
+                console.error('❌ [loadServiceCategories] Error stack:', error.stack);
+                select.empty();
+                select.append('<option value="">-- Lỗi tải danh sách dịch vụ --</option>');
+            });
+        }
+
+        function createSchedule() {
+            const token = localStorage.getItem('authToken');
+            const customerType = $('input[name="customerType"]:checked').val();
+            const serviceCategoryId = $('#serviceCategoryId').val();
+            // Lấy branchId từ hidden input hoặc từ select (nếu không disabled)
+            const branchId = parseInt($('#branchIdHidden').val() || $('#branchId').val());
+
+            // Validation
+            if (!branchId) {
+                showToast('Vui lòng chọn chi nhánh', 'error');
+                return;
+            }
+
+            const scheduledDateStr = $('#scheduledDate').val();
+            const scheduledHour = $('#scheduledHour').val();
+            const scheduledMinute = $('#scheduledMinute').val();
+            
+            if (!scheduledDateStr) {
+                showToast('Vui lòng chọn ngày hẹn', 'error');
+                return;
+            }
+
+            if (!scheduledHour) {
+                showToast('Vui lòng chọn giờ hẹn', 'error');
+                return;
+            }
+
+            if (!scheduledMinute) {
+                showToast('Vui lòng chọn phút hẹn', 'error');
+                return;
+            }
+
+            // Combine date, hour và minute
+            const [year, month, day] = scheduledDateStr.split('-');
+            const scheduledDate = new Date(year, month - 1, day, parseInt(scheduledHour), parseInt(scheduledMinute), 0);
+            
+            if (isNaN(scheduledDate.getTime())) {
+                showToast('Ngày và giờ hẹn không hợp lệ', 'error');
+                return;
+            }
+
+            // Kiểm tra ngày hẹn phải là tương lai (ít nhất 1 ngày)
+            const now = new Date();
+            const minDate = new Date(now);
+            minDate.setDate(minDate.getDate() + 1);
+            minDate.setHours(0, 0, 0, 0);
+            
+            if (scheduledDate < minDate) {
+                showToast('Lịch hẹn phải được đặt ít nhất 1 ngày trước thời điểm hẹn', 'error');
+                return;
+            }
+
+            if (!serviceCategoryId) {
+                showToast('Vui lòng chọn dịch vụ', 'error');
+                return;
+            }
+
+            let payload;
+            let endpoint;
+
+            if (customerType === 'existing') {
+                // Khách hàng có sẵn - dùng API bình thường
+                const userId = parseInt($('#userId').val());
+                const carId = parseInt($('#carId').val());
+
+                if (!userId || !carId) {
+                    showToast('Vui lòng chọn khách hàng và xe', 'error');
+                    return;
+                }
+
+                payload = {
+                    userId: userId,
+                    carId: carId,
+                    branchId: branchId,
+                scheduledDate: scheduledDate.toISOString(),
+                statusCode: 'PENDING'
+            };
+
+                if (serviceCategoryId) {
+                    payload.serviceCategoryId = parseInt(serviceCategoryId);
+                }
+
+                endpoint = `${API_BASE_URL}/ServiceSchedule`;
+            } else {
+                // Khách hàng mới - dùng API public-booking
+                const guestName = $('#guestName').val().trim();
+                const guestPhone = $('#guestPhone').val().trim();
+                const guestEmail = $('#guestEmail').val().trim();
+                const guestCarName = $('#guestCarName').val().trim();
+                const guestCarModel = $('#guestCarModel').val().trim();
+                const guestLicensePlate = $('#guestLicensePlate').val().trim();
+
+                if (!guestName || !guestPhone || !guestCarName) {
+                    showToast('Vui lòng điền đầy đủ thông tin khách hàng (Họ tên, Số điện thoại, Tên xe)', 'error');
+                    return;
+                }
+
+                payload = {
+                    fullName: guestName,
+                    phone: guestPhone,
+                    email: guestEmail || null,
+                    carName: guestCarName,
+                    carModel: guestCarModel || null,
+                    licensePlate: guestLicensePlate || null,
+                    branchId: branchId,
+                    scheduledDate: scheduledDate.toISOString()
+                };
+
+                if (serviceCategoryId) {
+                    payload.serviceCategoryId = parseInt(serviceCategoryId);
+                }
+
+                endpoint = `${API_BASE_URL}/ServiceSchedule/public-booking`;
+            }
+
+            // Show loading
+            const submitBtn = $('button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...');
+            submitBtn.prop('disabled', true);
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async response => {
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Đặt lịch hẹn thành công!', 'success');
+                    setTimeout(() => {
+                    window.location.href = '/ServiceSchedules';
+                    }, 1500);
+                } else {
+                    showToast('Lỗi: ' + (result.message || 'Không thể đặt lịch hẹn'), 'error');
+                    submitBtn.html(originalText);
+                    submitBtn.prop('disabled', false);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating schedule:', error);
+                showToast('Lỗi khi đặt lịch hẹn: ' + error.message, 'error');
+                submitBtn.html(originalText);
+                submitBtn.prop('disabled', false);
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const bgColor = type === 'success' ? '#28a745' : '#dc3545';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            const toast = $(`
+                <div class="toast-notification" style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background-color: ${bgColor};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    z-index: 9999;
+                    min-width: 250px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: slideInRight 0.3s ease-out;
+                ">
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
+                </div>
+            `);
+            
+            // Thêm animation style nếu chưa có
+            if (!$('#toast-animation-style').length) {
+                $('head').append(`
+                    <style id="toast-animation-style">
+                        @@keyframes slideInRight {
+                            from {
+                                transform: translateX(100%);
+                                opacity: 0;
+                            }
+                            to {
+                                transform: translateX(0);
+                                opacity: 1;
+                            }
+                        }
+                    </style>
+                `);
+            }
+            
+            $('body').append(toast);
+            
+            setTimeout(() => {
+                toast.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+    </script>
+}
+

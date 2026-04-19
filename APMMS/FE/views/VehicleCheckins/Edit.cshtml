@@ -1,0 +1,645 @@
+@{
+    ViewData["Title"] = "Sửa thông tin check-in xe";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">
+                            Sửa thông tin check-in xe
+                        </h5>
+                        <div class="badge bg-secondary fs-6" id="statusBadge">
+                            Đang tải...
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body bg-white">
+                    <form id="checkinForm" enctype="multipart/form-data">
+                        <input type="hidden" id="checkinId" name="id">
+                        <input type="hidden" id="branchId" name="branchId">
+                        <input type="hidden" id="statusCode" name="statusCode">
+                        
+                        <!-- Thông tin xe và khách hàng -->
+                        <div class="card mb-3 border">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0 fw-semibold">Thông tin xe</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="vinNumber" class="form-label small">Số khung (VIN)</label>
+                                        <input type="text" class="form-control form-control-sm" id="vinNumber" name="vinNumber">
+                                        </div>
+                                    <div class="col-md-3">
+                                        <label for="vehicleEngineNumber" class="form-label small">Số máy</label>
+                                        <input type="text" class="form-control form-control-sm" id="vehicleEngineNumber" name="vehicleEngineNumber">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="carColor" class="form-label small">Màu xe</label>
+                                        <input type="text" class="form-control form-control-sm" id="carColor" name="carColor">
+                                        </div>
+                                    <div class="col-md-3">
+                                        <label for="mileage" class="form-label small">Số km</label>
+                                        <input type="number" class="form-control form-control-sm" id="mileage" name="mileage" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin khách hàng -->
+                        <div class="card mb-3 border">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0 fw-semibold">Thông tin khách hàng</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="customerName" class="form-label small">Tên khách hàng</label>
+                                        <input type="text" class="form-control form-control-sm" id="customerName" name="customerName">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="customerPhone" class="form-label small">Số điện thoại</label>
+                                        <input type="tel" class="form-control form-control-sm" id="customerPhone" name="customerPhone">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ghi chú -->
+                        <div class="card mb-3 border">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0 fw-semibold">Ghi chú</h6>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control form-control-sm" id="notes" name="notes" rows="2" placeholder="Mô tả tình trạng xe, vấn đề cần sửa chữa..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Hình ảnh -->
+                        <div class="card mb-3 border">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0 fw-semibold">Hình ảnh xe</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label for="images" class="form-label small">Thêm hình ảnh mới</label>
+                                    <input type="file" class="form-control form-control-sm" id="images" name="images" multiple accept="image/*">
+                                    <div class="form-text small">Chọn hình ảnh mới để thêm vào (ảnh cũ sẽ được giữ lại). Sau khi upload, nhập mô tả và phân loại cho ảnh mới, rồi click "Cập nhật" để lưu.</div>
+                                </div>
+
+                                <!-- Current Images -->
+                                <div id="currentImagesSection" style="display: none;">
+                                    <label class="form-label small">Hình ảnh hiện tại</label>
+                                    <div id="currentImages" class="row g-2">
+                                            <!-- Current images will be displayed here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                            <div class="text-muted small">Vui lòng kiểm tra thông tin trước khi cập nhật</div>
+                                    <div class="btn-group">
+                                <a href="#" id="backButton" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-arrow-left me-1"></i> 
+                                            Quay lại
+                                        </a>
+                                <button type="submit" id="submitBtn" class="btn btn-outline-primary btn-sm">
+                                    <span id="submitText">
+                                            <i class="fas fa-save me-1"></i> 
+                                            Cập nhật
+                                    </span>
+                                    <span id="submitSpinner" class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
+                                        </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="mb-2">Cập nhật thành công!</h5>
+                <p class="text-muted mb-0">Thông tin check-in đã được cập nhật.</p>
+            </div>
+            <div class="modal-footer justify-content-center border-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="closeSuccessModal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkinId = getCheckinIdFromUrl();
+            if (checkinId) {
+                // Cập nhật link nút Quay lại để trỏ về trang Details
+                document.getElementById('backButton').href = `/VehicleCheckins/Details/${checkinId}`;
+                
+                loadCheckin(checkinId);
+                // Không cần load branch và statuses vì không hiển thị
+            }
+            
+            document.getElementById('checkinForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateCheckin();
+            });
+
+            // Xử lý upload ảnh
+            document.getElementById('images').addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    uploadImages(files);
+                }
+            });
+        });
+
+        function getCheckinIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        function loadCheckin(id) {
+            fetch(`/VehicleCheckins/GetDetails/${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const checkin = data.data;
+                    console.log('Loaded checkin data:', checkin); // Debug log
+                    
+                    document.getElementById('checkinId').value = checkin.id;
+                    document.getElementById('vinNumber').value = checkin.vinNumber || '';
+                    document.getElementById('vehicleEngineNumber').value = checkin.vehicleEngineNumber || '';
+                    document.getElementById('carColor').value = checkin.carColor || checkin.color || '';
+                    document.getElementById('mileage').value = checkin.mileage || '';
+                    document.getElementById('customerName').value = checkin.customerName || '';
+                    document.getElementById('customerPhone').value = checkin.customerPhone || '';
+                    document.getElementById('notes').value = checkin.notes || '';
+                    
+                    // Lưu branchId và statusCode vào hidden fields để dùng khi update (không hiển thị)
+                    if (checkin.branchId) {
+                        document.getElementById('branchId').value = checkin.branchId;
+                    }
+                    if (checkin.statusCode) {
+                        document.getElementById('statusCode').value = checkin.statusCode;
+                    }
+                    
+                    // Cập nhật status badge
+                    updateStatusBadge(checkin.statusCode);
+                    
+                    // Kiểm tra trạng thái - nếu đã CONFIRMED thì không cho phép chỉnh sửa
+                    if (checkin.statusCode === 'CONFIRMED') {
+                        showAlert('Vehicle check-in đã được xác nhận, không thể chỉnh sửa!', 'warning');
+                        // Disable tất cả input fields
+                        disableForm();
+                        // Chuyển hướng về trang Details sau 3 giây
+                        setTimeout(() => {
+                            window.location.href = `/VehicleCheckins/Details/${checkinId}`;
+                        }, 3000);
+                        return;
+                    }
+                    
+            // Lưu images data để dùng khi update
+            window.currentCheckinImages = checkin.images || [];
+            // Khởi tạo mảng lưu ID ảnh đã xóa
+            window.deletedImageIds = [];
+            // Display current images
+            displayCurrentImages(window.currentCheckinImages);
+                } else {
+                    showAlert('Lỗi khi tải thông tin check-in: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi tải thông tin check-in: ' + error.message, 'danger');
+            });
+        }
+
+
+        function displayCurrentImages(images) {
+            const container = document.getElementById('currentImages');
+            const section = document.getElementById('currentImagesSection');
+            
+            if (images.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            container.innerHTML = '';
+            
+            images.forEach((image, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-3';
+                const imageId = image.id || index;
+                const imageUrl = image.imageUrl || image.url || '';
+                const description = image.description || '';
+                const category = image.category || '';
+                
+                col.className = 'col-md-6 col-lg-4 mb-2';
+                col.innerHTML = `
+                    <div class="card h-100" data-image-id="${imageId}" id="image-card-${imageId}">
+                        <div class="card-body p-2 position-relative">
+                            <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-1" 
+                                    style="z-index: 10; width: 24px; height: 24px; padding: 0; border-radius: 50%; font-size: 0.7rem;"
+                                    onclick="removeImage(${imageId}, '${imageUrl}')"
+                                    title="Xóa ảnh này">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <img src="${imageUrl}" class="img-thumbnail w-100 mb-2" style="height: 120px; object-fit: cover; cursor: pointer;" 
+                                         alt="Hình ${index + 1}"
+                                         onclick="openImageModal('${imageUrl}')"
+                                         title="Click để xem ảnh lớn">
+                            <div class="mb-1">
+                                        <input type="text" class="form-control form-control-sm image-description-edit" 
+                                       placeholder="Mô tả ảnh" 
+                                               value="${description}"
+                                               data-image-id="${imageId}">
+                                    </div>
+                                        <select class="form-select form-select-sm image-category-edit" data-image-id="${imageId}">
+                                <option value="">-- Phân loại --</option>
+                                            <option value="Exterior" ${category === 'Exterior' ? 'selected' : ''}>Ngoại thất</option>
+                                            <option value="Interior" ${category === 'Interior' ? 'selected' : ''}>Nội thất</option>
+                                            <option value="Damage" ${category === 'Damage' ? 'selected' : ''}>Hư hỏng</option>
+                                            <option value="Engine" ${category === 'Engine' ? 'selected' : ''}>Động cơ</option>
+                                            <option value="Tire" ${category === 'Tire' ? 'selected' : ''}>Lốp xe</option>
+                                            <option value="Other" ${category === 'Other' ? 'selected' : ''}>Khác</option>
+                                        </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        function setLoadingState(isLoading) {
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+            
+            if (isLoading) {
+                submitBtn.disabled = true;
+                submitText.classList.add('d-none');
+                submitSpinner.classList.remove('d-none');
+            } else {
+                submitBtn.disabled = false;
+                submitText.classList.remove('d-none');
+                submitSpinner.classList.add('d-none');
+            }
+        }
+
+        async function updateCheckin() {
+            // Set loading state
+            setLoadingState(true);
+            
+            const checkinId = document.getElementById('checkinId').value;
+            const vinNumber = document.getElementById('vinNumber').value;
+            const vehicleEngineNumber = document.getElementById('vehicleEngineNumber').value;
+            const carColor = document.getElementById('carColor').value;
+            const mileage = document.getElementById('mileage').value;
+            const customerName = document.getElementById('customerName').value;
+            const customerPhone = document.getElementById('customerPhone').value;
+            const notes = document.getElementById('notes').value;
+
+            // Lấy thông tin ảnh hiện tại và descriptions/categories đã sửa
+            const imageDescriptions = [];
+            const imageCategories = [];
+            const imageUrls = [];
+            
+            // Lấy imageUrls từ dữ liệu đã load (bao gồm cả ảnh cũ và ảnh mới đã upload)
+            // Loại bỏ những ảnh đã bị đánh dấu xóa
+            // Đồng thời lấy descriptions và categories tương ứng
+            if (window.currentCheckinImages && window.currentCheckinImages.length > 0) {
+                window.currentCheckinImages.forEach(img => {
+                    const imageId = img.id;
+                    // Chỉ thêm ảnh nếu chưa bị đánh dấu xóa
+                    if (!window.deletedImageIds || !window.deletedImageIds.includes(imageId)) {
+                        const imageUrl = img.imageUrl || img.url || '';
+                        if (imageUrl) {
+                            imageUrls.push(imageUrl);
+                            
+                            // Lấy description và category từ form (nếu có) hoặc từ dữ liệu gốc
+                            const descriptionInput = document.querySelector(`.image-description-edit[data-image-id="${imageId}"]`);
+                            const categorySelect = document.querySelector(`.image-category-edit[data-image-id="${imageId}"]`);
+                            
+                            if (descriptionInput && !descriptionInput.disabled) {
+                                imageDescriptions.push(descriptionInput.value.trim() || null);
+                            } else {
+                                imageDescriptions.push(img.description || null);
+                            }
+                            
+                            if (categorySelect && !categorySelect.disabled) {
+                                imageCategories.push(categorySelect.value || null);
+                            } else {
+                                imageCategories.push(img.category || null);
+                            }
+                        }
+                    }
+                });
+            }
+
+            const updateData = {
+                id: parseInt(checkinId),
+                vinNumber: vinNumber || null,
+                vehicleEngineNumber: vehicleEngineNumber || null,
+                carColor: carColor || null,
+                mileage: parseInt(mileage) || 0,
+                customerName: customerName || null,
+                customerPhone: customerPhone || null,
+                notes: notes || null
+            };
+
+            // Chỉ gửi imageUrls nếu có ảnh (để update descriptions/categories)
+            // Nếu không có ảnh, không gửi imageUrls để không xóa ảnh cũ
+            if (imageUrls.length > 0) {
+                updateData.imageUrls = imageUrls;
+                updateData.imageDescriptions = imageDescriptions.length > 0 && imageDescriptions.some(d => d !== null) ? imageDescriptions : null;
+                updateData.imageCategories = imageCategories.length > 0 && imageCategories.some(c => c !== null) ? imageCategories : null;
+            }
+
+            console.log('Updating checkin:', checkinId);
+            console.log('Update data:', updateData);
+
+            try {
+                const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+                const response = await fetch(`${API_BASE_URL}/VehicleCheckin/${checkinId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Error response:', data);
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+
+                if (data.success) {
+                    // Reset loading state
+                    setLoadingState(false);
+                    
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Redirect after modal is closed
+                    document.getElementById('closeSuccessModal').addEventListener('click', function() {
+                        window.location.href = `/VehicleCheckins/Details/${checkinId}`;
+                    }, { once: true });
+                    
+                    // Auto redirect after 2 seconds if user doesn't close modal
+                    setTimeout(() => {
+                        if (document.getElementById('successModal').classList.contains('show')) {
+                            successModal.hide();
+                            window.location.href = `/VehicleCheckins/Details/${checkinId}`;
+                        }
+                    }, 2000);
+                } else {
+                    setLoadingState(false);
+                    showAlert('Lỗi: ' + (data.message || 'Không thể cập nhật'), 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                setLoadingState(false);
+                showAlert('Có lỗi xảy ra khi cập nhật check-in: ' + error.message, 'danger');
+            }
+        }
+
+        async function uploadImages(files) {
+            const checkinId = document.getElementById('checkinId').value;
+            if (!checkinId) {
+                showAlert('Không tìm thấy ID check-in', 'danger');
+                return;
+            }
+
+            // Upload all files at once using the multiple upload endpoint
+            const formData = new FormData();
+            Array.from(files).forEach((file, index) => {
+                formData.append('files', file);
+            });
+
+            try {
+                const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+                const response = await fetch(`${apiBaseUrl}/Image/upload-multiple-cloudinary?vehicleCheckinId=${checkinId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Upload result:', result);
+                
+                if (result.success) {
+                    console.log('Images uploaded successfully:', result.data);
+                    
+                    showAlert(`Upload thành công ${result.data.length} ảnh! Đang tải lại danh sách ảnh...`, 'success');
+                    
+                    // Reload để hiển thị ảnh mới (endpoint upload đã tự động lưu vào DB)
+                    // Sau khi reload, window.currentCheckinImages sẽ bao gồm cả ảnh mới
+                    loadCheckin(checkinId);
+                    
+                    // Reset file input
+                    document.getElementById('images').value = '';
+                } else {
+                    console.error('Upload failed:', result.message);
+                    showAlert('Lỗi upload ảnh: ' + result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert('Lỗi upload ảnh: ' + error.message, 'danger');
+            }
+        }
+
+        function updateStatusBadge(statusCode) {
+            const statusBadge = document.getElementById('statusBadge');
+            if (statusCode === 'PENDING') {
+                statusBadge.innerHTML = 'Chờ xử lý';
+                statusBadge.className = 'badge bg-secondary fs-6';
+            } else if (statusCode === 'CONFIRMED') {
+                statusBadge.innerHTML = 'Đã xác nhận';
+                statusBadge.className = 'badge bg-dark fs-6';
+            } else {
+                statusBadge.innerHTML = 'Không xác định';
+                statusBadge.className = 'badge bg-secondary fs-6';
+            }
+        }
+
+        function disableForm() {
+            // Disable tất cả input fields trong form
+            const form = document.getElementById('checkinForm');
+            const inputs = form.querySelectorAll('input, textarea, select, button');
+            inputs.forEach(input => {
+                input.disabled = true;
+            });
+        }
+
+        function removeImage(imageId, imageUrl) {
+            // Xóa modal cũ nếu có
+            const existingModal = document.getElementById('deleteImageModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Tạo modal xác nhận xóa
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.setAttribute('tabindex', '-1');
+            modal.setAttribute('id', 'deleteImageModal');
+            const uniqueId = 'confirmDeleteImageBtn_' + imageId;
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                Xác nhận xóa ảnh
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <p class="mb-2"><strong>Bạn có chắc chắn muốn xóa ảnh này?</strong></p>
+                                <p class="text-muted small mb-0">Ảnh sẽ bị xóa khi bạn click "Cập nhật".</p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                                Hủy
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" id="${uniqueId}">
+                                Xóa ảnh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Xử lý khi click nút xác nhận
+            document.getElementById(uniqueId).addEventListener('click', function() {
+                bsModal.hide();
+                
+                // Thêm vào danh sách ảnh đã xóa
+                window.deletedImageIds = window.deletedImageIds || [];
+                if (!window.deletedImageIds.includes(imageId)) {
+                    window.deletedImageIds.push(imageId);
+                }
+                
+                // Đánh dấu card ảnh để xóa
+                const imageCard = document.getElementById(`image-card-${imageId}`);
+                if (imageCard) {
+                    imageCard.style.opacity = '0.5';
+                    imageCard.style.backgroundColor = '#ffebee';
+                    imageCard.style.border = '2px dashed #dc3545';
+                    
+                    // Thêm alert warning
+                    const cardBody = imageCard.querySelector('.card-body');
+                    const existingAlert = cardBody.querySelector('.delete-alert');
+                    if (!existingAlert) {
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-warning mb-0 mt-2 py-1 delete-alert';
+                        alertDiv.style.fontSize = '0.85rem';
+                        alertDiv.innerHTML = `
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Ảnh này sẽ bị xóa khi bạn click "Cập nhật"
+                        `;
+                        cardBody.appendChild(alertDiv);
+                    }
+                    
+                    // Disable các input trong card
+                    const inputs = imageCard.querySelectorAll('input, select');
+                    inputs.forEach(input => input.disabled = true);
+                }
+                
+                showAlert('Ảnh đã được đánh dấu để xóa. Click "Cập nhật" để xác nhận xóa.', 'info');
+            });
+            
+            // Xóa modal khi đóng
+            modal.addEventListener('hidden.bs.modal', function() {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                }
+            });
+        }
+
+        function openImageModal(imageUrl) {
+            // Simple image modal - giống trang Details
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.setAttribute('tabindex', '-1');
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                Hình ảnh xe
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-0 bg-light">
+                            <img src="${imageUrl}" class="img-fluid" alt="Hình ảnh xe" 
+                                 style="max-height: 70vh; width: auto;"
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Lb8O0bmcgY8O0IGjDsm5oIMSR4b5uPC90ZXh0Pgo8L3N2Zz4K'; this.alt='Không thể tải hình ảnh';">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Xóa modal khi đóng
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('form'));
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+}
+

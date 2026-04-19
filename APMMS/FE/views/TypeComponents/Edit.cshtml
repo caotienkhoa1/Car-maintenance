@@ -1,0 +1,187 @@
+﻿@{
+    ViewData["Title"] = "Chỉnh sửa loại linh kiện";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Chỉnh sửa loại linh kiện</h5>
+                    <a href="/TypeComponents" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="loadingSpinner" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+
+                    <form id="editForm" style="display: none;">
+                        <input type="hidden" id="Id" name="Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Tên loại linh kiện <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="Name" name="Name" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Chi nhánh</label>
+                            <input type="text" class="form-control" id="BranchName" readonly />
+                            <input type="hidden" id="BranchId" name="BranchId" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái</label>
+                            <select class="form-select" id="StatusCode" name="StatusCode">
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Không hoạt động</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeComponentId = getTypeComponentIdFromUrl();
+            if (typeComponentId) {
+                loadTypeComponent(typeComponentId);
+            } else {
+                showError('Không tìm thấy ID loại linh kiện');
+            }
+
+            document.getElementById('editForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateTypeComponent();
+            });
+        });
+
+        function getTypeComponentIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        function loadTypeComponent(id) {
+            fetch(`/TypeComponents/GetDetails/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    
+                    if (data.success && data.data) {
+                        displayTypeComponentForm(data.data);
+                    } else {
+                        showError('Lỗi khi tải thông tin: ' + (data.message || 'Không có dữ liệu'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    showError('Có lỗi xảy ra khi tải thông tin loại linh kiện: ' + error.message);
+                });
+        }
+
+        function displayTypeComponentForm(typeComponent) {
+            document.getElementById('Id').value = typeComponent.id || '';
+            document.getElementById('Name').value = typeComponent.name || '';
+            document.getElementById('Description').value = typeComponent.description || '';
+            document.getElementById('BranchId').value = typeComponent.branchId || '';
+            document.getElementById('BranchName').value = typeComponent.branchName || typeComponent.branchId || '';
+            document.getElementById('StatusCode').value = typeComponent.statusCode || 'ACTIVE';
+            
+            document.getElementById('editForm').style.display = 'block';
+        }
+
+        function updateTypeComponent() {
+            const id = document.getElementById('Id').value;
+            const payload = {
+                Id: parseInt(id),
+                Name: document.getElementById('Name').value,
+                Description: document.getElementById('Description').value,
+                BranchId: document.getElementById('BranchId').value ? parseInt(document.getElementById('BranchId').value) : null,
+                StatusCode: document.getElementById('StatusCode').value
+            };
+
+            // Disable submit button
+            const submitBtn = document.querySelector('#editForm button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+
+            fetch(`/TypeComponents/Update/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/TypeComponents';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || 'Không thể cập nhật!', 'danger');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Lỗi khi gọi API: ' + error.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật';
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}

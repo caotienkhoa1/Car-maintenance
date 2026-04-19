@@ -1,0 +1,118 @@
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content login-modal-content">
+            <div class="modal-header login-modal-header">
+                <div class="login-header">
+                    <div class="logo-container">
+                        <div class="logo-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="logo-text">
+                            <span class="logo-main">APMMS</span>
+                            <span class="logo-sub">Auto Parts Management</span>
+                        </div>
+                    </div>
+                    <h3 class="login-title">Đăng nhập hệ thống</h3>
+                    <p class="login-subtitle">Quản lý phụ tùng & bảo dưỡng ô tô</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="login-form" id="loginForm">
+                    <div class="form-group mb-3">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user"></i> Tên đăng nhập
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> Mật khẩu
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Ghi nhớ đăng nhập
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-login w-100">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                    </button>
+
+                    <div class="login-footer mt-3">
+                        <a href="/Auth/ForgotPassword" class="forgot-password">Quên mật khẩu?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Modal thông báo tài khoản bị vô hiệu hóa -->
+<div class="modal fade" id="accountDisabledModal" tabindex="-1" aria-labelledby="accountDisabledModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title" id="accountDisabledModalLabel">
+                    <i class="fas fa-ban me-2"></i>
+                    TÀI KHOẢN ĐÃ BỊ VÔ HIỆU HÓA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeAccountDisabledModal()"></button>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-user-slash text-danger" style="font-size: 80px;"></i>
+                </div>
+                <h3 class="mb-3 fw-bold">Tài khoản của bạn đã bị vô hiệu hóa</h3>
+                <p class="text-muted mb-4" style="font-size: 1.1rem;">
+                    Tài khoản của bạn hiện không còn quyền truy cập vào hệ thống. 
+                    Để được hỗ trợ hoặc kích hoạt lại tài khoản, vui lòng liên hệ với quản trị viên.
+                </p>
+                <div class="alert alert-info">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-envelope fa-2x"></i>
+                        </div>
+                        <div class="col">
+                            <strong>Email hỗ trợ:</strong><br>
+                            <a href="mailto:apmms.manage.services@gmail.com" class="text-primary">
+                                apmms.manage.services@gmail.com
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-primary">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-phone fa-2x"></i>
+                        </div>
+                        <div class="col">
+                            <strong>Hotline:</strong><br>
+                            <a href="tel:190011089" class="text-primary">1900 110 89</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-secondary btn-lg px-5" onclick="closeAccountDisabledModal()">
+                    <i class="fas fa-times me-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function closeAccountDisabledModal() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('accountDisabledModal'));
+        modal.hide();
+        // Clear form sau khi đóng modal
+        $('#loginForm')[0].reset();
+    }
+</script>

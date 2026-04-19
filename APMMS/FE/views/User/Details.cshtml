@@ -1,0 +1,1726 @@
+@{
+    ViewData["Title"] = "Thông tin chi tiết người dùng";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    .user-profile-container {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0;
+    }
+    
+    .user-avatar-section {
+        background: #f8f9fa;
+        padding: 40px 30px;
+        text-align: center;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    /* Scope user-avatar to only profile section, not top bar */
+    .user-profile-container .user-avatar-section .user-avatar {
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #dee2e6;
+        background: #e9ecef;
+    }
+    
+    .user-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 20px;
+        color: #212529;
+    }
+    
+    .user-details-section {
+        background: white;
+        padding: 30px;
+    }
+    
+    .info-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+    
+    .info-tabs .nav-link {
+        color: #6c757d;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .info-tabs .nav-link:hover {
+        color: #495057;
+    }
+    
+    .info-tabs .nav-link.active {
+        color: #212529;
+        border-bottom-color: #212529;
+        font-weight: 500;
+    }
+    
+    .info-field {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .info-field:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 500;
+        flex: 0 0 200px;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        color: #212529;
+        font-weight: 400;
+        flex: 1;
+        text-align: left;
+    }
+    
+    /* Custom Notification Popup */
+    .custom-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        min-width: 350px;
+        max-width: 500px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        border-left: 4px solid #28a745;
+    }
+    
+    .custom-notification.error {
+        border-left-color: #dc3545;
+    }
+    
+    .custom-notification.warning {
+        border-left-color: #ffc107;
+    }
+    
+    .custom-notification.info {
+        border-left-color: #17a2b8;
+    }
+    
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @@keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .custom-notification.hide {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+    
+    .notification-header {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .notification-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.success {
+        background: #d4edda;
+        color: #28a745;
+    }
+    
+    .notification-icon.error {
+        background: #f8d7da;
+        color: #dc3545;
+    }
+    
+    .notification-icon.warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .notification-icon.info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .notification-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .notification-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .notification-close:hover {
+        color: #212529;
+    }
+    
+    .notification-body {
+        padding: 16px 20px;
+        color: #495057;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 4px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .form-field {
+        margin-bottom: 0;
+        padding-bottom: 8px;
+        padding-top: 8px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        min-height: 40px;
+    }
+    
+    .form-field:first-child {
+        padding-top: 0;
+    }
+    
+    .form-field:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #6c757d;
+        flex: 0 0 140px;
+        margin-bottom: 0;
+        font-size: 0.875rem;
+        margin-right: 15px;
+    }
+    
+    .form-label i {
+        margin-right: 6px;
+        color: #6c757d;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 12px;
+        flex: 1;
+        max-width: 350px;
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        background-color: #fff;
+    }
+    
+    .btn-save {
+        background: #007bff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-save:hover {
+        background: #0056b3;
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        color: white;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    .status-badge.active {
+        background: #28a745;
+        color: white;
+    }
+    
+    .status-badge.inactive {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .image-preview-container {
+        margin-top: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 4px;
+        border: 1px dashed #ced4da;
+    }
+    
+    .image-preview-container img {
+        border-radius: 4px;
+    }
+    
+    /* Ensure top bar is not affected by any styles in this page */
+    body.dashboard-body .top-bar {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        padding: 15px 30px !important;
+        line-height: normal !important;
+    }
+    
+    /* Ensure top bar avatar is not affected */
+    body.dashboard-body .top-bar .user-avatar,
+    body.dashboard-body .top-bar .user-avatar .avatar-btn {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    /* Ensure top bar h2 is not affected */
+    body.dashboard-body .top-bar h2 {
+        margin: 0 !important;
+        font-size: 1.5rem !important;
+        line-height: 1.2 !important;
+    }
+</style>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/Users"><i class="fas fa-users me-1"></i>Danh sách người dùng</a></li>
+        <li class="breadcrumb-item active" id="userNameBreadcrumb">-</li>
+    </ol>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="user-profile-container">
+                <div id="loadingSpinner" class="text-center p-5" style="background: white; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                    <div>
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải thông tin người dùng...</p>
+                    </div>
+                </div>
+
+                <div id="userDetails" style="display: none;">
+                    <div class="row g-0">
+                        <!-- Left Section: Avatar and Name -->
+                        <div class="col-md-3 user-avatar-section">
+                            <div class="mb-4">
+                                <img id="userAvatar" src="" alt="Avatar" 
+                                     class="user-avatar"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';">
+                        </div>
+                            <h4 id="userFullName" class="user-name">-</h4>
+                    </div>
+
+                        <!-- Right Section: Tabs and Details -->
+                        <div class="col-md-9 user-details-section">
+                            <!-- Tabs -->
+                            <ul class="nav nav-tabs info-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#personal" type="button" role="tab" 
+                                            aria-controls="personal" aria-selected="true">
+                                        <i class="fas fa-user me-2"></i>Thông tin cá nhân
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="edit-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#edit" type="button" role="tab" 
+                                            aria-controls="edit" aria-selected="false">
+                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="cars-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#cars" type="button" role="tab" 
+                                            aria-controls="cars" aria-selected="false">
+                                        <i class="fas fa-car me-2"></i>Danh sách phương tiện khách hàng
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content">
+                                <!-- Personal Information Tab -->
+                                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                                    <h5 class="mb-4" style="color: #212529; font-weight: 600;">Thông tin chi tiết</h5>
+                        <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="info-field">
+                                                <div class="info-label">Mã người dùng</div>
+                                                <div class="info-value" id="userCode">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Họ và tên</div>
+                                                <div class="info-value" id="userName">-</div>
+                                </div>
+
+                                            <div class="info-field">
+                                                <div class="info-label">Giới tính</div>
+                                                <div class="info-value" id="userGender">-</div>
+                            </div>
+
+                                            <div class="info-field">
+                                                <div class="info-label">Ngày sinh</div>
+                                                <div class="info-value" id="userDob">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Địa chỉ</div>
+                                                <div class="info-value" id="userAddress">-</div>
+                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">CMT/CCCD</div>
+                                                <div class="info-value" id="userCitizenId">-</div>
+                        </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Số điện thoại</div>
+                                                <div class="info-value" id="userPhone">-</div>
+                    </div>
+
+                                            <div class="info-field">
+                                                <div class="info-label">Email</div>
+                                                <div class="info-value" id="userEmail">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Mã số thuế</div>
+                                                <div class="info-value" id="userTaxCode">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Tình trạng</div>
+                                                <div class="info-value" id="userStatus">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Edit Tab -->
+                                <div class="tab-pane fade" id="edit" role="tabpanel" aria-labelledby="edit-tab">
+                                    <form id="editUserForm">
+                                        <div class="form-field">
+                                            <label for="editFullName" class="form-label">
+                                                <i class="fas fa-user"></i> Họ và tên
+                                            </label>
+                                            <input type="text" class="form-control" id="editFullName">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editPhone" class="form-label">
+                                                <i class="fas fa-phone"></i> Số điện thoại
+                                            </label>
+                                            <input type="tel" class="form-control" id="editPhone">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editGender" class="form-label">
+                                                <i class="fas fa-venus-mars"></i> Giới tính
+                                            </label>
+                                            <select class="form-select" id="editGender">
+                                                <option value="">-- Chọn giới tính --</option>
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                                <option value="Khác">Khác</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editDob" class="form-label">
+                                                <i class="fas fa-calendar-alt"></i> Ngày sinh
+                                            </label>
+                                            <input type="date" class="form-control" id="editDob">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editEmail" class="form-label">
+                                                <i class="fas fa-envelope"></i> Email
+                                            </label>
+                                            <input type="email" class="form-control" id="editEmail">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editAddress" class="form-label">
+                                                <i class="fas fa-map-marker-alt"></i> Địa chỉ
+                                            </label>
+                                            <input type="text" class="form-control" id="editAddress">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editCitizenId" class="form-label">
+                                                <i class="fas fa-id-badge"></i> CMT/CCCD
+                                            </label>
+                                            <input type="text" class="form-control" id="editCitizenId">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editTaxCode" class="form-label">
+                                                <i class="fas fa-receipt"></i> Mã số thuế
+                                            </label>
+                                            <input type="text" class="form-control" id="editTaxCode">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="userImageInput" class="form-label">
+                                                <i class="fas fa-image"></i> Ảnh đại diện
+                                            </label>
+                                            <input type="file" class="form-control" id="userImageInput" accept="image/*" style="max-width: 350px;">
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end mt-4">
+                                            <button type="submit" class="btn btn-save text-white">
+                                                <i class="fas fa-save me-1"></i> Lưu thông tin
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Cars Tab -->
+                                <div class="tab-pane fade" id="cars" role="tabpanel" aria-labelledby="cars-tab">
+                                    <div class="car-table">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="mb-0">Danh sách phương tiện khách hàng</h5>
+                                            <div class="d-flex gap-2">
+                                                <input type="text" class="form-control form-control-sm" id="carSearchInput" placeholder="Tìm theo phương tiện" style="width: 200px;">
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-start mb-3">
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCarModal">
+                                                <i class="fas fa-plus me-1"></i>Thêm mới
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Tên phương tiện</th>
+                                                        <th>Loại phương tiện</th>
+                                                        <th>Ngày tạo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="carsTableBody">
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted">
+                                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                                <span class="visually-hidden">Đang tải...</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div id="carsEmptyMessage" class="alert alert-info mt-3" style="display: none;">
+                                            <i class="fas fa-info-circle me-2"></i>Người dùng này chưa có xe nào.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <div id="errorMessage" class="alert alert-danger m-3" style="display: none; border-radius: 10px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="errorText">Có lỗi xảy ra khi tải thông tin người dùng</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal Thêm xe cho khách hàng -->
+<div class="modal fade" id="addCarModal" tabindex="-1" aria-labelledby="addCarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCarModalLabel">Thêm xe cho khách hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" id="carFormTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="vehicleInfo-tab" data-bs-toggle="tab" data-bs-target="#vehicleInfo" type="button" role="tab" aria-controls="vehicleInfo" aria-selected="true">Thông tin phương tiện</button>
+                    </li>
+                </ul>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="carFormTabContent">
+                    <div class="tab-pane fade show active" id="vehicleInfo" role="tabpanel" aria-labelledby="vehicleInfo-tab">
+                        <form id="addCarForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="carName" class="form-label">
+                                        Tên phương tiện <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="carName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="carModel" class="form-label">
+                                        Model <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="carModel" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="vehicleTypeId" class="form-label">
+                                        Loại phương tiện <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="vehicleTypeId" required>
+                                        <option value="">-- Chọn loại phương tiện --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="carColor" class="form-label">
+                                        Màu xe <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="carColor" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="yearOfManufacture" class="form-label">
+                                        Năm sản xuất <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" id="yearOfManufacture" min="1900" max="2100" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="vinNumber" class="form-label">
+                                        Số khung(VIN) <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="vinNumber" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="vehicleEngineNumber" class="form-label">
+                                        Số máy <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="vehicleEngineNumber" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="licensePlate" class="form-label">
+                                        Biển số xe <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="licensePlate" required>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-outline-primary" id="addCarSubmitBtn" onclick="submitAddCarForm()">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        let currentUser = null;
+        let originalFormData = null;
+
+        // Custom Notification Function
+        function showNotification(message, type = 'success') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.custom-notification');
+            existingNotifications.forEach(notif => {
+                notif.classList.add('hide');
+                setTimeout(() => notif.remove(), 300);
+            });
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `custom-notification ${type}`;
+            
+            const icons = {
+                success: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>',
+                error: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>',
+                warning: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>',
+                info: '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451.081.082.381 1.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg>'
+            };
+            
+            const titles = {
+                success: 'Thành công',
+                error: 'Lỗi',
+                warning: 'Cảnh báo',
+                info: 'Thông tin'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <div class="notification-icon ${type}">
+                        ${icons[type] || icons.info}
+                    </div>
+                    <h6 class="notification-title">${titles[type] || titles.info}</h6>
+                    <button type="button" class="notification-close" onclick="this.closest('.custom-notification').classList.add('hide'); setTimeout(() => this.closest('.custom-notification').remove(), 300);">&times;</button>
+                </div>
+                <div class="notification-body">
+                    ${message}
+                </div>
+            `;
+            
+            // Append to body
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('hide');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize image preview handler
+            initializeImagePreview();
+            
+            const userId = getUserIdFromUrl();
+            if (userId) {
+                loadUserDetails(userId);
+                // Load cars when cars tab is clicked
+                document.getElementById('cars-tab').addEventListener('shown.bs.tab', function() {
+                    loadUserCars();
+                });
+            } else {
+                showNotification('Không tìm thấy ID người dùng', 'error');
+            }
+            
+            // Thêm event listener cho ô tìm kiếm phương tiện
+            const carSearchInput = document.getElementById('carSearchInput');
+            if (carSearchInput) {
+                let searchTimeout;
+                carSearchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function() {
+                        loadUserCars();
+                    }, 300);
+                });
+            }
+            
+            // Load vehicle types when modal is opened
+            const addCarModal = document.getElementById('addCarModal');
+            if (addCarModal) {
+                addCarModal.addEventListener('show.bs.modal', function() {
+                    loadVehicleTypes();
+                });
+                addCarModal.addEventListener('hidden.bs.modal', function() {
+                    resetAddCarForm();
+                });
+            }
+        });
+        
+        function initializeImagePreview() {
+            // Handle user image input (edit form)
+            const userImageInput = document.getElementById('userImageInput');
+            if (userImageInput) {
+                userImageInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                            showNotification('Vui lòng chọn file hình ảnh hợp lệ', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            showNotification('Kích thước file không được vượt quá 5MB', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Create preview and update avatar
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const imageDataUrl = event.target.result;
+                            
+                            // Update avatar (left sidebar) - preview only
+                            const userAvatar = document.getElementById('userAvatar');
+                            if (userAvatar) {
+                                userAvatar.src = imageDataUrl;
+                            }
+                        };
+                        reader.onerror = function() {
+                            showNotification('Có lỗi xảy ra khi đọc file', 'error');
+                            e.target.value = '';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // No file selected - restore original avatar
+                        const userAvatar = document.getElementById('userAvatar');
+                        if (userAvatar && currentUser) {
+                            if (currentUser.image) {
+                                userAvatar.src = currentUser.image;
+                            } else {
+                                // Reset to default placeholder
+                                userAvatar.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function getUserIdFromUrl() {
+            // Try to get from ViewBag first (set by controller)
+            const viewBagId = @(ViewBag.UserId ?? 0);
+            if (viewBagId && viewBagId > 0) {
+                return viewBagId.toString();
+            }
+            
+            // Fallback: extract from URL path
+            const path = window.location.pathname;
+            const segments = path.split('/').filter(seg => seg && seg.trim() !== '');
+            const lastSegment = segments[segments.length - 1];
+            
+            // Remove any hash fragments or query parameters
+            let userId = lastSegment;
+            if (userId) {
+                // Remove hash fragment
+                userId = userId.split('#')[0];
+                // Remove query parameters
+                userId = userId.split('?')[0];
+                // Remove any non-numeric characters at the end (like :1)
+                userId = userId.replace(/[^0-9].*$/, '');
+            }
+            
+            // Validate it's a number
+            const idNum = parseInt(userId, 10);
+            if (isNaN(idNum) || idNum <= 0) {
+                console.error('Invalid user ID from URL:', userId);
+                return null;
+            }
+            
+            return idNum.toString();
+        }
+
+        function loadUserDetails(id) {
+            // Validate ID before making request - convert to string first
+            const idStr = String(id || '').trim();
+            if (!idStr || idStr === '' || isNaN(parseInt(idStr, 10))) {
+                console.error('Invalid user ID:', id);
+                showError('ID người dùng không hợp lệ');
+                return;
+            }
+            // Use idStr for API call
+            id = idStr;
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                showError('Vui lòng đăng nhập lại để xem thông tin khách hàng.');
+                return;
+            }
+
+            fetch(`${API_BASE_URL}/AutoOwner/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    
+                    // API trả về trực tiếp ResponseDto
+                    if (data && data.id) {
+                        displayUserDetails(data);
+                    } else if (data && data.success && data.data) {
+                        displayUserDetails(data.data);
+                    } else {
+                        showError('Không tìm thấy thông tin người dùng');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    showError('Có lỗi xảy ra khi tải thông tin người dùng: ' + error.message);
+                });
+        }
+
+        function displayUserDetails(user) {
+            currentUser = user;
+            
+            const fullName = `${(user.firstName || '')} ${(user.lastName || '')}`.trim() || '-';
+            
+            // Breadcrumb
+            document.getElementById('userNameBreadcrumb').textContent = fullName;
+            
+            // Avatar
+            const avatar = document.getElementById('userAvatar');
+            if (user.image) {
+                avatar.src = user.image;
+            }
+            
+            // Left section - only name
+            document.getElementById('userFullName').textContent = fullName;
+            
+            // Details
+            document.getElementById('userCode').textContent = user.code || '-';
+            document.getElementById('userName').textContent = fullName;
+            document.getElementById('userGender').textContent = 
+                user.gender === 'Male' || user.gender === 'Nam' ? 'Nam' :
+                user.gender === 'Female' || user.gender === 'Nữ' ? 'Nữ' : 
+                user.gender || '-';
+            
+            // Display date of birth
+            const dobElement = document.getElementById('userDob');
+            if (dobElement) {
+                const dobValue = user.dob;
+                if (dobValue) {
+                    try {
+                        // Handle DateOnly format (YYYY-MM-DD) or Date object
+                        let dob;
+                        if (typeof dobValue === 'string') {
+                            dob = new Date(dobValue);
+            } else {
+                            dob = new Date(dobValue);
+                        }
+                        if (!isNaN(dob.getTime())) {
+                            const formattedDate = dob.toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            });
+                            dobElement.textContent = formattedDate;
+                        } else {
+                            dobElement.textContent = '-';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date:', e, dobValue);
+                        dobElement.textContent = '-';
+                    }
+            } else {
+                    dobElement.textContent = '-';
+                }
+            }
+            
+            document.getElementById('userPhone').textContent = user.phone || '-';
+            document.getElementById('userEmail').textContent = user.email || '-';
+            document.getElementById('userAddress').textContent = user.address || '-';
+            document.getElementById('userCitizenId').textContent = user.citizenId || '-';
+            document.getElementById('userTaxCode').textContent = user.taxCode || '-';
+            
+            // Status - đổi thành "Có hiệu lực" / "Không hiệu lực"
+            const isActive = user.statusCode === 'ACTIVE';
+            const statusDiv = document.getElementById('userStatus');
+            statusDiv.innerHTML = isActive 
+                ? '<span class="status-badge active">Có hiệu lực</span>'
+                : '<span class="status-badge inactive">Không hiệu lực</span>';
+            
+            // Load data into edit form
+            loadEditForm(user);
+            
+            document.getElementById('userDetails').style.display = 'block';
+        }
+
+        function loadEditForm(user) {
+            // Gộp firstName và lastName thành fullName
+            const fullName = `${(user.firstName || '')} ${(user.lastName || '')}`.trim();
+            document.getElementById('editFullName').value = fullName || '';
+            
+            document.getElementById('editPhone').value = user.phone || '';
+            document.getElementById('editGender').value = 
+                user.gender === 'Male' || user.gender === 'Nam' ? 'Nam' :
+                user.gender === 'Female' || user.gender === 'Nữ' ? 'Nữ' : 
+                user.gender || '';
+            
+            // Load date of birth
+            const dobInput = document.getElementById('editDob');
+            if (dobInput) {
+                const dobValue = user.dob;
+                if (dobValue) {
+                    try {
+                        let dob;
+                        if (typeof dobValue === 'string') {
+                            dob = new Date(dobValue);
+                        } else {
+                            dob = new Date(dobValue);
+                        }
+                        if (!isNaN(dob.getTime())) {
+                            // Format to YYYY-MM-DD for date input
+                            const year = dob.getFullYear();
+                            const month = String(dob.getMonth() + 1).padStart(2, '0');
+                            const day = String(dob.getDate()).padStart(2, '0');
+                            dobInput.value = `${year}-${month}-${day}`;
+                        } else {
+                            dobInput.value = '';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date for input:', e);
+                        dobInput.value = '';
+                    }
+                } else {
+                    dobInput.value = '';
+                }
+            }
+            
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editAddress').value = user.address || '';
+            document.getElementById('editTaxCode').value = user.taxCode || '';
+            document.getElementById('editCitizenId').value = user.citizenId || '';
+
+            // Store original data
+            originalFormData = {
+                fullName: fullName || '',
+                phone: user.phone || '',
+                gender: document.getElementById('editGender').value,
+                dob: dobInput ? dobInput.value : '',
+                email: user.email || '',
+                address: user.address || '',
+                taxCode: user.taxCode || '',
+                citizenId: user.citizenId || ''
+            };
+        }
+
+        function resetEditForm() {
+            if (originalFormData) {
+                document.getElementById('editFullName').value = originalFormData.fullName || '';
+                document.getElementById('editPhone').value = originalFormData.phone;
+                document.getElementById('editGender').value = originalFormData.gender;
+                const dobInput = document.getElementById('editDob');
+                if (dobInput) {
+                    dobInput.value = originalFormData.dob || '';
+                }
+                document.getElementById('editEmail').value = originalFormData.email;
+                document.getElementById('editAddress').value = originalFormData.address;
+                document.getElementById('editTaxCode').value = originalFormData.taxCode;
+                document.getElementById('editCitizenId').value = originalFormData.citizenId;
+                document.getElementById('userImageInput').value = '';
+                
+                // Restore original avatar image when resetting
+                const userAvatar = document.getElementById('userAvatar');
+                if (userAvatar && currentUser && currentUser.image) {
+                    userAvatar.src = currentUser.image;
+                }
+            }
+        }
+
+        function showError(message) {
+            showNotification(message, 'error');
+        }
+
+        // Handle edit form submission
+        document.getElementById('editUserForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveUserChanges();
+        });
+
+        function saveUserChanges() {
+            if (!currentUser) {
+                showError('Không tìm thấy thông tin người dùng');
+                return;
+            }
+
+            // Format date of birth from input (format: YYYY-MM-DD for backend DateOnly)
+            let dobFormatted = null;
+            const dobInput = document.getElementById('editDob');
+            if (dobInput && dobInput.value) {
+                try {
+                    const dobDate = new Date(dobInput.value);
+                    if (!isNaN(dobDate.getTime())) {
+                        // Format as YYYY-MM-DD for DateOnly
+                        const year = dobDate.getFullYear();
+                        const month = String(dobDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(dobDate.getDate()).padStart(2, '0');
+                        dobFormatted = `${year}-${month}-${day}`;
+                    }
+                } catch (e) {
+                    console.error('Error formatting date of birth:', e);
+                }
+            }
+
+            // Validate required fields
+            if (!currentUser.username) {
+                showError('Không tìm thấy thông tin username của người dùng');
+                return;
+            }
+            
+            if (!currentUser.id) {
+                showError('Không tìm thấy ID người dùng. Vui lòng làm mới trang và thử lại.');
+                return;
+            }
+
+            // Split fullName thành firstName và lastName
+            const fullNameInput = document.getElementById('editFullName').value.trim();
+            const nameParts = fullNameInput.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const formData = {
+                username: currentUser.username,
+                password: '', // Empty password - backend should preserve existing password
+                firstName: firstName || null,
+                lastName: lastName || null,
+                email: document.getElementById('editEmail').value || null,
+                phone: document.getElementById('editPhone').value || null,
+                gender: document.getElementById('editGender').value || null,
+                image: currentUser.image || null,
+                taxCode: document.getElementById('editTaxCode').value || null,
+                address: document.getElementById('editAddress').value || null,
+                citizenId: document.getElementById('editCitizenId').value || null,
+                dob: dobFormatted,
+                branchId: currentUser.branchId || null
+            };
+            
+            // Remove null/empty values except username and password (they are required by DTO)
+            Object.keys(formData).forEach(key => {
+                if (key !== 'username' && key !== 'password' && key !== 'branchId' && (formData[key] === null || formData[key] === '')) {
+                    delete formData[key];
+                }
+            });
+            
+            console.log('Sending update request with data:', formData);
+            console.log('User ID being updated:', currentUser.id);
+
+            const token = localStorage.getItem('authToken');
+
+            // Handle image upload if file is selected
+            const imageFile = document.getElementById('userImageInput').files[0];
+            
+            // Function to update user
+            const updateUser = (imageUrl = null) => {
+                // Nếu có imageUrl từ upload, cập nhật vào formData
+                if (imageUrl) {
+                    formData.image = imageUrl;
+                }
+                
+                return fetch(`${API_BASE_URL}/AutoOwner/${currentUser.id}`, {
+                method: 'PUT',
+                headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+                });
+            };
+
+            // Upload ảnh trước nếu có file được chọn
+            if (imageFile) {
+                // Hiển thị loading state
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang upload ảnh...';
+
+                // Upload ảnh lên Cloudinary
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', imageFile);
+
+                fetch(`${API_BASE_URL}/AutoOwner/${currentUser.id}/upload-avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: uploadFormData
+            })
+            .then(async response => {
+                if (!response.ok) {
+                        let errorMessage = `Upload ảnh thất bại. Status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 400) {
+                                errorMessage = 'File ảnh không hợp lệ. Vui lòng chọn file khác.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(uploadData => {
+                    // Upload thành công, lấy URL ảnh
+                    const imageUrl = uploadData.data?.imageUrl || uploadData.data?.url;
+                    if (!imageUrl) {
+                        throw new Error('Không nhận được URL ảnh từ server');
+                    }
+
+                    // Cập nhật avatar preview ngay lập tức
+                    const userAvatar = document.getElementById('userAvatar');
+                    if (userAvatar) {
+                        userAvatar.src = imageUrl;
+                    }
+
+                    // Cập nhật currentUser.image để giữ đồng bộ
+                    if (currentUser) {
+                        currentUser.image = imageUrl;
+                    }
+
+                    // Update button text
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu thông tin...';
+
+                    // Tiếp tục cập nhật user (ảnh đã được lưu vào DB khi upload, không cần gửi lại)
+                    // Bỏ image khỏi formData vì đã được lưu
+                    delete formData.image;
+                    return updateUser();
+                })
+                .then(async response => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+
+                    if (!response.ok) {
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } catch (e) {
+                        if (response.status === 404) {
+                            errorMessage = 'Không tìm thấy người dùng với ID này. Vui lòng làm mới trang và thử lại.';
+                        } else if (response.status === 401) {
+                            errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                        } else if (response.status === 403) {
+                            errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Reload user details
+                loadUserDetails(currentUser.id);
+                
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.style.borderRadius = '10px';
+                alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin và ảnh đại diện thành công!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                const detailsSection = document.querySelector('.user-details-section');
+                if (detailsSection) {
+                    detailsSection.insertBefore(alertDiv, detailsSection.querySelector('.info-tabs'));
+                }
+                
+                // Switch to personal info tab
+                const personalTab = document.getElementById('personal-tab');
+                if (personalTab) {
+                    personalTab.click();
+                }
+
+                    // Reset image input
+                    document.getElementById('userImageInput').value = '';
+
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            })
+            .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                console.error('Error:', error);
+                    showError('Có lỗi xảy ra: ' + error.message);
+                });
+            } else {
+                // Không có ảnh mới, chỉ cập nhật user thôi
+                updateUser()
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 404) {
+                                errorMessage = 'Không tìm thấy người dùng với ID này. Vui lòng làm mới trang và thử lại.';
+                            } else if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reload user details
+                    loadUserDetails(currentUser.id);
+                    
+                    // Show success message
+                    showNotification('Cập nhật thông tin thành công!', 'success');
+                    
+                    // Switch to personal info tab
+                    const personalTab = document.getElementById('personal-tab');
+                    if (personalTab) {
+                        personalTab.click();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Có lỗi xảy ra khi cập nhật thông tin: ' + error.message, 'error');
+                });
+            }
+        }
+
+        function loadUserCars() {
+            if (!currentUser || !currentUser.id) {
+                document.getElementById('carsTableBody').innerHTML = 
+                    '<tr><td colspan="3" class="text-center text-danger">Không tìm thấy ID người dùng</td></tr>';
+                return;
+            }
+
+            const tbody = document.getElementById('carsTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center text-muted">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            fetch(`${API_BASE_URL}/CarOfAutoOwner/user/${currentUser.id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(cars => {
+                    tbody.innerHTML = '';
+                    
+                    if (!cars || cars.length === 0) {
+                        document.getElementById('carsEmptyMessage').style.display = 'block';
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                        return;
+                    }
+
+                    document.getElementById('carsEmptyMessage').style.display = 'none';
+                    
+                    // Lọc theo từ khóa tìm kiếm nếu có
+                    const searchInput = document.getElementById('carSearchInput');
+                    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                    let filteredCars = cars;
+                    
+                    if (searchTerm) {
+                        filteredCars = cars.filter(car => {
+                            const carName = (car.carName || '').toLowerCase();
+                            const carModel = (car.carModel || '').toLowerCase();
+                            return carName.includes(searchTerm) || carModel.includes(searchTerm);
+                        });
+                    }
+                    
+                    if (filteredCars.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Không tìm thấy phương tiện nào</td></tr>';
+                        return;
+                    }
+                    
+                    filteredCars.forEach(car => {
+                        const row = document.createElement('tr');
+                        const createdDate = car.createdDate 
+                            ? new Date(car.createdDate).toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                            })
+                            : '-';
+                        
+                        row.innerHTML = `
+                            <td><a href="/Users/CarDetail/${car.id}" style="color: #007bff; text-decoration: none; cursor: pointer;">${car.carName || '-'}</a></td>
+                            <td>${car.carModel || '-'}</td>
+                            <td>${createdDate}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading cars:', error);
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi khi tải danh sách xe: ' + error.message + '</td></tr>';
+                    document.getElementById('carsEmptyMessage').style.display = 'none';
+                });
+        }
+        
+        // Load vehicle types for dropdown
+        function loadVehicleTypes() {
+            fetch(`${API_BASE_URL}/VehicleType`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(vehicleTypes => {
+                    const select = document.getElementById('vehicleTypeId');
+                    if (select) {
+                        select.innerHTML = '<option value="">-- Chọn loại phương tiện --</option>';
+                        if (vehicleTypes && Array.isArray(vehicleTypes)) {
+                            vehicleTypes.forEach(vt => {
+                                const option = document.createElement('option');
+                                option.value = vt.id;
+                                option.textContent = vt.name;
+                                select.appendChild(option);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading vehicle types:', error);
+                });
+        }
+        
+        // Kiểm tra trùng (nếu BE hỗ trợ endpoint check-duplicate). Nếu lỗi/404 sẽ bỏ qua để không chặn luồng.
+        async function checkCarDuplicate(plate, vin, engine) {
+            try {
+                const params = new URLSearchParams();
+                if (plate) params.append('licensePlate', plate);
+                if (vin) params.append('vinNumber', vin);
+                if (engine) params.append('engineNumber', engine);
+
+                if (!plate && !vin && !engine) return { success: true, data: {} };
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+                const resp = await fetch(`${API_BASE_URL}/CarOfAutoOwner/check-duplicate?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token') || ''}` },
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!resp.ok) {
+                    console.warn('Skip duplicate check, status:', resp.status);
+                    return { success: true, data: {} };
+                }
+
+                const data = await resp.json().catch(() => ({}));
+                return data;
+            } catch (e) {
+                console.warn('Skip duplicate check due to error:', e);
+                return { success: true, data: {} };
+            }
+        }
+        
+        function validateCarForm() {
+            const errors = [];
+            const carName = document.getElementById('carName').value.trim();
+            const carModel = document.getElementById('carModel').value.trim();
+            const vehicleTypeId = document.getElementById('vehicleTypeId').value;
+            const carColor = document.getElementById('carColor').value.trim();
+            const yearOfManufacture = document.getElementById('yearOfManufacture').value;
+            const vinNumber = document.getElementById('vinNumber').value.trim();
+            const vehicleEngineNumber = document.getElementById('vehicleEngineNumber').value.trim();
+            // Chuẩn hoá biển số: bỏ khoảng trắng/dấu chấm, upper-case
+            const licensePlate = document.getElementById('licensePlate').value
+                .trim()
+                .replace(/\s+/g, '')
+                .toUpperCase();
+
+            if (carName.length < 2 || carName.length > 30) {
+                errors.push('Tên phương tiện phải từ 2-30 ký tự.');
+            }
+            if (carModel.length < 1 || carModel.length > 20) {
+                errors.push('Model phải từ 1-20 ký tự.');
+            }
+            if (!vehicleTypeId) {
+                errors.push('Vui lòng chọn loại phương tiện.');
+            }
+            if (carColor.length < 1 || carColor.length > 10) {
+                errors.push('Màu xe phải từ 1-10 ký tự.');
+            }
+            const currentYear = new Date().getFullYear();
+            const year = parseInt(yearOfManufacture, 10);
+            if (isNaN(year) || year < 1950 || year > currentYear + 1) {
+                errors.push(`Năm sản xuất phải từ 1950 đến ${currentYear + 1}.`);
+            }
+            const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
+            if (vinNumber.length !== 17 || !vinRegex.test(vinNumber.toUpperCase())) {
+                errors.push('Số khung (VIN) phải đúng 17 ký tự (không chứa I, O, Q).');
+            }
+            const engineRegex = /^[A-Z0-9\-]{5,20}$/i;
+            if (!engineRegex.test(vehicleEngineNumber)) {
+                errors.push('Số máy phải gồm 5-20 ký tự chữ số hoặc dấu gạch ngang.');
+            }
+            // Biển số: bám gần regex BE (30A-12345, 30A-123.45, 59N-12345,...)
+            const plateRegex = /^(?:[0-9]{2}[A-Z]-[0-9]{2}\.[0-9]{3}|[0-9]{2}[A-Z]-[0-9]{3}\.[0-9]{2}|[0-9]{2}[A-Z]-?[0-9]{4,5})$/;
+            if (!plateRegex.test(licensePlate)) {
+                errors.push('Biển số không hợp lệ. Ví dụ: 30A-12345, 30A-123.45, 59N-12345.');
+            }
+
+            if (errors.length) {
+                showNotification(errors.join('<br>'), 'error');
+                return { isValid: false };
+            }
+            return { isValid: true, licensePlate };
+        }
+
+        // Submit add car form
+        function submitAddCarForm() {
+            if (!currentUser || !currentUser.id) {
+                showNotification('Không tìm thấy thông tin người dùng', 'error');
+                return;
+            }
+            
+            const form = document.getElementById('addCarForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const validation = validateCarForm();
+            if (!validation.isValid) {
+                return;
+            }
+            
+            const formData = {
+                userId: currentUser.id,
+                carName: document.getElementById('carName').value,
+                carModel: document.getElementById('carModel').value,
+                vehicleTypeId: parseInt(document.getElementById('vehicleTypeId').value),
+                color: document.getElementById('carColor').value,
+                yearOfManufacture: parseInt(document.getElementById('yearOfManufacture').value),
+                vinNumber: document.getElementById('vinNumber').value,
+                vehicleEngineNumber: document.getElementById('vehicleEngineNumber').value,
+                licensePlate: validation.licensePlate
+                // Không gửi branchId vì xe của khách hàng không cần chi nhánh
+            };
+            
+            // Lấy token từ localStorage - thử nhiều key có thể
+            let token = localStorage.getItem('authToken') || localStorage.getItem('token');
+            
+            // Nếu vẫn không có, thử lấy từ userInfo
+            if (!token) {
+                const userInfo = localStorage.getItem('userInfo');
+                if (userInfo) {
+                    try {
+                        const userInfoObj = JSON.parse(userInfo);
+                        token = userInfoObj.token;
+                    } catch (e) {
+                        console.error('Error parsing userInfo:', e);
+                    }
+                }
+            }
+            
+            if (!token) {
+                showNotification('Bạn cần đăng nhập để thực hiện thao tác này. Vui lòng đăng nhập lại.', 'warning');
+                console.error('Token not found in localStorage. Available keys:', Object.keys(localStorage));
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('addCarSubmitBtn');
+            if (!submitBtn) {
+                showNotification('Không tìm thấy nút submit', 'error');
+                return;
+            }
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
+            
+            // Check duplicates before submit
+            const plate = formData.licensePlate;
+            const vin = formData.vinNumber;
+            const engine = formData.vehicleEngineNumber;
+            
+            checkCarDuplicate(plate, vin, engine)
+                .then(result => {
+                    if (result && result.success === false && result.message) {
+                        throw new Error(result.message);
+                    }
+                    if (result && result.data) {
+                        const { licensePlateExists, vinNumberExists, engineNumberExists } = result.data;
+                        const dupMessages = [];
+                        if (licensePlateExists) dupMessages.push('Biển số xe đã tồn tại.');
+                        if (vinNumberExists) dupMessages.push('Số khung (VIN) đã tồn tại.');
+                        if (engineNumberExists) dupMessages.push('Số máy đã tồn tại.');
+                        if (dupMessages.length) {
+                            throw new Error(dupMessages.join('<br>'));
+                        }
+                    }
+                    
+                    // Timeout guard to avoid stuck spinner
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                    return fetch(`${API_BASE_URL}/CarOfAutoOwner`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formData),
+                        signal: controller.signal
+                    }).finally(() => clearTimeout(timeoutId));
+                })
+                .then(async response => {
+                    // Đọc body một lần, ưu tiên parse JSON
+                    let rawText = '';
+                    let responseData = {};
+                    try {
+                        rawText = await response.text();
+                        try {
+                            responseData = JSON.parse(rawText);
+                        } catch {
+                            responseData = { message: rawText };
+                        }
+                    } catch { /* ignore */ }
+
+                    if (!response.ok) {
+                        const serverMsg = responseData?.message || responseData?.error || responseData?.title;
+                        let errorMessage = serverMsg || 'Đã xảy ra lỗi khi thêm xe.';
+
+                        if (!serverMsg && responseData?.errors) {
+                            const firstKey = Object.keys(responseData.errors)[0];
+                            if (firstKey) {
+                                errorMessage = responseData.errors[firstKey]?.join('<br>') || errorMessage;
+                            }
+                        }
+
+                        if (response.status === 400 && !serverMsg && !responseData?.errors) {
+                            errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra: biển số (đúng định dạng), VIN 17 ký tự, số máy 5-20 ký tự.';
+                        } else if (response.status === 500 && !serverMsg) {
+                            errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+                        }
+
+                        console.error('Add car failed', { status: response.status, body: responseData, rawText });
+                        throw new Error(errorMessage);
+                    }
+
+                    return responseData;
+                })
+                .then(data => {
+                    showNotification('Thêm xe thành công!', 'success');
+                    const modalElement = document.getElementById('addCarModal');
+                    if (modalElement) {
+                        let modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        if (!modalInstance) {
+                            modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+                        }
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+                    cleanupModalBackdrop();
+                    document.getElementById('addCarForm').reset();
+                    loadUserCars();
+                })
+                .catch(error => {
+                    console.error('Error adding car:', error);
+                    if (error.name === 'AbortError') {
+                        showNotification('Quá thời gian chờ khi thêm xe. Vui lòng thử lại.', 'error');
+                    } else {
+                        showNotification(error.message || 'Có lỗi xảy ra khi thêm xe.', 'error');
+                    }
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+        }
+
+        function cleanupModalBackdrop() {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        }
+        
+        // Reset add car form
+        function resetAddCarForm() {
+            const form = document.getElementById('addCarForm');
+            if (form) {
+                form.reset();
+            }
+        }
+    </script>
+}

@@ -1,0 +1,148 @@
+<!-- Top Bar -->
+<div class="top-bar">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <span class="top-bar-text">
+                    <i class="fas fa-phone"></i> Bạn có câu hỏi? Gọi ngay: <strong>1900 110 89</strong>
+                </span>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="top-bar-text">
+                    <i class="fas fa-envelope"></i> apmms.manage.services@gmail.com
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+        <!-- Logo -->
+        <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-car"></i>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-main">APMMS</span>
+                    <span class="logo-sub">Auto Parts Management</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Menu -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")" href="@Url.Action("Index", "Home")">Trang chủ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "About" ? "active" : "")" href="@Url.Action("About", "Home")">Giới thiệu</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Services" ? "active" : "")" href="@Url.Action("Services", "Home")">Dịch vụ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Contact" ? "active" : "")" href="@Url.Action("Contact", "Home")">Liên hệ</a>
+                </li>
+                <li class="nav-item">
+                    <!-- Login Button (shown when not logged in) -->
+                    <button type="button" class="btn btn-primary btn-sm ms-2" id="loginBtn" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                    </button>
+                    
+                    <!-- Profile Dropdown (shown when logged in) -->
+                    <div class="dropdown profile-dropdown" id="profileDropdown" style="display: none;">
+                        <button class="btn btn-outline-primary btn-sm ms-2 dropdown-toggle profile-btn" type="button" id="profileDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTE2IDE2QzE4LjIwOTEgMTYgMjAgMTQuMjA5MSAyMCAxMkMyMCA5Ljc5MDg2IDE4LjIwOTEgOCAxNiA4QzEzLjc5MDkgOCAxMiA5Ljc5MDg2IDEyIDEyQzEyIDE0LjIwOTEgMTMuNzkwOSAxNiAxNiAxNloiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNiAxOEMxMi42ODYzIDE4IDEwIDIwLjY4NjMgMTAgMjRIMjJDMTggMjAuNjg2MyAxNS4zMTM3IDE4IDE2IDE4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==" alt="Avatar" class="profile-avatar" id="profileAvatar">
+                            <span class="profile-name" id="profileName">Tên người dùng</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end profile-menu" aria-labelledby="profileDropdownToggle">
+                            <li>
+                                <a class="dropdown-item profile-menu-item" href="/Profile">
+                                    <i class="fas fa-user"></i>
+                                    <span>Hồ sơ</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item profile-menu-item" href="@Url.Action("Index", "Profile")?section=cars">
+                                    <i class="fas fa-truck"></i>
+                                    <span>Thông tin xe</span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item profile-menu-item logout-item" href="#" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Đăng xuất</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // ✅ Hiển thị họ tên thay vì username trong header
+    // Sử dụng hàm từ site.js để tránh lỗi Razor compilation
+    (function() {
+        function updateProfileName() {
+            const profileNameEl = document.getElementById('profileName');
+            if (!profileNameEl) return;
+            
+            const userInfoStr = localStorage.getItem('userInfo');
+            if (!userInfoStr) return;
+            
+            try {
+                const userInfo = JSON.parse(userInfoStr);
+                
+                // ✅ Ưu tiên hiển thị firstName + lastName
+                let displayName = 'Người dùng';
+                if (userInfo.firstName && userInfo.lastName) {
+                    displayName = (userInfo.firstName + ' ' + userInfo.lastName).trim();
+                } else if (userInfo.fullName) {
+                    displayName = userInfo.fullName;
+                } else if (userInfo.username) {
+                    displayName = userInfo.username;
+                }
+                
+                if (profileNameEl.textContent !== displayName) {
+                    profileNameEl.textContent = displayName;
+                }
+            } catch (error) {
+                console.error('Error updating profile name:', error);
+            }
+        }
+        
+        // Chạy khi DOM ready
+        function init() {
+            updateProfileName();
+            setTimeout(updateProfileName, 300);
+            setTimeout(updateProfileName, 1000);
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        // Lắng nghe storage event
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'userInfo') {
+                updateProfileName();
+            }
+        });
+    })();
+</script>

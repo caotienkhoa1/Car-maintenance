@@ -1,0 +1,328 @@
+@{
+    ViewData["Title"] = "Thêm người dùng mới";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Thêm người dùng mới</h4>
+                </div>
+                <div class="card-body">
+                    <form id="userForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">Họ <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName"
+                                           maxlength="100" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName"
+                                           maxlength="100" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="username" name="username"
+                                           minlength="6" maxlength="12" pattern="[a-zA-Z0-9_]+" required>
+                                    <small class="form-text text-muted">6-12 ký tự, chữ/số/gạch dưới</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="password" name="password"
+                                           minlength="6" maxlength="12" required>
+                                    <small class="form-text text-muted">6-12 ký tự</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                           minlength="6" maxlength="12" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                           maxlength="100" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone"
+                                           maxlength="20" pattern="0[3|5|7|8|9][0-9]{8}">
+                                    <small class="form-text text-muted">10 số, bắt đầu 0[3,5,7,8,9]</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="citizenId" class="form-label">Căn cước công dân (CCCD)</label>
+                                    <input type="text" class="form-control" id="citizenId" name="citizenId"
+                                           maxlength="12" pattern="[0-9]{12}">
+                                    <small class="form-text text-muted">12 chữ số</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Giới tính</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="">Chọn</option>
+                                        <option value="Male">Nam</option>
+                                        <option value="Female">Nữ</option>
+                                        <option value="Other">Khác</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dob" class="form-label">Ngày sinh</label>
+                                    <input type="date" class="form-control" id="dob" name="dob">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchId" class="form-label">Chi nhánh</label>
+                                    <select class="form-select" id="branchId" name="branchId">
+                                        <option value="">Chọn chi nhánh</option>
+                                    </select>
+                                </div>
+                            </div>
+                            @* <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="taxCode" class="form-label">Mã số thuế</label>
+                                    <input type="text" class="form-control" id="taxCode" name="taxCode">
+                                </div>
+                            </div> *@
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
+                            <label class="form-check-label" for="isActive">Kích hoạt tài khoản</label>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/Users" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Quay lại</a>
+                            <button type="submit" class="btn btn-outline-primary"><i class="fas fa-save"></i> Lưu</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Use global API base URL configured in _DashboardLayout
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadBranches();
+            document.getElementById('userForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                createUser();
+            });
+        });
+
+        let isSubmitting = false;
+
+        function createUser() {
+            if (isSubmitting) return; // prevent spam click
+
+            // basic client validations
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const citizenId = document.getElementById('citizenId').value.trim();
+            const dob = document.getElementById('dob').value;
+
+            if (!firstName || !lastName || !username || !password || !confirmPassword || !email) {
+                showAlert('Vui lòng nhập đủ các trường bắt buộc.', 'danger');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('Mật khẩu xác nhận không khớp!', 'danger');
+                return;
+            }
+
+            // phone format VN
+            if (phone) {
+                const phoneClean = phone.replace(/\s+/g, '').replace(/-/g, '');
+                if (!/^0[3|5|7|8|9][0-9]{8}$/.test(phoneClean)) {
+                    showAlert('Số điện thoại không hợp lệ (0[3,5,7,8,9] + 8 số).', 'danger');
+                    return;
+                }
+            }
+
+            // citizenId 12 digits
+            if (citizenId && !/^[0-9]{12}$/.test(citizenId.replace(/\s+/g, '').replace(/-/g, ''))) {
+                showAlert('CCCD phải đúng 12 chữ số.', 'danger');
+                return;
+            }
+
+            // DOB >= 18, not future
+            if (dob) {
+                const dobDate = new Date(dob + 'T00:00:00');
+                const today = new Date();
+                if (isNaN(dobDate.getTime())) {
+                    showAlert('Ngày sinh không hợp lệ.', 'danger');
+                    return;
+                }
+                if (dobDate > today) {
+                    showAlert('Ngày sinh không được ở tương lai.', 'danger');
+                    return;
+                }
+                let age = today.getFullYear() - dobDate.getFullYear();
+                const md = today.getMonth() - dobDate.getMonth();
+                if (md < 0 || (md === 0 && today.getDate() < dobDate.getDate())) age--;
+                if (age < 18) {
+                    showAlert('Khách hàng phải từ 18 tuổi trở lên.', 'danger');
+                    return;
+                }
+            }
+
+            const userData = {
+                firstName: firstName,
+                lastName: lastName,
+                username: username,
+                password: password,
+                email: email,
+                phone: phone || null,
+                citizenId: citizenId || null,
+                gender: document.getElementById('gender').value || null,
+                dob: dob || null,
+                branchId: document.getElementById('branchId').value || null,
+                address: document.getElementById('address').value.trim() || null,
+                statusCode: document.getElementById('isActive').checked ? 'ACTIVE' : 'INACTIVE'
+            };
+
+            // lock UI
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+            isSubmitting = true;
+
+            fetch(`${API_BASE_URL}/autoowner`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(userData)
+            })
+
+                .then(async (response) => {
+                    if (response.ok) {
+                        showAlert('Thêm người dùng thành công!', 'success');
+                        setTimeout(() => window.location.href = '/Users', 1500);
+                    } else {
+                        let msg = 'Không thể thêm người dùng.';
+                        try {
+                            const ct = response.headers.get('content-type');
+                            if (ct && ct.includes('application/json')) {
+                                const data = await response.json();
+                                if (data?.message) msg = data.message;
+                                else if (data?.errors && Array.isArray(data.errors)) msg = data.errors.join(', ');
+                                else if (data?.error) msg = data.error;
+                            } else {
+                                msg = await response.text();
+                            }
+                        } catch (err) {
+                            console.error('Parse error:', err);
+                        }
+                        showAlert(msg, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Có lỗi xảy ra khi thêm người dùng.', 'danger');
+                })
+                .finally(() => {
+                    isSubmitting = false;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+        }
+        function loadBranches() {
+            const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+
+            fetch(`${apiBaseUrl}/Branch`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Không thể tải danh sách chi nhánh');
+                    return response.json();
+                })
+                .then(result => {
+                    if (!result.success || !Array.isArray(result.data)) {
+                        throw new Error('Dữ liệu chi nhánh không hợp lệ');
+                    }
+
+                    const branches = result.data;
+                    const branchSelect = document.getElementById('branchId');
+                    branchSelect.innerHTML = '<option value="">Chọn chi nhánh</option>'; // reset trước khi append
+
+                    branches.forEach(branch => {
+                        const option = document.createElement('option');
+                        option.value = branch.id;       // giá trị gửi về backend
+                        option.textContent = branch.name; // tên hiển thị
+                        branchSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('❌ Lỗi load branch:', error);
+                    showAlert('Không thể tải danh sách chi nhánh', 'danger');
+                });
+        }
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+            alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('form'));
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+}

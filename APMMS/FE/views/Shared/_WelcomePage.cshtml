@@ -1,0 +1,187 @@
+<!-- Welcome Page (Default) -->
+<div id="welcome-page" class="page-content active">
+    <div class="welcome-container">
+        <!-- Header Section -->
+        <div class="welcome-header mb-4">
+            <h1 class="display-5 fw-normal mb-2" style="color: #000000;">Chào mừng đến với APMMS</h1>
+            <p class="text-muted" style="color: #333333;">Hệ thống Quản lý Phụ tùng & Bảo dưỡng Ô tô</p>
+        </div>
+
+        <!-- Dashboard Statistics -->
+        <div id="dashboardStatsSection">
+            <!-- Hàng 1: Doanh thu -->
+            <div class="row mb-3">
+                <div class="col-md-6 mb-3" id="card-todayRevenue">
+                    <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                    <i class="fas fa-money-bill-wave fa-2x text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="text-muted mb-1 small">Doanh thu hôm nay</h6>
+                                <h4 class="mb-0 fw-bold" id="todayRevenue">0 VNĐ</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" id="card-monthRevenue">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-chart-line fa-2x text-success"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">Doanh thu tháng này</h6>
+                                    <h4 class="mb-0 fw-bold" id="monthRevenue">0 VNĐ</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hàng 2: Tình trạng bảo dưỡng -->
+            <div class="row mb-3">
+                <div class="col-md-4 mb-3" id="card-maintenanceInProgress">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-wrench fa-2x text-warning"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">🔧 Đang xử lý</h6>
+                                    <h4 class="mb-0 fw-bold" id="maintenanceInProgress">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3" id="card-maintenancePending">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-clock fa-2x text-info"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">⏳ Chờ xử lý</h6>
+                                    <h4 class="mb-0 fw-bold" id="maintenancePending">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3" id="card-maintenanceCompletedToday">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">✅ Hoàn thành hôm nay</h6>
+                                    <h4 class="mb-0 fw-bold" id="maintenanceCompletedToday">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hàng 3: Lịch hẹn -->
+            <div class="row mb-3">
+                <div class="col-md-6 mb-3" id="card-todaySchedules">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-calendar-day fa-2x text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">📅 Lịch hẹn hôm nay</h6>
+                                    <h4 class="mb-0 fw-bold" id="todaySchedules">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3" id="card-weekSchedules">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-calendar-week fa-2x text-info"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">📆 Lịch hẹn tuần này</h6>
+                                    <h4 class="mb-0 fw-bold" id="weekSchedules">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hàng 4: Phụ tùng -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3" id="card-totalPartsIssuedToday">
+                    <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                    <i class="fas fa-box-open fa-2x text-warning"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">📦 Phụ tùng xuất hôm nay</h6>
+                                    <h4 class="mb-0 fw-bold" id="totalPartsIssuedToday">0 món</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3" id="card-totalPartsValueToday">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-file-invoice-dollar fa-2x text-danger"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                    <h6 class="text-muted mb-1 small">💰 Giá trị phụ tùng xuất</h6>
+                                    <h4 class="mb-0 fw-bold" id="totalPartsValueToday">0 VNĐ</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Schedule Alert -->
+        <div class="row mb-4" id="todayScheduleAlert" style="display: none;">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="mb-3 fw-normal">
+                            <i class="fas fa-calendar-day me-2 text-muted"></i>
+                            Lịch hẹn hôm nay
+                        </h6>
+                        <p class="mb-2" id="todayScheduleMessage">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Đang tải lịch hẹn...
+                        </p>
+                        <div id="todayScheduleList" class="mt-2"></div>
+                        <div class="mt-3">
+                            <a href="/ServiceSchedules" class="btn btn-sm btn-outline-secondary">
+                                Xem tất cả lịch hẹn
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

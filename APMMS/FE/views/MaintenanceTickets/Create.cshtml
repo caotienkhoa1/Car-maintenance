@@ -1,0 +1,573 @@
+@{
+    ViewData["Title"] = "Tạo Phiếu Bảo Dưỡng";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Tạo Phiếu Bảo Dưỡng từ Vehicle Check-in
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Step 1: Select Vehicle Check-in -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-list me-2"></i>
+                                Bước 1: Chọn Vehicle Check-in
+                            </h5>
+                        </div>
+                    </div>
+
+                    <!-- Filter for Vehicle Check-ins -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="checkinStatusFilter" class="form-label">Trạng thái Check-in</label>
+                            <select class="form-select" id="checkinStatusFilter">
+                                <option value="">Tất cả</option>
+                                <option value="CHECKED_IN">Đã check-in</option>
+                                <option value="PENDING">Chờ xử lý</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="checkinSearchInput" class="form-label">Tìm kiếm</label>
+                            <input type="text" class="form-control" id="checkinSearchInput" placeholder="Tìm theo xe, khách hàng...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="checkinDateFilter" class="form-label">Ngày check-in</label>
+                            <input type="date" class="form-control" id="checkinDateFilter">
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Check-ins Table -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Chọn</th>
+                                    <th>Mã Check-in</th>
+                                    <th>Xe</th>
+                                    <th>Khách hàng</th>
+                                    <th>Số km</th>
+                                    <th>Ghi chú</th>
+                                    <th>Ngày check-in</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicleCheckinsTableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Selected Check-in Info -->
+                    <div id="selectedCheckinInfo" class="card bg-light mb-4" style="display: none;">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Thông tin Check-in đã chọn
+                            </h6>
+                </div>
+                <div class="card-body">
+                            <div class="row" id="selectedCheckinDetails">
+                                <!-- Selected check-in details will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Maintenance Ticket Details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-wrench me-2"></i>
+                                Bước 2: Thông tin Phiếu Bảo Dưỡng
+                            </h5>
+                        </div>
+                    </div>
+
+                    <form id="maintenanceTicketForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="consulterId" class="form-label">Tư vấn viên <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="consulterId" required>
+                                        <option value="">Chọn tư vấn viên</option>
+                                        <!-- Will be loaded dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- ✅ QUY TRÌNH ĐÚNG: Không cho phép chọn kỹ thuật viên khi tạo phiếu -->
+                            <!-- Kỹ thuật viên chỉ được gán sau khi phiếu được tạo, thông qua trang Details -->
+                            <!--
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Kỹ thuật viên</label>
+                                    <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa;" id="techniciansContainer">
+                                        <div class="text-center text-muted py-3">
+                                            <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách kỹ thuật viên...
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Chọn một hoặc nhiều kỹ thuật viên</small>
+                                    
+                                    <div class="mt-3 border rounded p-2" id="selectedTechniciansPreview" style="background-color: #e7f3ff; display: none;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <strong class="text-primary">
+                                                <i class="fas fa-users me-1"></i>
+                                                Đã chọn: <span id="selectedCount">0</span> kỹ thuật viên
+                                            </strong>
+                                        </div>
+                                        <div id="selectedTechniciansList" class="text-muted small">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            -->
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchId" class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                    <input type="hidden" id="branchIdHidden" />
+                                    <select class="form-select" id="branchId" required disabled>
+                                        <option value="">Chọn chi nhánh</option>
+                                        <!-- Will be loaded dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serviceCategoryId" class="form-label">Nhóm dịch vụ</label>
+                                    <select class="form-select" id="serviceCategoryId">
+                                        <option value="">Chọn nhóm dịch vụ (tuỳ chọn)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Ẩn trường dịch vụ đã lên lịch vì API chưa sẵn sàng -->
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="priorityLevel" class="form-label">Mức độ ưu tiên</label>
+                                    <select class="form-select" id="priorityLevel">
+                                        <option value="NORMAL">Bình thường</option>
+                                        <option value="HIGH">Cao</option>
+                                        <option value="URGENT">Khẩn cấp</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                        <div class="mb-3">
+                                    <label for="description" class="form-label">Mô tả bảo dưỡng</label>
+                                    <textarea class="form-control" id="description" rows="3" placeholder="Mô tả chi tiết về công việc bảo dưỡng cần thực hiện..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/MaintenanceTickets" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>
+                                        Quay lại
+                            </a>
+                                    <button type="submit" class="btn btn-outline-primary" id="createTicketBtn">
+                                        <i class="fas fa-save me-1"></i>
+                                        Tạo phiếu bảo dưỡng
+                            </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedCheckinId = null;
+
+$(document).ready(function() {
+    loadVehicleCheckins();
+    loadConsulterFromToken();
+    // loadTechniciansByRole(); // ✅ Đã comment - không cho phép chọn kỹ thuật viên khi tạo
+    loadBranchesAndSelectUserBranch();
+    loadServiceCategories();
+    
+    // Filter events
+    $('#checkinStatusFilter, #checkinSearchInput, #checkinDateFilter').on('change keyup', function() {
+        loadVehicleCheckins();
+    });
+    
+    // ✅ Đã comment - không cần xử lý checkbox kỹ thuật viên
+    // $(document).on('change', '.technician-checkbox', function() {
+    //     updateSelectedTechniciansPreview();
+    // });
+    
+    // Form submission
+    $('#maintenanceTicketForm').on('submit', function(e) {
+        e.preventDefault();
+        createMaintenanceTicket();
+    });
+});
+
+function loadVehicleCheckins() {
+    const status = $('#checkinStatusFilter').val();
+    const search = $('#checkinSearchInput').val();
+    const date = $('#checkinDateFilter').val();
+    
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+    if (date) params.append('date', date);
+    
+    fetch(`/VehicleCheckins/ListData?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayVehicleCheckins(data.data);
+            } else {
+                showAlert('Lỗi tải dữ liệu check-in: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Có lỗi xảy ra khi tải dữ liệu check-in', 'danger');
+        });
+}
+
+function displayVehicleCheckins(checkins) {
+    const tbody = $('#vehicleCheckinsTableBody');
+    tbody.empty();
+    
+    if (checkins.length === 0) {
+        tbody.append(`
+            <tr>
+                <td colspan="8" class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">Không có vehicle check-in nào</p>
+                </td>
+            </tr>
+        `);
+        return;
+    }
+    
+    checkins.forEach(checkin => {
+        // Only show check-ins that don't have maintenance ticket yet
+        if (checkin.maintenanceRequestId) {
+            return; // Skip check-ins that already have maintenance ticket
+        }
+        
+        const statusBadge = getCheckinStatusBadge(checkin.statusCode);
+        const createdAt = new Date(checkin.createdAt).toLocaleDateString('vi-VN');
+        const mileage = checkin.mileage ? checkin.mileage.toLocaleString() + ' km' : 'N/A';
+        const notes = checkin.notes ? (checkin.notes.length > 50 ? checkin.notes.substring(0, 50) + '...' : checkin.notes) : 'Không có';
+        
+        tbody.append(`
+            <tr>
+                <td>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="checkinSelect" value="${checkin.id}" 
+                               onchange="selectCheckin(${checkin.id})">
+                    </div>
+                </td>
+                <td>
+                    <strong>${checkin.code || 'VCI-' + checkin.id}</strong>
+                </td>
+                <td>
+                    <div>
+                        <strong>${checkin.carName || 'N/A'}</strong>
+                        <br>
+                        <small class="text-muted">${checkin.licensePlate || 'N/A'}</small>
+                    </div>
+                </td>
+                <td>${checkin.customerName || 'N/A'}</td>
+                <td>${mileage}</td>
+                <td title="${checkin.notes || ''}">${notes}</td>
+                <td>${createdAt}</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `);
+    });
+}
+
+function getCheckinStatusBadge(statusCode) {
+    const statusMap = {
+        'PENDING': { class: 'bg-warning', text: 'Chờ xử lý' },
+        'CHECKED_IN': { class: 'bg-info', text: 'Đã check-in' },
+        'CANCELLED': { class: 'bg-danger', text: 'Đã hủy' }
+    };
+    
+    const status = statusMap[statusCode] || { class: 'bg-secondary', text: statusCode };
+    return `<span class="badge ${status.class}">${status.text}</span>`;
+}
+
+function selectCheckin(checkinId) {
+    selectedCheckinId = checkinId;
+    
+    // Get check-in details
+    fetch(`/VehicleCheckins/GetById/${checkinId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySelectedCheckin(data.data);
+                $('#selectedCheckinInfo').show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+function displaySelectedCheckin(checkin) {
+    const details = $('#selectedCheckinDetails');
+    const createdAt = new Date(checkin.createdAt).toLocaleDateString('vi-VN');
+    const mileage = checkin.mileage ? checkin.mileage.toLocaleString() + ' km' : 'N/A';
+    
+    details.html(`
+        <div class="col-md-3">
+            <strong>Mã Check-in:</strong><br>
+            ${checkin.code || 'VCI-' + checkin.id}
+        </div>
+        <div class="col-md-3">
+            <strong>Xe:</strong><br>
+            ${checkin.carName || 'N/A'}<br>
+            <small class="text-muted">${checkin.licensePlate || 'N/A'}</small>
+        </div>
+        <div class="col-md-3">
+            <strong>Khách hàng:</strong><br>
+            ${checkin.customerName || 'N/A'}
+        </div>
+        <div class="col-md-3">
+            <strong>Số km:</strong><br>
+            ${mileage}
+        </div>
+        <div class="col-12 mt-2">
+            <strong>Ghi chú:</strong><br>
+            ${checkin.notes || 'Không có ghi chú'}
+        </div>
+        <div class="col-12 mt-2">
+            <strong>Ảnh tình trạng:</strong><br>
+            ${checkin.firstImageUrl ? 
+                `<img src="${checkin.firstImageUrl}" alt="Ảnh xe" class="img-thumbnail" style="max-width: 200px;">` : 
+                'Không có ảnh'
+            }
+        </div>
+    `);
+}
+
+function loadConsulterFromToken() {
+    const token = localStorage.getItem('authToken');
+            const select = $('#consulterId');
+    select.empty();
+    if (!token) {
+        select.append('<option value="">Không xác định tư vấn viên</option>');
+        return;
+    }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+        const userName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || 'consulter';
+        select.append(`<option value="${userId}" selected>${userName}</option>`);
+        select.prop('disabled', true);
+    } catch (e) {
+        console.error('Token parse error:', e);
+        select.append('<option value="">Không xác định tư vấn viên</option>');
+    }
+}
+
+
+function loadBranchesAndSelectUserBranch() {
+    const token = localStorage.getItem('authToken');
+    let userId = null;
+    try {
+        if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+        }
+    } catch {}
+
+    const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+
+    // Tải danh sách chi nhánh
+    fetch(`${API_BASE_URL}/Branch`)
+        .then(response => response.json())
+        .then(branchRes => {
+            const select = $('#branchId');
+            select.find('option:not(:first)').remove();
+            if (branchRes.success && branchRes.data) {
+                branchRes.data.forEach(branch => {
+                    select.append(`<option value="${branch.id}">${branch.name}</option>`);
+                });
+            }
+
+            if (!userId) return;
+            // Lấy thông tin nhân viên để biết chi nhánh
+            fetch(`${API_BASE_URL}/Employee/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(async r => {
+                    if (!r.ok) throw new Error(`Employee fetch failed: ${r.status}`);
+                    return r.json();
+                })
+                .then(empRes => {
+                    if (!empRes || empRes.success !== true || !empRes.data) throw new Error('Empty employee');
+                    const emp = empRes.data;
+                    // Prefer branchId if available
+                    if (emp.branchId) {
+                        $('#branchId').val(String(emp.branchId));
+                        $('#branchIdHidden').val(String(emp.branchId));
+                        $('#branchNameDisplay').text(emp.branchName || $('#branchId option:selected').text());
+                    } else if (emp.branchName) {
+                    $('#branchId option').each(function() {
+                        if ($(this).text() === emp.branchName) {
+                            $('#branchId').val($(this).val());
+                        }
+                    });
+                        $('#branchIdHidden').val($('#branchId').val());
+                        $('#branchNameDisplay').text(emp.branchName);
+                    }
+                    // Disable to enforce consulter's branch
+                    $('#branchId').prop('disabled', true);
+                })
+                .catch(err => {
+                    console.warn('Employee fetch error, blocking submit:', err);
+                    $('#branchNameDisplay').text('Không lấy được chi nhánh');
+                    // Block submit if cannot resolve branch
+                    $('#createTicketBtn').prop('disabled', true).text('Không thể tạo - thiếu chi nhánh');
+                });
+        })
+        .catch(error => {
+            console.error('Error loading branches:', error);
+            $('#branchNameDisplay').text('Không lấy được danh sách chi nhánh');
+            $('#createTicketBtn').prop('disabled', true).text('Không thể tạo - lỗi chi nhánh');
+        });
+}
+
+function loadScheduleServices() {
+    // Load schedule services from API
+    fetch('/api/ServiceSchedule')
+        .then(response => response.json())
+        .then(data => {
+            const select = $('#scheduleServiceId');
+            if (data.success && data.data) {
+                data.data.forEach(service => {
+                    select.append(`<option value="${service.id}">${service.name}</option>`);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading schedule services:', error);
+        });
+}
+
+function loadServiceCategories() {
+    const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+    fetch(`${API_BASE_URL}/ServiceCategory`)
+        .then(r => r.json())
+        .then(res => {
+            const select = $('#serviceCategoryId');
+            select.find('option:not(:first)').remove();
+            if (res && res.success && Array.isArray(res.data)) {
+                res.data.forEach(item => {
+                    select.append(`<option value="${item.id}">${item.name}</option>`);
+                });
+            }
+        })
+        .catch(err => console.error('Error loading service categories:', err));
+}
+
+function createMaintenanceTicket() {
+    if (!selectedCheckinId) {
+        showAlert('Vui lòng chọn vehicle check-in', 'warning');
+        return;
+    }
+    
+    // ✅ QUY TRÌNH ĐÚNG: Không gán kỹ thuật viên khi tạo phiếu
+    // Kỹ thuật viên chỉ được gán sau khi phiếu được tạo
+    
+    const formData = {
+        vehicleCheckinId: selectedCheckinId,
+        consulterId: $('#consulterId').val(),
+        technicianId: null, // ✅ Luôn null khi tạo phiếu
+        technicianIds: null, // ✅ Luôn null khi tạo phiếu
+        branchId: $('#branchIdHidden').val(),
+        scheduleServiceId: $('#scheduleServiceId')?.val?.() || null,
+        serviceCategoryId: $('#serviceCategoryId').val() || null,
+        priorityLevel: $('#priorityLevel').val(),
+        description: $('#description').val()
+    };
+
+    if (!formData.branchId) {
+        showAlert('Không lấy được chi nhánh của tư vấn viên. Vui lòng đăng nhập lại hoặc thử lại.', 'danger');
+        return;
+    }
+    
+    // Validation
+    if (!formData.consulterId || !formData.branchId) {
+        showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+        return;
+    }
+    
+    // Show loading
+    const submitBtn = $('#createTicketBtn');
+    const originalText = submitBtn.html();
+    submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Đang tạo...');
+    submitBtn.prop('disabled', true);
+    
+    fetch('/MaintenanceTickets/CreateFromCheckin', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Tạo phiếu bảo dưỡng thành công!', 'success');
+            setTimeout(() => {
+                window.location.href = '/MaintenanceTickets';
+            }, 1500);
+        } else {
+            showAlert('Lỗi tạo phiếu bảo dưỡng: ' + data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Có lỗi xảy ra khi tạo phiếu bảo dưỡng', 'danger');
+    })
+    .finally(() => {
+        submitBtn.html(originalText);
+        submitBtn.prop('disabled', false);
+    });
+}
+
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    $('body').append(alertHtml);
+    
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 3000);
+}
+</script>

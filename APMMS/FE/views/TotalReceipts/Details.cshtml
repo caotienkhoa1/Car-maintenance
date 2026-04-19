@@ -1,0 +1,2040 @@
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+    var totalReceiptId = ViewBag.TotalReceiptId ?? 0;
+}
+
+<style>
+    .invoice-header-card {
+        border-radius: 1rem;
+        box-shadow: var(--bs-box-shadow-sm);
+    }
+
+    .invoice-status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .invoice-status-badge.pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #b78000;
+    }
+
+    .invoice-status-badge.paid {
+        background: rgba(25, 135, 84, 0.15);
+        color: #157347;
+    }
+
+    .summary-tile {
+        border: 1px solid rgba(13, 110, 253, 0.12);
+        border-radius: 0.85rem;
+        padding: 1rem 1.2rem;
+        background: rgba(13, 110, 253, 0.03);
+    }
+
+    .summary-tile .label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--bs-secondary);
+        margin-bottom: 0.35rem;
+    }
+
+    .summary-tile .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .table thead th {
+        background-color: rgba(13, 110, 253, 0.05);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+    }
+
+    .table tbody td {
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    .cost-summary-card {
+        border-radius: 0.85rem;
+        border: 1px solid var(--bs-border-color);
+        box-shadow: var(--bs-box-shadow-sm);
+    }
+
+    .cost-summary-card .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+        font-size: 0.95rem;
+    }
+
+    .cost-summary-card .summary-row.total {
+        font-weight: 700;
+        font-size: 1.05rem;
+        border-top: 1px dashed rgba(0, 0, 0, 0.1);
+        padding-top: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .note-box {
+        border-radius: 0.75rem;
+        border: 1px dashed rgba(13, 110, 253, 0.35);
+        padding: 0.85rem 1rem;
+        background: rgba(13, 110, 253, 0.03);
+    }
+
+    .loading-placeholder {
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bs-secondary);
+    }
+
+    /* Ẩn layout in đặc biệt trên màn hình, chỉ hiện khi in */
+    .only-print {
+        display: none;
+    }
+
+    .invoice-company-header {
+        border-bottom: 2px solid rgba(13, 110, 253, 0.2);
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .invoice-company-logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.1), rgba(111, 66, 193, 0.1));
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--bs-primary);
+        font-weight: 700;
+    }
+
+    .invoice-company-info h5 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--bs-dark);
+    }
+
+    .invoice-company-info .text-muted {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .invoice-billing-section {
+        background: rgba(13, 110, 253, 0.02);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        border: 1px solid rgba(13, 110, 253, 0.1);
+    }
+
+    .invoice-billing-section .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--bs-secondary);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .invoice-billing-section .value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--bs-dark);
+    }
+
+    .payment-terms-box {
+        background: rgba(255, 193, 7, 0.05);
+        border-left: 3px solid #ffc107;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .payment-terms-box .title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: var(--bs-dark);
+    }
+
+    .payment-terms-box .content {
+        font-size: 0.85rem;
+        color: var(--bs-secondary);
+        line-height: 1.6;
+    }
+
+    .invoice-footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--bs-border-color);
+        font-size: 0.85rem;
+        color: var(--bs-secondary);
+        text-align: center;
+    }
+
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        /* Ẩn layout màn hình, chỉ dùng layout in đặc biệt */
+        .screen-layout {
+            display: none !important;
+        }
+
+        .only-print {
+            display: block !important;
+        }
+
+        .invoice-header-card,
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+        }
+
+        .invoice-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .container-fluid {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .summary-tile {
+            padding: 0.85rem;
+        }
+
+        .summary-tile .value {
+            font-size: 1rem;
+        }
+
+        .invoice-company-header {
+            text-align: center;
+        }
+    }
+</style>
+
+<div class="container-fluid screen-layout">
+    <!-- Action Buttons -->
+    <div class="row mb-3 no-print">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <a href="/TotalReceipts" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Quay lại
+                </a>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm d-none" type="button" id="payInvoiceBtn" title="Thanh toán hóa đơn">
+                        <i class="fas fa-money-bill-wave me-1"></i>Thanh toán
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" type="button" id="exportPdfBtn" onclick="exportPdf()">
+                        <i class="fas fa-print me-1"></i>In hóa đơn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Document -->
+    <div class="row">
+        <div class="col-12">
+            <!-- Company Header -->
+            <div class="invoice-company-header">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center text-md-start mb-3 mb-md-0">
+                        <div class="invoice-company-logo mx-auto mx-md-0">
+                            <i class="fas fa-wrench"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-5 invoice-company-info">
+                        <h5 id="companyName">CÔNG TY BẢO DƯỠNG XE</h5>
+                        <div class="text-muted" id="companyAddress">-</div>
+                        <div class="text-muted" id="companyPhone">-</div>
+                    </div>
+                    <div class="col-md-5 text-md-end">
+                        <h3 class="mb-2" id="invoiceCode">HÓA ĐƠN</h3>
+                        <div class="text-muted small mb-1">Mã: <span id="invoiceCodeValue" class="fw-semibold text-dark">-</span></div>
+                        <div class="text-muted small mb-1">Ngày: <span id="invoiceDate" class="fw-semibold text-dark">-</span></div>
+                        <div class="mt-2">
+                            <span id="invoiceStatusHeader" class="invoice-status-badge pending">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Information: 2 Columns -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="invoice-billing-section">
+                        <div class="label">Thông tin khách hàng</div>
+                        <div class="value mb-2" id="billingCustomerName">-</div>
+                        <div class="text-muted small mb-1" id="billingCustomerCode">Mã KH: -</div>
+                        <div class="text-muted small mb-1" id="billingCustomerGender">Giới tính: -</div>
+                        <div class="text-muted small mb-1" id="billingCustomerPhone">-</div>
+                        <div class="text-muted small mb-1" id="billingCustomerEmail">-</div>
+                        <div class="text-muted small" id="billingCustomerAddress">-</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="invoice-billing-section">
+                        <div class="label">Thông tin xe</div>
+                        <div class="value mb-1" id="billingCarName">-</div>
+                        <div class="text-muted small mb-1" id="billingCarModel">Mẫu xe: -</div>
+                        <div class="text-muted small mb-1" id="billingVehicleType">Loại xe: -</div>
+                        <div class="text-muted small mb-1">Biển số: <span id="billingLicensePlate" class="fw-semibold">-</span></div>
+                        <div class="text-muted small mb-1">Số khung: <span id="billingVinNumber" class="fw-semibold">-</span></div>
+                        <div class="text-muted small mb-1">Số máy: <span id="billingEngineNumber" class="fw-semibold">-</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-info-circle text-primary"></i>Thông tin hóa đơn
+                    </div>
+                    <div class="row g-3" id="invoiceDetailInfo">
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Mã hóa đơn</div>
+                            <div id="detailCode">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Ngày tạo</div>
+                            <div id="detailCreated">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Trạng thái</div>
+                            <div id="detailStatus">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Phiếu bảo dưỡng</div>
+                            <div id="detailTicketLink">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Ngày sửa</div>
+                            <div id="detailMaintenanceStart">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Ngày hoàn thành</div>
+                            <div id="detailMaintenanceEnd">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Kế toán xử lý</div>
+                            <div id="detailAccountant">-</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="fw-semibold text-uppercase small text-muted">Ghi chú</div>
+                            <div id="detailNote" class="text-muted fst-italic">Không có ghi chú</div>
+                        </div>
+                        <div class="col-md-6" id="servicePackageInfoRow" style="display: none;">
+                            <div class="fw-semibold text-uppercase small text-muted">Gói dịch vụ</div>
+                            <div id="detailServicePackage">
+                                <span class="badge bg-info" id="detailServicePackageName">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-tasks text-primary"></i>Danh sách công việc
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-2">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;" class="text-center">#</th>
+                                    <th>Tên công việc</th>
+                                    <th style="width: 180px;" class="text-end">Phí nhân công</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasksTableBody">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Đang tải danh sách công việc...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="tasksEmptyState" class="text-muted fst-italic" style="display:none;">
+                        Không có công việc nào.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-cogs text-primary"></i>Phụ tùng sử dụng
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-2">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;" class="text-center">#</th>
+                                    <th>Phụ tùng</th>
+                                    <th style="width: 120px;" class="text-end">Số lượng</th>
+                                    <th style="width: 140px;" class="text-end">Đơn giá</th>
+                                    <th style="width: 150px;" class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="componentsTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Đang tải danh sách phụ tùng...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="componentsEmptyState" class="text-muted fst-italic" style="display:none;">
+                        Chưa có phụ tùng nào được ghi nhận.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card cost-summary-card mb-4">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-calculator text-primary"></i>Tổng hợp chi phí
+                    </div>
+                    <div class="summary-row">
+                        <span>Phí nhân công</span>
+                        <span id="summaryLaborCost">0 ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Chi phí phụ tùng</span>
+                        <span id="summaryComponentCost">0 ₫</span>
+                    </div>
+                    <div class="summary-row" style="border-top: 1px dashed rgba(0, 0, 0, 0.1); padding-top: 0.5rem; margin-top: 0.5rem;">
+                        <span class="fw-semibold">Tổng phụ (Subtotal)</span>
+                        <span class="fw-semibold" id="summarySubtotal">0 ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Thuế VAT (<span id="vatPercent">0</span>%)</span>
+                        <span id="summaryVat">0 ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Phụ thu</span>
+                        <span id="summarySurcharge">0 ₫</span>
+                    </div>
+                    <div class="summary-row" id="packageDiscountRow" style="display: none;">
+                        <span>Giảm giá gói dịch vụ <span id="packageName" class="text-muted small">(-)</span></span>
+                        <span class="text-danger" id="summaryPackageDiscount">-0 ₫</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Giảm giá</span>
+                        <span class="text-danger" id="summaryDiscount">-0 ₫</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Tổng thanh toán</span>
+                        <span id="summaryGrandTotal">0 ₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4" id="discountCard">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-tag text-primary"></i>Áp dụng giảm giá
+                    </div>
+                    <div class="discount-section">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="discountCodeInput" placeholder="Nhập mã giảm giá hoặc số tiền">
+                            <button class="btn btn-primary" type="button" id="applyDiscountBtn">
+                                <i class="fas fa-check"></i> Áp dụng
+                            </button>
+                            <button class="btn btn-outline-danger d-none" type="button" id="removeDiscountBtn" title="Xóa giảm giá">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i> Nhập mã giảm giá hoặc số tiền (VD: 50000 hoặc 10%)
+                        </div>
+                        <div id="discountInfo" class="alert alert-info d-none" role="alert">
+                            <i class="fas fa-check-circle"></i> <span id="discountInfoText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4" id="surchargeCard">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-plus-circle text-primary"></i>Áp dụng phụ thu
+                    </div>
+                    <div class="discount-section">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="surchargeCodeInput" placeholder="Nhập số tiền phụ thu">
+                            <button class="btn btn-primary" type="button" id="applySurchargeBtn">
+                                <i class="fas fa-check"></i> Áp dụng
+                            </button>
+                            <button class="btn btn-outline-danger d-none" type="button" id="removeSurchargeBtn" title="Xóa phụ thu">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i> Nhập số tiền phụ thu (VD: 50000)
+                        </div>
+                        <div id="surchargeInfo" class="alert alert-info d-none" role="alert">
+                            <i class="fas fa-check-circle"></i> <span id="surchargeInfoText"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="section-title">
+                        <i class="fas fa-sticky-note text-primary"></i>Ghi chú hóa đơn
+                    </div>
+                    <div class="mb-2">
+                        <textarea class="form-control" id="noteInput" rows="4" placeholder="Nhập ghi chú cho hóa đơn..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button class="btn btn-primary" type="button" id="saveNoteBtn">
+                            <i class="fas fa-save"></i> Lưu ghi chú
+                        </button>
+                    </div>
+                    <div id="noteInfo" class="alert alert-info d-none mt-2" role="alert">
+                        <i class="fas fa-check-circle"></i> <span id="noteInfoText"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="payment-terms-box">
+                        <div class="title">
+                            <i class="fas fa-info-circle me-1"></i>Điều khoản thanh toán
+                        </div>
+                        <div class="content">
+                            <div class="mb-2">
+                                <strong>Hạn thanh toán:</strong> Thanh toán ngay khi nhận hóa đơn
+                            </div>
+                            <div class="mb-2">
+                                <strong>Phương thức:</strong> Tiền mặt hoặc chuyển khoản
+                            </div>
+                            <div>
+                                <strong>Lưu ý:</strong> Vui lòng thanh toán đúng hạn để tránh gián đoạn dịch vụ.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Footer -->
+    <div class="invoice-footer">
+        <div class="row">
+            <div class="col-md-6 text-md-start mb-2 mb-md-0">
+                <div class="fw-semibold mb-1">Cảm ơn quý khách đã sử dụng dịch vụ!</div>
+                <div class="small">Mọi thắc mắc vui lòng liên hệ chi nhánh để được hỗ trợ.</div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="small mb-1">Hóa đơn được tạo tự động từ hệ thống</div>
+                <div class="small">© 2025 - Hệ thống quản lý bảo dưỡng xe</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Layout in hóa đơn kiểu A4, chỉ hiện khi in -->
+<div class="container-fluid only-print">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="bg-white p-4" style="border: 1px solid #000; min-height: 1050px;">
+                <!-- Header công ty + tiêu đề -->
+                <div class="text-center mb-3">
+                    <div class="fw-bold text-uppercase" style="font-size: 0.9rem;" id="printCompanyName">
+                        CÔNG TY BẢO DƯỠNG XE
+                    </div>
+                    <div class="small" id="printCompanyAddress">
+                        Địa chỉ chi nhánh sẽ được cập nhật
+                    </div>
+                    <div class="small" id="printCompanyPhone">
+                        Điện thoại: Sẽ được cập nhật
+                    </div>
+
+                    <div class="mt-3" style="font-size: 1.4rem; font-weight: 700;">
+                        HÓA ĐƠN DỊCH VỤ
+                    </div>
+                    <div class="small mt-1">
+                        Ngày <span id="printInvoiceDate">..../..../....</span>
+                    </div>
+                    <div class="small">
+                        Số: <span id="printInvoiceCode" class="fw-semibold">..............</span>
+                    </div>
+                </div>
+
+                <!-- Thông tin khách hàng / xe -->
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <table class="table table-borderless table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 40%;" class="fw-normal">Khách hàng:</th>
+                                    <td id="printCustomerName">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Mã khách hàng:</th>
+                                    <td id="printCustomerCode">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Giới tính:</th>
+                                    <td id="printCustomerGender">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Điện thoại:</th>
+                                    <td id="printCustomerPhone">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Email:</th>
+                                    <td id="printCustomerEmail">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Địa chỉ:</th>
+                                    <td id="printCustomerAddress">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-6">
+                        <table class="table table-borderless table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 40%;" class="fw-normal">Tên xe:</th>
+                                    <td id="printCarName">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Biển số:</th>
+                                    <td id="printLicensePlate">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Số khung:</th>
+                                    <td id="printVinNumber">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Số máy:</th>
+                                    <td id="printEngineNumber">-</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Phiếu bảo dưỡng:</th>
+                                    <td id="printTicketInfo">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Thông tin chung hóa đơn -->
+                <table class="table table-borderless table-sm mb-3">
+                    <tbody>
+                        <tr>
+                            <th style="width: 18%;" class="fw-normal">Mã hóa đơn:</th>
+                            <td style="width: 32%;" id="printDetailCode">-</td>
+                            <th style="width: 18%;" class="fw-normal">Trạng thái:</th>
+                            <td style="width: 32%;" id="printDetailStatus">-</td>
+                        </tr>
+                        <tr>
+                            <th class="fw-normal">Ngày tạo:</th>
+                            <td id="printDetailCreated">-</td>
+                            <th class="fw-normal">Kế toán:</th>
+                            <td id="printDetailAccountant">-</td>
+                        </tr>
+                        <tr>
+                            <th class="fw-normal">Ngày sửa:</th>
+                            <td id="printDetailMaintenanceStart">-</td>
+                            <th class="fw-normal">Ngày hoàn thành:</th>
+                            <td id="printDetailMaintenanceEnd">-</td>
+                        </tr>
+                        <tr>
+                            <th class="fw-normal">Ghi chú:</th>
+                            <td colspan="3" id="printDetailNote" class="fst-italic text-muted">Không có ghi chú</td>
+                        </tr>
+                        <tr id="printServicePackageRow" style="display: none;">
+                            <th class="fw-normal">Gói dịch vụ:</th>
+                            <td colspan="3">
+                                <span class="badge bg-info" id="printServicePackageName">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Danh sách công việc -->
+                <div class="mb-2">
+                    <strong>Danh sách công việc</strong>
+                    <div class="table-responsive mt-1">
+                        <table class="table table-bordered table-sm mb-2">
+                            <thead class="text-center" style="background: #f5f5f5; font-size: 0.85rem;">
+                                <tr>
+                                    <th style="width: 40px;">STT</th>
+                                    <th>Tên công việc</th>
+                                    <th style="width: 140px;">Phí nhân công</th>
+                                </tr>
+                            </thead>
+                            <tbody id="printTasksBody">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">Đang tải danh sách công việc...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Phụ tùng sử dụng -->
+                <div class="mb-3">
+                    <strong>Phụ tùng sử dụng</strong>
+                    <div class="table-responsive mt-1">
+                        <table class="table table-bordered table-sm mb-2">
+                            <thead class="text-center" style="background: #f5f5f5; font-size: 0.85rem;">
+                                <tr>
+                                    <th style="width: 40px;">STT</th>
+                                    <th>Phụ tùng</th>
+                                    <th style="width: 100px;">Số lượng</th>
+                                    <th style="width: 120px;">Đơn giá</th>
+                                    <th style="width: 130px;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="printComponentsBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Đang tải danh sách phụ tùng...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tổng tiền -->
+                <div class="row mt-3">
+                    <div class="col-7">
+                        <div class="small mb-2">
+                            Số tiền viết bằng chữ:
+                            <span class="fw-semibold" id="printAmountInWords">
+                                ........................................................................................
+                            </span>
+                        </div>
+                        <div class="small">
+                            Ghi chú thêm:
+                            <span id="printNoteBottom" class="text-muted"></span>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <table class="table table-borderless table-sm mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="fw-normal">Phí nhân công:</th>
+                                    <td class="text-end" id="printLaborCost">0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Chi phí phụ tùng:</th>
+                                    <td class="text-end" id="printComponentCost">0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Tổng phụ:</th>
+                                    <td class="text-end fw-semibold" id="printSubtotal">0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">
+                                        Thuế GTGT (<span id="printVatPercent">0</span>%):
+                                    </th>
+                                    <td class="text-end" id="printVatAmount">0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Phụ thu:</th>
+                                    <td class="text-end" id="printSurcharge">0 ₫</td>
+                                </tr>
+                                <tr id="printPackageDiscountRow" style="display: none;">
+                                    <th class="fw-normal">
+                                        Giảm giá gói <span id="printPackageName" class="text-muted small"></span>:
+                                    </th>
+                                    <td class="text-end text-danger" id="printPackageDiscount">-0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-normal">Giảm giá khác:</th>
+                                    <td class="text-end text-danger" id="printDiscount">-0 ₫</td>
+                                </tr>
+                                <tr>
+                                    <th class="fw-bold">Tổng thanh toán:</th>
+                                    <td class="text-end fw-bold" id="printGrandTotal">0 ₫</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chữ ký -->
+                <div class="row mt-5 text-center">
+                    <div class="col-4">
+                        <div class="fw-semibold">Người mua hàng</div>
+                        <div class="fst-italic small">(Ký, họ tên)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-semibold">Kế toán trưởng</div>
+                        <div class="fst-italic small">(Ký, họ tên)</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-semibold">Giám đốc</div>
+                        <div class="fst-italic small">(Ký, họ tên)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Xác nhận
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmModalOkBtn">
+                    <i class="fas fa-check me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = '@apiBaseUrl';
+        const RECEIPT_ID = Number('@totalReceiptId');
+
+        let receiptData = null;
+        let maintenanceTicketId = null;
+        let tasksData = [];
+        let componentsData = [];
+
+        function exportPdf() {
+            if (!RECEIPT_ID || Number.isNaN(RECEIPT_ID)) {
+                showAlert('Không tìm thấy mã hóa đơn hợp lệ.', 'danger');
+                return;
+            }
+
+            const token = localStorage.getItem('authToken');
+            const url = `${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}/export-pdf`;
+            
+            // Disable button while loading
+            const btn = document.getElementById('exportPdfBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tạo PDF...';
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không thể tạo PDF');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Tạo URL từ blob
+                const pdfUrl = window.URL.createObjectURL(blob);
+                
+                // Mở PDF trong tab mới
+                const printWindow = window.open(pdfUrl, '_blank');
+                
+                if (printWindow) {
+                    // Đợi PDF load xong rồi tự động in
+                    let printAttempted = false;
+                    const tryPrint = () => {
+                        if (!printAttempted) {
+                            try {
+                                printWindow.focus();
+                                setTimeout(() => {
+                                    printWindow.print();
+                                    printAttempted = true;
+                                }, 1000);
+                            } catch (e) {
+                                console.log('Print dialog sẽ hiện khi PDF load xong');
+                            }
+                        }
+                    };
+                    
+                    // Thử in khi window load
+                    printWindow.onload = tryPrint;
+                    
+                    // Thử in sau khi đợi một chút (fallback)
+                    setTimeout(tryPrint, 1500);
+                    
+                    // Cleanup URL sau một thời gian
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(pdfUrl);
+                    }, 60000);
+                } else {
+                    // Nếu popup bị chặn, tạo link download
+                    const a = document.createElement('a');
+                    a.href = pdfUrl;
+                    a.target = '_blank';
+                    a.click();
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(pdfUrl);
+                    }, 100);
+                }
+                
+                // Restore button ngay sau khi mở PDF
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-print me-1"></i>In hóa đơn';
+            })
+            .catch(error => {
+                console.error('Export PDF error:', error);
+                showAlert('Không thể in hóa đơn: ' + error.message, 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-print me-1"></i>In hóa đơn';
+            });
+        }
+
+        $(document).ready(function () {
+            if (!RECEIPT_ID || Number.isNaN(RECEIPT_ID)) {
+                showAlert('Không tìm thấy mã hóa đơn hợp lệ.', 'danger');
+                return;
+            }
+            loadReceiptDetails();
+            
+            // Event handlers cho discount
+            $('#applyDiscountBtn').on('click', applyDiscount);
+            $('#removeDiscountBtn').on('click', removeDiscount);
+            $('#applySurchargeBtn').on('click', applySurcharge);
+            $('#removeSurchargeBtn').on('click', removeSurcharge);
+            $('#saveNoteBtn').on('click', saveNote);
+            $('#payInvoiceBtn').on('click', payInvoice);
+            $('#discountCodeInput').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    applyDiscount();
+                }
+            });
+            $('#surchargeCodeInput').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    applySurcharge();
+                }
+            });
+        });
+
+        function loadReceiptDetails() {
+            const token = localStorage.getItem('authToken');
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(async response => {
+                    if (!response.ok) {
+                        const message = await response.text();
+                        throw new Error(message || `HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (!result.success || !result.data) {
+                        throw new Error(result.message || 'Không thể tải thông tin hóa đơn.');
+                    }
+                    receiptData = result.data;
+                    maintenanceTicketId = receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId;
+                    
+                    // Debug: Log VAT data and Package info
+                    console.log('Receipt Data:', receiptData);
+                    console.log('VatPercent (PascalCase):', receiptData?.VatPercent);
+                    console.log('VatPercent (camelCase):', receiptData?.vatPercent);
+                    console.log('VatAmount (PascalCase):', receiptData?.VatAmount);
+                    console.log('VatAmount (camelCase):', receiptData?.vatAmount);
+                    console.log('PackageDiscountAmount:', receiptData?.PackageDiscountAmount ?? receiptData?.packageDiscountAmount);
+                    console.log('ServicePackageName:', receiptData?.ServicePackageName ?? receiptData?.servicePackageName);
+                    console.log('ServicePackageId:', receiptData?.ServicePackageId ?? receiptData?.servicePackageId);
+                    
+                    renderInvoiceSummary(receiptData);
+                    updateCostSummary();
+                    updateDiscountDisplay();
+                    updateSurchargeDisplay();
+
+                    if (maintenanceTicketId) {
+                        loadServiceTasks(maintenanceTicketId);
+                        loadComponents(maintenanceTicketId);
+                    } else {
+                        renderTasks([]);
+                        renderComponents([]);
+                    }
+                })
+                .catch(error => {
+                    console.error('loadReceiptDetails error:', error);
+                    showAlert('Không thể tải thông tin chi tiết hóa đơn.', 'danger');
+                });
+        }
+
+        function renderInvoiceSummary(data) {
+            // Helper để lấy giá trị hỗ trợ cả PascalCase và camelCase
+            const getValue = (pascal, camel, defaultValue = '') => data?.[pascal] ?? data?.[camel] ?? defaultValue;
+            
+            // Header
+            const code = getValue('Code', 'code', '-');
+            const createdAt = getValue('CreatedAt', 'createdAt');
+            $('#invoiceCodeValue').text(code);
+            $('#invoiceDate').text(formatDateOnly(createdAt));
+            const statusCode = getValue('StatusCode', 'statusCode', '');
+            const statusClass = getStatusClass(statusCode);
+            const statusText = getStatusText(statusCode);
+            $('#invoiceStatusHeader').removeClass('pending paid').addClass(statusClass).text(statusText);
+            
+            // Hiển thị/ẩn các nút và card dựa trên trạng thái thanh toán
+            if (statusCode && statusCode.toUpperCase() === 'PAID') {
+                // Đã thanh toán: ẩn nút thanh toán và các card chỉnh sửa
+                $('#payInvoiceBtn').addClass('d-none');
+                $('#discountCard').addClass('d-none');
+                $('#surchargeCard').addClass('d-none');
+            } else {
+                // Chưa thanh toán: hiển thị tất cả
+                $('#payInvoiceBtn').removeClass('d-none');
+                $('#discountCard').removeClass('d-none');
+                $('#surchargeCard').removeClass('d-none');
+            }
+
+            // Company Info (Branch)
+            $('#companyName').text(getValue('BranchName', 'branchName', 'CÔNG TY BẢO DƯỠNG XE'));
+            const branchAddress = getValue('BranchAddress', 'branchAddress');
+            $('#companyAddress').text(branchAddress || 'Địa chỉ chi nhánh sẽ được cập nhật');
+            const branchPhone = getValue('BranchPhone', 'branchPhone');
+            $('#companyPhone').text(branchPhone ? `Điện thoại: ${branchPhone}` : 'Điện thoại: Sẽ được cập nhật');
+
+            // Company Info - PRINT
+            $('#printCompanyName').text($('#companyName').text());
+            $('#printCompanyAddress').text($('#companyAddress').text());
+            $('#printCompanyPhone').text($('#companyPhone').text());
+            $('#printInvoiceCode').text(code || '..............');
+            $('#printInvoiceDate').text(formatDateOnly(createdAt) || '..../..../....');
+
+            // Billing Information - Customer
+            const customerName = getValue('CustomerName', 'customerName', 'Không rõ');
+            const customerCode = getValue('CustomerCode', 'customerCode');
+            const customerGenderRaw = getValue('CustomerGender', 'customerGender');
+            const customerPhone = getValue('CustomerPhone', 'customerPhone');
+            const customerEmail = getValue('CustomerEmail', 'customerEmail');
+            const customerAddress = getValue('CustomerAddress', 'customerAddress');
+
+            // Chuẩn hóa giới tính hiển thị
+            let customerGender = '-';
+            if (customerGenderRaw) {
+                if (customerGenderRaw === 'Male' || customerGenderRaw === 'Nam') {
+                    customerGender = 'Nam';
+                } else if (customerGenderRaw === 'Female' || customerGenderRaw === 'Nữ') {
+                    customerGender = 'Nữ';
+                } else {
+                    customerGender = customerGenderRaw;
+                }
+            }
+
+            $('#billingCustomerName').text(customerName);
+            $('#billingCustomerCode').text(customerCode ? `Mã KH: ${customerCode}` : 'Mã KH: -');
+            $('#billingCustomerGender').text(`Giới tính: ${customerGender}`);
+            $('#billingCustomerPhone').text(customerPhone ? `Điện thoại: ${customerPhone}` : '');
+            $('#billingCustomerEmail').text(customerEmail ? `Email: ${customerEmail}` : '');
+            $('#billingCustomerAddress').text(customerAddress ? `Địa chỉ: ${customerAddress}` : 'Địa chỉ: Sẽ được cập nhật');
+
+            // Customer - PRINT
+            $('#printCustomerName').text(customerName);
+            $('#printCustomerCode').text(customerCode || '-');
+            $('#printCustomerGender').text(customerGender);
+            $('#printCustomerPhone').text(customerPhone || '-');
+            $('#printCustomerEmail').text(customerEmail || '-');
+            $('#printCustomerAddress').text(customerAddress || '-');
+
+            // Billing Information - Vehicle
+            const carName = getValue('CarName', 'carName', 'Không rõ');
+            const carModel = getValue('CarModel', 'carModel');
+            const vehicleType = getValue('VehicleType', 'vehicleType');
+            const licensePlate = getValue('LicensePlate', 'licensePlate', '-');
+            const vinNumber = getValue('VinNumber', 'vinNumber', '-');
+            const engineNumber = getValue('EngineNumber', 'engineNumber', '-');
+            const maintenanceTicketId = getValue('MaintenanceTicketId', 'maintenanceTicketId');
+
+            $('#billingCarName').text(carName);
+            $('#billingCarModel').text(carModel ? `Mẫu xe: ${carModel}` : 'Mẫu xe: -');
+            $('#billingVehicleType').text(vehicleType ? `Loại xe: ${vehicleType}` : 'Loại xe: -');
+            $('#billingLicensePlate').text(licensePlate);
+            $('#billingVinNumber').text(vinNumber);
+            $('#billingEngineNumber').text(engineNumber);
+
+            // Vehicle - PRINT
+            $('#printCarName').text(carName);
+            $('#printLicensePlate').text(licensePlate);
+            $('#printVinNumber').text(vinNumber);
+            $('#printEngineNumber').text(engineNumber);
+            if (maintenanceTicketId) {
+                $('#billingTicketLink').attr('href', `/MaintenanceTickets/Details/${maintenanceTicketId}`)
+                    .text(getValue('MaintenanceTicketCode', 'maintenanceTicketCode') || `#${maintenanceTicketId}`);
+                $('#printTicketInfo').text(getValue('MaintenanceTicketCode', 'maintenanceTicketCode') || `#${maintenanceTicketId}`);
+            } else {
+                $('#billingTicketLink').text('Không xác định').removeAttr('href');
+                $('#printTicketInfo').text('Không xác định');
+            }
+
+            // Detail Info (old section - keeping for compatibility)
+            const createdAtText = formatDateTime(createdAt);
+            const maintenanceStart = getValue('MaintenanceStartTime', 'maintenanceStartTime');
+            const maintenanceEnd = getValue('MaintenanceEndTime', 'maintenanceEndTime');
+            const maintenanceStartText = maintenanceStart ? formatDateTime(maintenanceStart) : 'Chưa xác định';
+            const maintenanceEndText = maintenanceEnd ? formatDateTime(maintenanceEnd) : 'Chưa xác định';
+            $('#detailCode').text(code);
+            $('#detailCreated').text(createdAtText);
+            $('#detailStatus').html(`<span class="invoice-status-badge ${statusClass}">${statusText}</span>`);
+            $('#detailMaintenanceStart').text(maintenanceStartText);
+            $('#detailMaintenanceEnd').text(maintenanceEndText);
+
+            // Detail Info - PRINT
+            $('#printDetailCode').text(code);
+            $('#printDetailCreated').text(createdAtText);
+            $('#printDetailMaintenanceStart').text(maintenanceStartText);
+            $('#printDetailMaintenanceEnd').text(maintenanceEndText);
+            $('#printDetailStatus').text(statusText);
+
+            if (maintenanceTicketId) {
+                $('#detailTicketLink').html(`<a href="/MaintenanceTickets/Details/${maintenanceTicketId}" class="text-decoration-none">${getValue('MaintenanceTicketCode', 'maintenanceTicketCode') || 'Xem phiếu'}</a>`);
+            } else {
+                $('#detailTicketLink').text('Không xác định');
+            }
+
+            const accountantName = getValue('AccountantName', 'accountantName', 'Chưa xác định');
+            $('#detailAccountant').text(accountantName);
+            $('#printDetailAccountant').text(accountantName);
+
+            const note = getValue('Note', 'note');
+            if (note) {
+                $('#detailNote').text(note);
+                $('#noteInput').val(note);
+                $('#printDetailNote').text(note);
+                $('#printNoteBottom').text(note);
+            } else {
+                $('#detailNote').text('Không có ghi chú');
+                $('#noteInput').val('');
+                $('#printDetailNote').text('Không có ghi chú');
+                $('#printNoteBottom').text('');
+            }
+            
+            // Hiển thị thông tin gói dịch vụ
+            const servicePackageName = getValue('ServicePackageName', 'servicePackageName');
+            const servicePackageId = getValue('ServicePackageId', 'servicePackageId');
+            if (servicePackageId && servicePackageName) {
+                $('#detailServicePackageName').text(servicePackageName);
+                $('#servicePackageInfoRow').show();
+                $('#printServicePackageName').text(servicePackageName);
+                $('#printServicePackageRow').show();
+            } else {
+                $('#servicePackageInfoRow').hide();
+                $('#printServicePackageRow').hide();
+            }
+        }
+
+        function loadServiceTasks(ticketId) {
+            const token = localStorage.getItem('authToken');
+            fetch(`${API_BASE_URL}/ServiceTask/by-ticket/${ticketId}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && Array.isArray(result.data)) {
+                        tasksData = result.data;
+                    } else {
+                        tasksData = [];
+                    }
+                    renderTasks(tasksData);
+                    updateCostSummary();
+                })
+                .catch(error => {
+                    console.error('loadServiceTasks error:', error);
+                    tasksData = [];
+                    renderTasks(tasksData);
+                    updateCostSummary();
+                });
+        }
+
+        function renderTasks(tasks) {
+            const tbody = $('#tasksTableBody');
+            tbody.empty();
+
+            if (!tasks.length) {
+                $('#tasksEmptyState').show();
+            } else {
+                $('#tasksEmptyState').hide();
+                tasks.forEach((task, index) => {
+                    tbody.append(`
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${escapeHtml(task.taskName || 'Công việc')}</td>
+                        <td class="text-end">${formatCurrency(task.laborCost || 0)}</td>
+                    </tr>
+                `);
+                });
+            }
+
+            // Render cho layout in
+            const tbodyPrint = $('#printTasksBody');
+            if (!tbodyPrint.length) return;
+            tbodyPrint.empty();
+
+            if (!tasks.length) {
+                tbodyPrint.append(`
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Không có công việc nào.</td>
+                    </tr>
+                `);
+                return;
+            }
+
+            tasks.forEach((task, index) => {
+                tbodyPrint.append(`
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${escapeHtml(task.taskName || 'Công việc')}</td>
+                        <td class="text-end">${formatCurrency(task.laborCost || 0)}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        function loadComponents(ticketId) {
+            const token = localStorage.getItem('authToken');
+            fetch(`${API_BASE_URL}/TicketComponent/by-maintenance-ticket/${ticketId}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && Array.isArray(result.data)) {
+                        componentsData = result.data;
+                    } else {
+                        componentsData = [];
+                    }
+                    renderComponents(componentsData);
+                    updateCostSummary();
+                })
+                .catch(error => {
+                    console.error('loadComponents error:', error);
+                    componentsData = [];
+                    renderComponents(componentsData);
+                    updateCostSummary();
+                });
+        }
+
+        function renderComponents(components) {
+            const tbody = $('#componentsTableBody');
+            tbody.empty();
+
+            if (!components.length) {
+                $('#componentsEmptyState').show();
+            } else {
+                $('#componentsEmptyState').hide();
+                components.forEach((component, index) => {
+                    const quantity = component.actualQuantity ?? component.quantity ?? 0;
+                    const unitPrice = component.unitPrice ?? 0;
+                    const total = component.totalPrice ?? (quantity * unitPrice);
+                    tbody.append(`
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>
+                            <div class="fw-semibold">${escapeHtml(component.componentName || 'Phụ tùng')}</div>
+                            ${component.componentCode ? `<div class="text-muted small">Mã: ${escapeHtml(component.componentCode)}</div>` : ''}
+                        </td>
+                        <td class="text-end">${quantity.toFixed(2)}</td>
+                        <td class="text-end">${formatCurrency(unitPrice)}</td>
+                        <td class="text-end">${formatCurrency(total)}</td>
+                    </tr>
+                    `);
+                });
+            }
+
+            // Render cho layout in
+            const tbodyPrint = $('#printComponentsBody');
+            if (!tbodyPrint.length) return;
+            tbodyPrint.empty();
+
+            if (!components.length) {
+                tbodyPrint.append(`
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Chưa có phụ tùng nào được ghi nhận.</td>
+                    </tr>
+                `);
+                return;
+            }
+
+            components.forEach((component, index) => {
+                const quantity = component.actualQuantity ?? component.quantity ?? 0;
+                const unitPrice = component.unitPrice ?? 0;
+                const total = component.totalPrice ?? (quantity * unitPrice);
+                tbodyPrint.append(`
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>
+                            <div class="fw-semibold">${escapeHtml(component.componentName || 'Phụ tùng')}</div>
+                            ${component.componentCode ? `<div class="text-muted small">Mã: ${escapeHtml(component.componentCode)}</div>` : ''}
+                        </td>
+                        <td class="text-end">${quantity.toFixed(2)}</td>
+                        <td class="text-end">${formatCurrency(unitPrice)}</td>
+                        <td class="text-end">${formatCurrency(total)}</td>
+                    </tr>
+                `);
+            });
+        }
+
+        function updateCostSummary() {
+            const laborTotal = tasksData.reduce((sum, task) => sum + (task.laborCost || 0), 0);
+            const componentTotal = componentsData.reduce((sum, component) => {
+                const qty = component.actualQuantity ?? component.quantity ?? 0;
+                const price = component.unitPrice ?? 0;
+                const total = component.totalPrice ?? (qty * price);
+                return sum + total;
+            }, 0);
+
+            const laborText = formatCurrency(laborTotal);
+            const componentText = formatCurrency(componentTotal);
+            $('#summaryLaborCost').text(laborText);
+            $('#summaryComponentCost').text(componentText);
+
+            // Calculate subtotal (before tax) - Hỗ trợ cả PascalCase và camelCase
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? (laborTotal + componentTotal);
+            const subtotalText = formatCurrency(subtotal);
+            $('#summarySubtotal').text(subtotalText);
+
+            // Other charges - Hỗ trợ cả PascalCase và camelCase
+            const surcharge = receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0;
+            const discount = receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0;
+            const packageDiscount = receiptData?.PackageDiscountAmount ?? receiptData?.packageDiscountAmount ?? 0;
+            const packageName = receiptData?.ServicePackageName ?? receiptData?.servicePackageName;
+            const packageId = receiptData?.ServicePackageId ?? receiptData?.servicePackageId;
+            
+            // Debug: Log package discount info
+            console.log('Package Discount Debug:', {
+                packageDiscount: packageDiscount,
+                packageName: packageName,
+                packageId: packageId,
+                receiptData: receiptData
+            });
+            
+            const surchargeText = formatCurrency(surcharge);
+            const discountText = formatCurrency(discount);
+            $('#summarySurcharge').text(surchargeText);
+            $('#summaryDiscount').text(discountText);
+
+            // Hiển thị Package Discount nếu có packageId (hiển thị kể cả khi discount = 0)
+            if (packageId) {
+                const displayName = packageName || 'Gói dịch vụ';
+                const pkgDiscountText = formatCurrency(packageDiscount);
+                $('#packageName').text(`(${displayName})`);
+                $('#summaryPackageDiscount').text(pkgDiscountText);
+                $('#packageDiscountRow').show();
+            } else {
+                $('#packageDiscountRow').hide();
+            }
+
+            // ✅ VAT phải tính CUỐI CÙNG, sau khi đã trừ mọi loại giảm giá (KHÔNG tính trên phụ thu)
+            const vatPercent = receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10; // Mặc định 10% nếu không có
+            
+            // Bước 1: Tính tổng discount = package discount + discount khác
+            const totalDiscount = packageDiscount + discount;
+            
+            // Bước 2: Trừ tất cả giảm giá
+            const amountAfterDiscount = Math.max(0, subtotal - totalDiscount);
+            
+            // Bước 3: Tính VAT trên số tiền sau khi đã trừ giảm giá (KHÔNG tính trên phụ thu)
+            // Luôn tính lại VAT dựa trên data hiện tại để đảm bảo chính xác
+            const vatAmount = vatPercent * amountAfterDiscount / 100;
+            
+            // Debug
+            console.log('updateCostSummary - vatPercent:', vatPercent, 'vatAmount:', vatAmount, 'subtotal:', subtotal, 'packageDiscount:', packageDiscount, 'discount:', discount, 'totalDiscount:', totalDiscount, 'surcharge:', surcharge, 'amountAfterDiscount:', amountAfterDiscount);
+            
+            const vatPercentText = vatPercent.toFixed(1);
+            const vatAmountText = formatCurrency(vatAmount);
+            $('#vatPercent').text(vatPercentText);
+            $('#summaryVat').text(vatAmountText);
+
+            // Grand total - (Subtotal - TotalDiscount) + VAT + Surcharge
+            // totalDiscount đã được tính ở trên (dòng 878)
+            // Luôn tính lại grand total dựa trên data hiện tại để đảm bảo chính xác
+            const grandTotal = amountAfterDiscount + vatAmount + surcharge;
+            const grandTotalText = formatCurrency(grandTotal);
+            $('#summaryGrandTotal').text(grandTotalText);
+
+            // Cập nhật cho layout in
+            $('#printLaborCost').text(laborText);
+            $('#printComponentCost').text(componentText);
+            $('#printSubtotal').text(subtotalText);
+            $('#printVatPercent').text(vatPercentText);
+            $('#printVatAmount').text(vatAmountText);
+            $('#printSurcharge').text(surchargeText);
+            $('#printDiscount').text(discountText);
+
+            if (packageId) {
+                $('#printPackageName').text($('#packageName').text());
+                $('#printPackageDiscount').text(formatCurrency(packageDiscount));
+                $('#printPackageDiscountRow').show();
+            } else {
+                $('#printPackageDiscountRow').hide();
+            }
+
+            $('#printGrandTotal').text(grandTotalText);
+        }
+
+        function getStatusClass(statusCode) {
+            const code = (statusCode || '').toUpperCase();
+            if (code === 'PAID') return 'paid';
+            return 'pending';
+        }
+
+        function getStatusText(statusCode) {
+            const code = (statusCode || '').toUpperCase();
+            switch (code) {
+                case 'PAID':
+                    return 'Đã thanh toán';
+                case 'CANCELLED':
+                    return 'Đã hủy';
+                case 'PENDING':
+                default:
+                    return 'Chưa thanh toán';
+            }
+        }
+
+        function renderTaskStatus(statusCode) {
+            const map = {
+                'PENDING': { text: 'Chờ xử lý', class: 'badge bg-warning text-dark' },
+                'IN_PROGRESS': { text: 'Đang làm', class: 'badge bg-primary' },
+                'DONE': { text: 'Hoàn thành', class: 'badge bg-success' },
+                'COMPLETED': { text: 'Hoàn thành', class: 'badge bg-success' }
+            };
+            const status = map[(statusCode || '').toUpperCase()] || { text: statusCode || 'Không rõ', class: 'badge bg-secondary' };
+            return `<span class="${status.class}">${status.text}</span>`;
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+        }
+
+        function formatDateTime(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date)) return '-';
+            return `${date.toLocaleDateString('vi-VN')} ${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        }
+
+        function formatDateOnly(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date)) return '-';
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function escapeHtml(str) {
+            return $('<div>').text(str || '').html();
+        }
+
+        function showAlert(message, type = 'info') {
+            const id = `alert-${Date.now()}`;
+            const html = `
+                <div id="${id}" class="alert alert-${type} alert-dismissible fade show position-fixed" role="alert"
+                    style="top: 20px; right: 20px; z-index: 9999; min-width: 280px;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            $('body').append(html);
+            setTimeout(() => $(`#${id}`).alert('close'), 3000);
+        }
+
+        function parseDiscountInput(input) {
+            if (!input || !input.trim()) {
+                return { type: 'invalid', value: 0 };
+            }
+            
+            const trimmed = input.trim();
+            
+            // Kiểm tra nếu là phần trăm (có dấu %)
+            if (trimmed.endsWith('%')) {
+                // Xóa dấu % và các dấu phân cách (dấu chấm và phẩy)
+                const percentStr = trimmed.replace('%', '').replace(/\./g, '').replace(/,/g, '');
+                const percent = parseFloat(percentStr);
+                if (isNaN(percent) || percent < 0 || percent > 100) {
+                    return { type: 'invalid', value: 0 };
+                }
+                return { type: 'percent', value: percent };
+            }
+            
+            // Kiểm tra nếu là số tiền
+            // Xóa các dấu phân cách (dấu chấm và phẩy) - trong tiếng Việt dùng dấu chấm làm dấu phân cách hàng nghìn
+            // Ví dụ: "240.000" -> "240000"
+            const amountStr = trimmed.replace(/\./g, '').replace(/,/g, '');
+            const amount = parseFloat(amountStr);
+            if (isNaN(amount) || amount < 0) {
+                return { type: 'invalid', value: 0 };
+            }
+            return { type: 'amount', value: amount };
+        }
+
+        function applyDiscount() {
+            const input = $('#discountCodeInput').val();
+            const parsed = parseDiscountInput(input);
+            
+            if (parsed.type === 'invalid') {
+                showAlert('Vui lòng nhập mã giảm giá hợp lệ hoặc số tiền (VD: 50000 hoặc 10%)', 'warning');
+                $('#discountInfo').addClass('d-none');
+                return;
+            }
+            
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            let discountAmount = 0;
+            if (parsed.type === 'percent') {
+                discountAmount = subtotal * parsed.value / 100;
+            } else {
+                discountAmount = parsed.value;
+            }
+            
+            // Đảm bảo không giảm quá subtotal
+            if (discountAmount > subtotal) {
+                discountAmount = subtotal;
+                showAlert('Số tiền giảm giá không được vượt quá tổng phụ. Đã tự động điều chỉnh.', 'warning');
+            }
+            
+            // Gọi API để update discount
+            const updateData = {
+                discountAmount: discountAmount,
+                // Giữ nguyên các trường khác
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                accountantId: receiptData?.AccountantId ?? receiptData?.accountantId,
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                surchargeAmount: receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0
+            };
+            
+            $('#applyDiscountBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang áp dụng...');
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể cập nhật giảm giá.');
+                }
+                
+                // Cập nhật lại dữ liệu và UI
+                receiptData = result.data;
+                updateCostSummary();
+                
+                // Hiển thị thông báo thành công
+                const discountText = parsed.type === 'percent' 
+                    ? `${parsed.value}% (${formatCurrency(discountAmount)})`
+                    : formatCurrency(discountAmount);
+                $('#discountInfoText').text(`Đã áp dụng giảm giá: ${discountText}`);
+                $('#discountInfo').removeClass('d-none').addClass('alert-success').removeClass('alert-info');
+                
+                // Hiển thị nút Xóa
+                $('#removeDiscountBtn').removeClass('d-none');
+                
+                showAlert('Áp dụng giảm giá thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('applyDiscount error:', error);
+                showAlert('Không thể áp dụng giảm giá. Vui lòng thử lại.', 'danger');
+                $('#discountInfo').addClass('d-none');
+            })
+            .finally(() => {
+                $('#applyDiscountBtn').prop('disabled', false).html('<i class="fas fa-check"></i> Áp dụng');
+            });
+        }
+
+        function updateDiscountDisplay() {
+            if (!receiptData) return;
+            
+            const discount = receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0;
+            if (discount > 0) {
+                const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+                const percent = subtotal > 0 ? (discount / subtotal * 100).toFixed(1) : 0;
+                $('#discountCodeInput').val(`${discount.toLocaleString('vi-VN')} (${percent}%)`);
+                $('#discountInfoText').text(`Giảm giá hiện tại: ${formatCurrency(discount)} (${percent}%)`);
+                $('#discountInfo').removeClass('d-none').addClass('alert-success').removeClass('alert-info');
+                
+                // Hiển thị nút Xóa
+                $('#removeDiscountBtn').removeClass('d-none');
+            } else {
+                $('#discountCodeInput').val('');
+                $('#discountInfo').addClass('d-none');
+                
+                // Ẩn nút Xóa
+                $('#removeDiscountBtn').addClass('d-none');
+            }
+        }
+
+        function showConfirmModal(message, onConfirm) {
+            $('#confirmModalMessage').html(message); // Dùng html() thay vì text() để hỗ trợ HTML
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            
+            // Remove previous handlers
+            $('#confirmModalOkBtn').off('click');
+            
+            // Add new handler
+            $('#confirmModalOkBtn').on('click', function() {
+                modal.hide();
+                if (onConfirm) onConfirm();
+            });
+            
+            modal.show();
+        }
+
+        function removeDiscount() {
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            showConfirmModal('Bạn có chắc chắn muốn xóa giảm giá?', function() {
+                performRemoveDiscount();
+            });
+        }
+
+        function performRemoveDiscount() {
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            const updateData = {
+                discountAmount: 0,
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                accountantId: receiptData?.AccountantId ?? receiptData?.accountantId,
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                surchargeAmount: receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0
+            };
+            
+            $('#removeDiscountBtn').prop('disabled', true);
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể xóa giảm giá.');
+                }
+                
+                receiptData = result.data;
+                updateCostSummary();
+                updateDiscountDisplay();
+                showAlert('Đã xóa giảm giá thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('removeDiscount error:', error);
+                showAlert('Không thể xóa giảm giá. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                $('#removeDiscountBtn').prop('disabled', false);
+            });
+        }
+
+        function applySurcharge() {
+            const input = $('#surchargeCodeInput').val();
+            if (!input || !input.trim()) {
+                showAlert('Vui lòng nhập số tiền phụ thu hợp lệ (VD: 50000)', 'warning');
+                $('#surchargeInfo').addClass('d-none');
+                return;
+            }
+            
+            // Xóa các dấu phân cách (dấu chấm và phẩy) - trong tiếng Việt dùng dấu chấm làm dấu phân cách hàng nghìn
+            // Ví dụ: "200.000" -> "200000"
+            const surchargeAmount = parseFloat(input.trim().replace(/\./g, '').replace(/,/g, ''));
+            if (isNaN(surchargeAmount) || surchargeAmount < 0) {
+                showAlert('Vui lòng nhập số tiền phụ thu hợp lệ (VD: 50000)', 'warning');
+                $('#surchargeInfo').addClass('d-none');
+                return;
+            }
+            
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            // Gọi API để update surcharge
+            const updateData = {
+                surchargeAmount: surchargeAmount,
+                // Giữ nguyên các trường khác
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                accountantId: receiptData?.AccountantId ?? receiptData?.accountantId,
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                discountAmount: receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0
+            };
+            
+            $('#applySurchargeBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang áp dụng...');
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể cập nhật phụ thu.');
+                }
+                
+                // Cập nhật lại dữ liệu và UI
+                receiptData = result.data;
+                updateCostSummary();
+                
+                // Hiển thị thông báo thành công
+                $('#surchargeInfoText').text(`Đã áp dụng phụ thu: ${formatCurrency(surchargeAmount)}`);
+                $('#surchargeInfo').removeClass('d-none').addClass('alert-success').removeClass('alert-info');
+                
+                // Hiển thị nút Xóa
+                $('#removeSurchargeBtn').removeClass('d-none');
+                
+                showAlert('Áp dụng phụ thu thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('applySurcharge error:', error);
+                showAlert('Không thể áp dụng phụ thu. Vui lòng thử lại.', 'danger');
+                $('#surchargeInfo').addClass('d-none');
+            })
+            .finally(() => {
+                $('#applySurchargeBtn').prop('disabled', false).html('<i class="fas fa-check"></i> Áp dụng');
+            });
+        }
+
+        function updateSurchargeDisplay() {
+            if (!receiptData) return;
+            
+            const surcharge = receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0;
+            if (surcharge > 0) {
+                $('#surchargeCodeInput').val(surcharge.toLocaleString('vi-VN'));
+                $('#surchargeInfoText').text(`Phụ thu hiện tại: ${formatCurrency(surcharge)}`);
+                $('#surchargeInfo').removeClass('d-none').addClass('alert-success').removeClass('alert-info');
+                
+                // Hiển thị nút Xóa
+                $('#removeSurchargeBtn').removeClass('d-none');
+            } else {
+                $('#surchargeCodeInput').val('');
+                $('#surchargeInfo').addClass('d-none');
+                
+                // Ẩn nút Xóa
+                $('#removeSurchargeBtn').addClass('d-none');
+            }
+        }
+
+        function removeSurcharge() {
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            showConfirmModal('Bạn có chắc chắn muốn xóa phụ thu?', function() {
+                performRemoveSurcharge();
+            });
+        }
+
+        function performRemoveSurcharge() {
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            const updateData = {
+                surchargeAmount: 0,
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                accountantId: receiptData?.AccountantId ?? receiptData?.accountantId,
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                discountAmount: receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0
+            };
+            
+            $('#removeSurchargeBtn').prop('disabled', true);
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể xóa phụ thu.');
+                }
+                
+                receiptData = result.data;
+                updateCostSummary();
+                updateSurchargeDisplay();
+                showAlert('Đã xóa phụ thu thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('removeSurcharge error:', error);
+                showAlert('Không thể xóa phụ thu. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                $('#removeSurchargeBtn').prop('disabled', false);
+            });
+        }
+
+        function saveNote() {
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            const note = $('#noteInput').val().trim();
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            // Gọi API để update note
+            const updateData = {
+                note: note,
+                // Giữ nguyên các trường khác
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                accountantId: receiptData?.AccountantId ?? receiptData?.accountantId,
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                discountAmount: receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0,
+                surchargeAmount: receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0
+            };
+            
+            $('#saveNoteBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể lưu ghi chú.');
+                }
+                
+                // Cập nhật lại dữ liệu và UI
+                receiptData = result.data;
+                
+                // Cập nhật hiển thị ghi chú ở phần header
+                if (note) {
+                    $('#detailNote').text(note);
+                } else {
+                    $('#detailNote').text('Không có ghi chú');
+                }
+                
+                // Hiển thị thông báo thành công
+                $('#noteInfoText').text('Đã lưu ghi chú thành công!');
+                $('#noteInfo').removeClass('d-none').addClass('alert-success').removeClass('alert-info');
+                
+                showAlert('Đã lưu ghi chú thành công!', 'success');
+                
+                // Ẩn thông báo sau 3 giây
+                setTimeout(() => {
+                    $('#noteInfo').addClass('d-none');
+                }, 3000);
+            })
+            .catch(error => {
+                console.error('saveNote error:', error);
+                showAlert('Không thể lưu ghi chú. Vui lòng thử lại.', 'danger');
+                $('#noteInfo').addClass('d-none');
+            })
+            .finally(() => {
+                $('#saveNoteBtn').prop('disabled', false).html('<i class="fas fa-save"></i> Lưu ghi chú');
+            });
+        }
+
+        function payInvoice() {
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            const statusCode = receiptData?.StatusCode ?? receiptData?.statusCode ?? '';
+            if (statusCode && statusCode.toUpperCase() === 'PAID') {
+                showAlert('Hóa đơn đã được thanh toán rồi.', 'info');
+                return;
+            }
+            
+            const finalAmount = receiptData?.FinalAmount ?? receiptData?.finalAmount ?? receiptData?.Amount ?? receiptData?.amount ?? 0;
+            const formattedAmount = formatCurrency(finalAmount);
+            
+            showConfirmModal(`Bạn có chắc chắn muốn thanh toán hóa đơn này?<br><strong>Tổng tiền: ${formattedAmount}</strong>`, function() {
+                performPayInvoice();
+            });
+        }
+
+        function performPayInvoice() {
+            if (!receiptData) {
+                showAlert('Chưa tải được thông tin hóa đơn.', 'danger');
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            const subtotal = receiptData?.Subtotal ?? receiptData?.subtotal ?? 0;
+            
+            // Gọi API để cập nhật trạng thái thanh toán
+            // ✅ Không truyền accountantId - Backend sẽ tự động lưu người bấm thanh toán vào AccountantId
+            const updateData = {
+                statusCode: 'PAID',
+                // Giữ nguyên các trường khác
+                maintenanceTicketId: receiptData?.MaintenanceTicketId ?? receiptData?.maintenanceTicketId,
+                carId: receiptData?.CarId ?? receiptData?.carId,
+                branchId: receiptData?.BranchId ?? receiptData?.branchId,
+                // accountantId: không truyền - để backend tự động lưu current user
+                subtotal: subtotal,
+                vatPercent: receiptData?.VatPercent ?? receiptData?.vatPercent ?? 10,
+                discountAmount: receiptData?.DiscountAmount ?? receiptData?.discountAmount ?? 0,
+                surchargeAmount: receiptData?.SurchargeAmount ?? receiptData?.surchargeAmount ?? 0,
+                note: receiptData?.Note ?? receiptData?.note ?? ''
+            };
+            
+            $('#payInvoiceBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+            
+            fetch(`${API_BASE_URL}/TotalReceipt/${RECEIPT_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (!result.success || !result.data) {
+                    throw new Error(result.message || 'Không thể thanh toán hóa đơn.');
+                }
+                
+                // Cập nhật lại dữ liệu và UI
+                receiptData = result.data;
+                renderInvoiceSummary(receiptData);
+                updateCostSummary();
+                
+                showAlert('Thanh toán hóa đơn thành công!', 'success');
+            })
+            .catch(error => {
+                console.error('payInvoice error:', error);
+                showAlert('Không thể thanh toán hóa đơn. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                $('#payInvoiceBtn').prop('disabled', false).html('<i class="fas fa-money-bill-wave"></i> Thanh toán');
+            });
+        }
+    </script>
+}

@@ -1,0 +1,231 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@{
+    var title = ViewData["Title"] as string ?? "Dashboard";
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7173/api";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - APMMS Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/dashboard.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- jQuery - Load early -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="dashboard-body">
+    <script>
+        // Global API base URL for frontend JS
+        window.API_BASE_URL = '@apiBaseUrl';
+        console.log('API_BASE_URL configured as:', window.API_BASE_URL);
+    </script>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        @await Html.PartialAsync("_Sidebar")
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            @await Html.PartialAsync("_TopBar")
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+    <script src="~/js/sidebar.js"></script>
+    
+    <script>
+        // Dashboard layout JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard layout loaded');
+            
+            // ✅ Hide Employee List menu for non-Admin and non-Branch Manager roles
+            const employeeListMenu = document.getElementById('employeeListMenuItem');
+            if (employeeListMenu) {
+                try {
+                    // Decode JWT token to get roleId
+                    const token = localStorage.getItem('authToken');
+                    if (token) {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        const roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                        
+                        console.log('Current user RoleId:', roleId);
+                        
+                        // Only Admin (1) and Branch Manager (2) can see this menu
+                        if (roleId !== 1 && roleId !== 2) {
+                            employeeListMenu.style.display = 'none';
+                            console.log('Employee List menu hidden for role:', roleId);
+                        } else {
+                            console.log('Employee List menu shown for role:', roleId);
+                        }
+                    } else {
+                        // If no token, hide the menu
+                        employeeListMenu.style.display = 'none';
+                        console.log('No token found, hiding Employee List menu');
+                    }
+                } catch (e) {
+                    console.error('Error checking role:', e);
+                    // On error, hide the menu for security
+                    employeeListMenu.style.display = 'none';
+                }
+            }
+            
+            // ✅ Show Branch Management menu only for Admin (role id = 1)
+            const branchManagementSection = document.getElementById('branchManagementSection');
+            // ✅ Hide nhập kho cho Consulter (role id = 6)
+            const stockInSection = document.getElementById('stockInSection');
+            const stockInRequestsItem = document.getElementById('stockInRequestsItem');
+            // ✅ Hiển thị "Danh sách nhiệm vụ" chỉ cho Technician (role id = 4)
+            const serviceTasksItem = document.getElementById('serviceTasksItem');
+            // ✅ Hide cho technician & các role khác: user management, schedule list, receipts, check-in xe
+            const userManagementSection = document.getElementById('userManagementSection');
+            const scheduleSection = document.getElementById('scheduleSection');
+            const scheduleListItem = document.getElementById('scheduleListItem');
+            const vehicleCheckinsItem = document.getElementById('vehicleCheckinsItem');
+            const receiptSection = document.getElementById('receiptSection');
+            if (branchManagementSection) {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    if (token) {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        const roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                        const roleName = (payload['RoleName'] || payload['role_name'] || '').toString().toUpperCase();
+                        
+                        console.log('Checking Branch Management access for RoleId:', roleId);
+                        
+                        // Only Admin (1) can see Branch Management menu
+                        if (roleId === 1) {
+                            branchManagementSection.style.display = 'block';
+                            console.log('Branch Management menu shown for Admin');
+                        } else {
+                            branchManagementSection.style.display = 'none';
+                            console.log('Branch Management menu hidden for role:', roleId);
+                        }
+
+                        // Hide menus cho Consulter (role 6), Technician (role 4), Warehouse Keeper (role 5)
+                        const isConsulter = roleId === 6 || roleName === 'CONSULTER';
+                        const isTechnician = roleId === 4 || roleName === 'TECHNICIAN';
+                        const isWarehouseKeeper = roleId === 5 || roleName === 'WAREHOUSE_KEEPER' || roleName.includes('WAREHOUSE');
+                        const isRole3 = roleId === 3;
+
+                        if (isConsulter) {
+                            if (stockInSection) stockInSection.style.display = 'none';
+                            console.log('Consulter detected -> hide stock-in menu');
+                        }
+
+                        // Hide chỉ "Yêu cầu nhập kho" + "Check-in xe" + "Danh sách đặt lịch" cho role 3
+                        if (isRole3) {
+                            if (stockInRequestsItem) stockInRequestsItem.style.display = 'none';
+                            if (vehicleCheckinsItem) vehicleCheckinsItem.style.display = 'none';
+                            if (scheduleListItem) scheduleListItem.style.display = 'none';
+                            console.log('Role 3 detected -> hide stock-in requests, vehicle check-ins, schedule list');
+                        }
+
+                        if (!isTechnician && serviceTasksItem) {
+                            serviceTasksItem.style.display = 'none';
+                            console.log('Hide service tasks menu for non-technician roles');
+                        }
+
+                        if (isTechnician) {
+                            if (userManagementSection) userManagementSection.style.display = 'none';
+                            if (stockInSection) stockInSection.style.display = 'none';
+                            if (receiptSection) receiptSection.style.display = 'none';
+                            if (scheduleListItem) scheduleListItem.style.display = 'none';
+                            console.log('Technician detected -> hide user management, stock-in, receipts, schedule list');
+                        }
+
+                        // Hide receipts + check-in xe + danh sách đặt lịch + quản lý người dùng cho Warehouse Keeper (role 5)
+                        if (isWarehouseKeeper && !isTechnician) {
+                            if (receiptSection) receiptSection.style.display = 'none';
+                            if (vehicleCheckinsItem) vehicleCheckinsItem.style.display = 'none';
+                            if (scheduleListItem) scheduleListItem.style.display = 'none';
+                            if (userManagementSection) userManagementSection.style.display = 'none';
+                            console.log('Warehouse Keeper detected -> hide receipts, vehicle check-ins, schedule list, user management');
+                        }
+                    } else {
+                        // If no token, hide the menu
+                        branchManagementSection.style.display = 'none';
+                        console.log('No token found, hiding Branch Management menu');
+                    }
+                } catch (e) {
+                    console.error('Error checking role for Branch Management:', e);
+                    // On error, hide the menu for security
+                    branchManagementSection.style.display = 'none';
+                }
+            }
+            
+            // Sidebar toggle functionality
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    if (window.innerWidth > 768) {
+                        sidebar.classList.toggle('collapsed');
+                    } else {
+                        sidebar.classList.toggle('show');
+                    }
+                });
+            }
+            
+            // Handle mobile sidebar toggle
+            const mobileToggle = document.querySelector('.mobile-sidebar-toggle');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(e.target) && 
+                        !sidebarToggle.contains(e.target) && 
+                        !mobileToggle.contains(e.target)) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Force show welcome page if it exists
+            setTimeout(function() {
+                const welcomePage = document.getElementById('welcome-page');
+                if (welcomePage) {
+                    console.log('Showing welcome page');
+                    welcomePage.style.display = 'block';
+                    welcomePage.style.visibility = 'visible';
+                    welcomePage.style.opacity = '1';
+                    welcomePage.style.position = 'relative';
+                    welcomePage.style.left = 'auto';
+                    welcomePage.classList.add('active');
+                }
+            }, 100);
+        });
+    </script>
+    
+    <!-- Bootstrap -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

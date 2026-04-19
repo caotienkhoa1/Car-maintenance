@@ -1,0 +1,496 @@
+@{
+    ViewData["Title"] = "Tạo yêu cầu nhập kho";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Tạo yêu cầu nhập kho</h4>
+                    <a href="/StockInRequests" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form id="createStockInRequestForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="code" class="form-label">Mã yêu cầu</label>
+                                <input type="text" class="form-control" id="code" name="code" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="description" class="form-label">Mô tả</label>
+                                <input type="text" class="form-control" id="description" name="description">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="note" class="form-label">Ghi chú</label>
+                                <textarea class="form-control" id="note" name="note" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h5 class="mb-3">Danh sách linh kiện</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <input type="text" class="form-control me-2" id="componentSearch" placeholder="Tìm kiếm linh kiện...">
+                                    <div class="d-flex gap-2">
+                                        <a href="/StockInRequests/Template" class="btn btn-outline-success" download>
+                                            <i class="fas fa-download"></i> Tải mẫu Excel
+                                        </a>
+                                        <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display: none;">
+                                        <label for="excelFileInput" class="btn btn-outline-primary" id="uploadExcelBtn" style="cursor: pointer; margin: 0;">
+                                            <i class="fas fa-upload"></i> Tải Excel
+                                        </label>
+                                        <button type="button" class="btn btn-outline-primary" id="addComponentBtn">
+                                            <i class="fas fa-plus"></i> Thêm linh kiện
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã linh kiện</th>
+                                                <th>Tên linh kiện</th>
+                                                <th>Số lượng</th>
+                                                <th>Thao tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="componentsTableBody">
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">Chưa có linh kiện nào</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/StockInRequests" class="btn btn-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Tạo yêu cầu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Chọn linh kiện -->
+<div class="modal fade" id="selectComponentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chọn linh kiện</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="form-control mb-3" id="modalComponentSearch" placeholder="Tìm kiếm...">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Chọn</th>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Loại</th>
+                                <th>Số lượng hiện có</th>
+                            </tr>
+                        </thead>
+                        <tbody id="availableComponentsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-outline-primary" id="confirmAddComponentsBtn">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="messageModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let selectedComponents = [];
+        let availableComponents = [];
+
+        $(document).ready(function() {
+            loadAvailableComponents();
+
+            $('#addComponentBtn').click(function() {
+                // Cleanup backdrop cũ nếu có
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                $('body').css('overflow', '');
+                $('body').css('padding-right', '');
+                
+                $('#selectComponentModal').modal('show');
+            });
+
+            $('#modalComponentSearch').on('input', function() {
+                filterAvailableComponents();
+            });
+
+            $('#confirmAddComponentsBtn').click(function() {
+                const checked = $('input[type="checkbox"]:checked', '#availableComponentsTableBody');
+                checked.each(function() {
+                    const componentId = $(this).val();
+                    const component = availableComponents.find(c => c.id == componentId);
+                    if (component && !selectedComponents.find(sc => sc.id == componentId)) {
+                        selectedComponents.push({
+                            id: component.id,
+                            code: component.code,
+                            name: component.name,
+                            quantity: 1
+                        });
+                    }
+                });
+                renderSelectedComponents();
+                
+                // Đóng modal và cleanup
+                const modal = bootstrap.Modal.getInstance($('#selectComponentModal')[0]);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    $('#selectComponentModal').modal('hide');
+                }
+                
+                // Cleanup backdrop nếu còn sót
+                setTimeout(function() {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', '');
+                    $('body').css('padding-right', '');
+                }, 300);
+            });
+
+            $('#createStockInRequestForm').submit(function(e) {
+                e.preventDefault();
+                createStockInRequest();
+            });
+
+            // Upload Excel
+            $('#excelFileInput').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileName = file.name.toLowerCase();
+                    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                        showMessage('Lỗi', 'Vui lòng chọn file Excel (.xlsx hoặc .xls)', 'error');
+                        $(this).val('');
+                        return;
+                    }
+                    uploadExcelFile(file);
+                }
+            });
+
+            function uploadExcelFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                $('#uploadExcelBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
+
+                $.ajax({
+                    url: '/StockInRequests/Upload',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(result) {
+                        if (result.success && result.data && result.data.details) {
+                            // Merge với selectedComponents
+                            const newComponents = result.data.details.map(d => ({
+                                id: d.componentId,
+                                code: d.componentCode,
+                                name: d.componentName,
+                                quantity: d.quantity || 1
+                            }));
+                            
+                            // Loại bỏ trùng lặp
+                            newComponents.forEach(newComp => {
+                                const existing = selectedComponents.find(sc => sc.id == newComp.id);
+                                if (!existing) {
+                                    selectedComponents.push(newComp);
+                                }
+                            });
+                            
+                            renderSelectedComponents();
+                            showMessage('Thành công', `Đã import ${newComponents.length} linh kiện từ Excel`, 'success');
+                        } else {
+                            const errorMsg = result.message || 'Không thể đọc file Excel';
+                            showMessage('Lỗi', errorMsg, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMsg = 'Lỗi không xác định';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            errorMsg = xhr.responseText;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    },
+                    complete: function() {
+                        $('#uploadExcelBtn').prop('disabled', false).html('<i class="fas fa-upload"></i> Tải Excel');
+                        $('#excelFileInput').val('');
+                    }
+                });
+            }
+
+            // Tạo mã preview ngay khi load trang
+            generatePreviewCode();
+        });
+
+        // Function tạo mã preview (theo format backend: YC + yyMMdd + 0001)
+        function generatePreviewCode() {
+            const prefix = "YC";
+            const now = new Date();
+            const year = now.getFullYear().toString().substring(2); // Lấy 2 số cuối của năm
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = year + month + day; // yyMMdd
+            const counter = "0001"; // Counter mặc định
+            
+            const previewCode = prefix + dateStr + counter;
+            $('#code').val(previewCode);
+        }
+
+        function loadAvailableComponents() {
+            $.ajax({
+                url: '/Components/ListData',
+                method: 'GET',
+                data: { page: 1, pageSize: 1000 },
+                success: function(result) {
+                    if (result.success && result.data) {
+                        availableComponents = result.data;
+                        renderAvailableComponents();
+                    }
+                }
+            });
+        }
+
+        function renderAvailableComponents() {
+            const tbody = $('#availableComponentsTableBody');
+            tbody.empty();
+            
+            if (availableComponents.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                return;
+            }
+
+            availableComponents.forEach(function(component) {
+                const isSelected = selectedComponents.find(sc => sc.id == component.id);
+                const row = `
+                    <tr>
+                        <td>
+                            <input type="checkbox" value="${component.id}" ${isSelected ? 'disabled' : ''}>
+                        </td>
+                        <td>${component.code || component.id}</td>
+                        <td>${component.name || '-'}</td>
+                        <td>${component.typeComponentName || '-'}</td>
+                        <td>${component.quantityStock || component.QuantityStock || 0}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function filterAvailableComponents() {
+            const search = $('#modalComponentSearch').val().toLowerCase();
+            $('#availableComponentsTableBody tr').each(function() {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.includes(search));
+            });
+        }
+
+        function renderSelectedComponents() {
+            const tbody = $('#componentsTableBody');
+            tbody.empty();
+
+            if (selectedComponents.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">Chưa có linh kiện nào</td></tr>');
+                return;
+            }
+
+            selectedComponents.forEach(function(component, index) {
+                const row = `
+                    <tr>
+                        <td>${component.code || component.id}</td>
+                        <td>${component.name || '-'}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" 
+                                   value="${component.quantity}" min="1" 
+                                   onchange="updateComponentQuantity(${index}, this.value)"
+                                   style="width: 100px;">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeComponent(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updateComponentQuantity(index, quantity) {
+            if (quantity < 1) {
+                quantity = 1;
+                $(`#componentsTableBody tr:eq(${index}) input[type="number"]`).val(1);
+            }
+            selectedComponents[index].quantity = parseInt(quantity);
+        }
+
+        function removeComponent(index) {
+            selectedComponents.splice(index, 1);
+            renderSelectedComponents();
+        }
+
+        function createStockInRequest() {
+            if (selectedComponents.length === 0) {
+                showMessage('Cảnh báo', 'Vui lòng thêm ít nhất một linh kiện', 'warning');
+                return;
+            }
+
+            // Disable submit button và hiển thị loading
+            const submitBtn = $('#createStockInRequestForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tạo...');
+
+            // Không gửi code, để backend tự động tạo mã 12 ký tự
+            const formData = {
+                code: '', // Để trống, backend sẽ tự động tạo
+                description: $('#description').val(),
+                note: $('#note').val(),
+                details: selectedComponents.map(sc => ({
+                    componentId: sc.id,
+                    quantity: sc.quantity
+                }))
+            };
+
+            $.ajax({
+                url: '/StockInRequests/Create',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(result) {
+                    // Đóng tất cả modal đang mở
+                    $('.modal').modal('hide');
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', '');
+                    $('body').css('padding-right', '');
+
+                    if (result && result.success) {
+                        showMessage('Thành công', 'Tạo yêu cầu nhập kho thành công', 'success', function() {
+                            window.location.href = '/StockInRequests';
+                        });
+                    } else {
+                        const errorMsg = result?.message || result?.error || 'Không thể tạo yêu cầu';
+                        showMessage('Lỗi', errorMsg, 'error');
+                        submitBtn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Đóng tất cả modal đang mở
+                    $('.modal').modal('hide');
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', '');
+                    $('body').css('padding-right', '');
+
+                    let errorMsg = error;
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorObj = JSON.parse(xhr.responseText);
+                            errorMsg = errorObj.message || errorObj.error || error;
+                        } catch (e) {
+                            errorMsg = xhr.responseText || error;
+                        }
+                    }
+                    
+                    showMessage('Lỗi', errorMsg, 'error');
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        }
+
+        function showMessage(title, message, type, callback) {
+            // Đóng tất cả modal đang mở trước
+            $('.modal').modal('hide');
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+
+            const modal = $('#messageModal');
+            const header = $('#messageModalHeader');
+            const titleEl = $('#messageModalTitle');
+            const bodyEl = $('#messageModalBody');
+            const textEl = $('#messageModalText');
+            const okBtn = $('#messageModalOkBtn');
+
+            titleEl.text(title);
+            textEl.text(message);
+
+            // Set màu sắc theo type
+            header.removeClass('bg-success bg-danger bg-warning');
+            okBtn.removeClass('btn-success btn-danger btn-warning');
+            
+            if (type === 'success') {
+                header.addClass('bg-success text-white');
+                okBtn.addClass('btn-success');
+            } else if (type === 'error') {
+                header.addClass('bg-danger text-white');
+                okBtn.addClass('btn-danger');
+            } else if (type === 'warning') {
+                header.addClass('bg-warning text-dark');
+                okBtn.addClass('btn-warning');
+            } else {
+                header.addClass('bg-primary text-white');
+            }
+
+            // Xóa callback cũ và thêm callback mới
+            modal.off('hidden.bs.modal');
+            if (callback) {
+                modal.on('hidden.bs.modal', function() {
+                    callback();
+                });
+            }
+
+            // Hiển thị modal
+            modal.modal('show');
+        }
+    </script>
+}
+

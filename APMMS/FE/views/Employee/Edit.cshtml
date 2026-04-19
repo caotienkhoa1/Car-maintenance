@@ -1,0 +1,309 @@
+@{
+    ViewData["Title"] = "Sửa thông tin nhân viên";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Sửa thông tin nhân viên</h4>
+                </div>
+                <div class="card-body">
+                    <form id="employeeForm">
+                        <input type="hidden" id="employeeId" name="id">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">Họ <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phoneNumber" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dob" class="form-label">Ngày sinh</label>
+                                    <input type="date" class="form-control" id="dob" name="dob">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="citizenId" class="form-label">CMT/CCCD</label>
+                                    <input type="text" class="form-control" id="citizenId" name="citizenId" maxlength="20">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="roleId" class="form-label">Vai trò <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="roleId" name="roleId" required>
+                                        <option value="">Chọn vai trò</option>
+                                        <option value="1">Tổng giám đốc</option>
+                                        <option value="2">Giám đốc chi nhánh</option>
+                                        <option value="3">Kế toán</option>
+                                        <option value="4">Kỹ thuật viên</option>
+                                        <option value="5">Thủ kho</option>
+                                        <option value="6">Tư vấn viên</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchId" class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="branchId" name="branchId" required>
+                                        <option value="">Chọn chi nhánh</option>
+                                        <!-- Will be loaded dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Mật khẩu mới</label>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Để trống nếu không đổi mật khẩu">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Địa chỉ</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isActive" name="isActive">
+                                    <label class="form-check-label" for="isActive">
+                                        Kích hoạt tài khoản
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/Employees" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const employeeId = getEmployeeIdFromUrl();
+            if (employeeId) {
+                loadEmployee(employeeId);
+                loadBranches();
+            }
+            
+            document.getElementById('employeeForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateEmployee();
+            });
+        });
+
+        function getEmployeeIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        function loadEmployee(id) {
+            const token = localStorage.getItem('authToken');
+            fetch(`/api/Employee/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const employee = data.data;
+                    document.getElementById('employeeId').value = employee.id;
+                    document.getElementById('firstName').value = employee.firstName || '';
+                    document.getElementById('lastName').value = employee.lastName || '';
+                    document.getElementById('email').value = employee.email || '';
+                    document.getElementById('phoneNumber').value = employee.phone || '';
+                    document.getElementById('dob').value = employee.dob ? new Date(employee.dob).toISOString().split('T')[0] : '';
+                    document.getElementById('citizenId').value = employee.citizenId || '';
+                    document.getElementById('roleId').value = employee.roleId || '';
+                    document.getElementById('username').value = employee.username || '';
+                    document.getElementById('address').value = employee.fullAddress || '';
+                    document.getElementById('isActive').checked = !employee.statusCode || employee.statusCode === 'ACTIVE';
+                } else {
+                    showAlert('Lỗi khi tải thông tin nhân viên: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi tải thông tin nhân viên', 'danger');
+            });
+        }
+
+        function loadBranches() {
+            fetch('/api/Branch')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('branchId');
+                        data.data.forEach(branch => {
+                            const option = document.createElement('option');
+                            option.value = branch.id;
+                            option.textContent = branch.name;
+                            select.appendChild(option);
+                        });
+                        
+                        // Set selected branch after loading
+                        const employeeId = getEmployeeIdFromUrl();
+                        if (employeeId) {
+                            loadEmployeeBranch(employeeId);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading branches:', error);
+                });
+        }
+
+        function loadEmployeeBranch(employeeId) {
+            const token = localStorage.getItem('authToken');
+            fetch(`/api/Employee/${employeeId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.branchId) {
+                    document.getElementById('branchId').value = data.data.branchId;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading employee branch:', error);
+            });
+        }
+
+        function updateEmployee() {
+            const formData = new FormData(document.getElementById('employeeForm'));
+            const employeeData = Object.fromEntries(formData.entries());
+            
+            // Map isActive to StatusCode
+            employeeData.statusCode = document.getElementById('isActive').checked ? 'ACTIVE' : 'INACTIVE';
+            delete employeeData.isActive;
+            
+            // Remove empty password
+            if (!employeeData.password) {
+                delete employeeData.password;
+            }
+            
+            // Rename fields to match backend
+            if (employeeData.phoneNumber) {
+                employeeData.phone = employeeData.phoneNumber;
+                delete employeeData.phoneNumber;
+            }
+            if (employeeData.address) {
+                // Address is already correct
+            }
+            
+            // Format dob from YYYY-MM-DD to dd-MM-yyyy
+            if (employeeData.dob) {
+                const date = new Date(employeeData.dob + 'T00:00:00');
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                employeeData.dob = `${day}-${month}-${year}`;
+            }
+
+            const employeeId = document.getElementById('employeeId').value;
+            const token = localStorage.getItem('authToken');
+
+            fetch(`/api/Employee/${employeeId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(employeeData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật thông tin nhân viên thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/Employees';
+                    }, 1500);
+                } else {
+                    showAlert('Lỗi: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi cập nhật thông tin nhân viên', 'danger');
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('form'));
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+}

@@ -1,0 +1,374 @@
+@{
+    ViewData["Title"] = "Chỉnh sửa gói dịch vụ";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Chỉnh sửa gói dịch vụ</h5>
+                    <a href="/ServicePackages" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="loadingSpinner" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+
+                    <form id="editForm" style="display: none;">
+                        <input type="hidden" id="Id" name="Id" />
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Mã gói <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="Code" name="Code" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tên gói <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="Name" name="Name" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Giá <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="Price" name="Price" step="0.01" min="0" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng thái</label>
+                                    <select class="form-select" id="StatusCode" name="StatusCode">
+                                        <option value="ACTIVE">Hoạt động</option>
+                                        <option value="INACTIVE">Không hoạt động</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Chi nhánh</label>
+                            <input type="text" class="form-control" id="BranchName" readonly />
+                            <input type="hidden" id="BranchId" name="BranchId" />
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="mb-3">
+                            <label class="form-label">Linh kiện trong gói</label>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="componentSearch" placeholder="Tìm kiếm linh kiện..." />
+                            </div>
+                            <div id="componentsLoading" class="text-center mb-2" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                            <div id="componentsList" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                <p class="text-muted text-center">Đang tải danh sách linh kiện...</p>
+                            </div>
+                            <small class="text-muted">Chọn các linh kiện sẽ được bao gồm trong gói dịch vụ này.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/ServicePackages" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allComponents = [];
+        let selectedComponentIds = [];
+        let componentQuantities = {}; // Map componentId -> quantity
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const packageId = getPackageIdFromUrl();
+            if (packageId) {
+                loadServicePackage(packageId);
+            } else {
+                showError('Không tìm thấy ID gói dịch vụ');
+            }
+
+            document.getElementById('editForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateServicePackage();
+            });
+
+            // Component search
+            document.getElementById('componentSearch').addEventListener('input', function() {
+                filterComponents();
+            });
+        });
+
+        function getPackageIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        function loadServicePackage(id) {
+            fetch(`/ServicePackages/GetDetails/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    
+                    if (data.success && data.data) {
+                        displayServicePackageForm(data.data);
+                        // loadComponents() đã được gọi trong displayServicePackageForm
+                    } else {
+                        showError('Lỗi khi tải thông tin: ' + (data.message || 'Không có dữ liệu'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    showError('Có lỗi xảy ra khi tải thông tin gói dịch vụ: ' + error.message);
+                });
+        }
+
+        function displayServicePackageForm(package) {
+            document.getElementById('Id').value = package.id || '';
+            document.getElementById('Code').value = package.code || '';
+            document.getElementById('Name').value = package.name || '';
+            document.getElementById('Description').value = package.description || '';
+            document.getElementById('Price').value = package.price || '';
+            document.getElementById('BranchId').value = package.branchId || '';
+            document.getElementById('BranchName').value = package.branchName || package.branchId || '';
+            document.getElementById('StatusCode').value = package.statusCode || 'ACTIVE';
+            
+            // Store selected component IDs and quantities
+            if (package.components && package.components.length > 0) {
+                selectedComponentIds = package.components.map(c => c.id);
+                // Store quantities from package
+                package.components.forEach(c => {
+                    componentQuantities[c.id] = c.quantity || 1; // Default to 1 if not provided
+                });
+            }
+            
+            document.getElementById('editForm').style.display = 'block';
+            
+            // Load components - backend sẽ tự động lọc theo branchId của user đang đăng nhập
+            loadComponents();
+        }
+
+        function loadComponents() {
+            const componentsList = document.getElementById('componentsList');
+            const componentsLoading = document.getElementById('componentsLoading');
+            
+            componentsLoading.style.display = 'block';
+            componentsList.innerHTML = '<p class="text-muted text-center">Đang tải...</p>';
+
+            // Filter components theo branchId của package (không phải user)
+            // Đảm bảo chỉ hiển thị components thuộc cùng branch với package
+            const branchId = document.getElementById('BranchId').value;
+            const url = branchId 
+                ? `/Components/ListData?page=1&pageSize=1000&statusCode=ACTIVE&branchId=${branchId}`
+                : `/Components/ListData?page=1&pageSize=1000&statusCode=ACTIVE`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    componentsLoading.style.display = 'none';
+                    
+                    if (data.success && data.data) {
+                        // Chỉ hiển thị components thuộc cùng branch với package
+                        allComponents = data.data;
+                        renderComponents();
+                    } else {
+                        componentsList.innerHTML = '<p class="text-danger">Không thể tải danh sách linh kiện.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading components:', error);
+                    componentsLoading.style.display = 'none';
+                    componentsList.innerHTML = '<p class="text-danger">Lỗi khi tải danh sách linh kiện: ' + error.message + '</p>';
+                });
+        }
+
+        function renderComponents() {
+            const componentsList = document.getElementById('componentsList');
+            const searchTerm = document.getElementById('componentSearch').value.toLowerCase();
+            
+            let html = '';
+            
+            if (allComponents.length === 0) {
+                html = '<p class="text-muted text-center">Không có linh kiện nào.</p>';
+            } else {
+                const filtered = allComponents.filter(c => {
+                    const name = (c.name || '').toLowerCase();
+                    const code = (c.code || '').toLowerCase();
+                    return name.includes(searchTerm) || code.includes(searchTerm);
+                });
+
+                if (filtered.length === 0) {
+                    html = '<p class="text-muted text-center">Không tìm thấy linh kiện nào.</p>';
+                } else {
+                    filtered.forEach(function(component) {
+                        const isChecked = selectedComponentIds.includes(component.id);
+                        const unitPrice = component.unitPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.unitPrice) : '-';
+                        const quantity = componentQuantities[component.id] || 1;
+                        
+                        html += `<div class="form-check mb-2 d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" value="${component.id}" id="component_${component.id}" ${isChecked ? 'checked' : ''} onchange="toggleComponent(${component.id})">
+                            <label class="form-check-label flex-grow-1" for="component_${component.id}">
+                                <strong>${component.code || component.id}</strong> - ${component.name || '-'} 
+                                <small class="text-muted">(${unitPrice})</small>
+                            </label>
+                            <input type="number" class="form-control form-control-sm ms-2" id="quantity_${component.id}" 
+                                   value="${quantity}" min="1" style="width: 80px;" 
+                                   ${!isChecked ? 'disabled' : ''} 
+                                   onchange="updateComponentQuantity(${component.id}, this.value)"
+                                   placeholder="Số lượng">
+                        </div>`;
+                    });
+                }
+            }
+            
+            componentsList.innerHTML = html;
+        }
+
+        function toggleComponent(componentId) {
+            const index = selectedComponentIds.indexOf(componentId);
+            const quantityInput = document.getElementById(`quantity_${componentId}`);
+            
+            if (index > -1) {
+                selectedComponentIds.splice(index, 1);
+                if (quantityInput) {
+                    quantityInput.disabled = true;
+                }
+            } else {
+                selectedComponentIds.push(componentId);
+                if (!componentQuantities[componentId]) {
+                    componentQuantities[componentId] = 1;
+                }
+                if (quantityInput) {
+                    quantityInput.disabled = false;
+                    quantityInput.value = componentQuantities[componentId];
+                }
+            }
+        }
+
+        function filterComponents() {
+            renderComponents();
+        }
+
+        function updateComponentQuantity(componentId, quantity) {
+            const qty = parseInt(quantity) || 1;
+            if (qty < 1) {
+                alert('Số lượng phải lớn hơn 0');
+                document.getElementById(`quantity_${componentId}`).value = componentQuantities[componentId] || 1;
+                return;
+            }
+            componentQuantities[componentId] = qty;
+        }
+
+        function updateServicePackage() {
+            const id = document.getElementById('Id').value;
+            
+            // Build Components array with Quantity
+            const components = selectedComponentIds.map(componentId => ({
+                componentId: componentId,
+                quantity: componentQuantities[componentId] || 1
+            }));
+            
+            const payload = {
+                Id: parseInt(id),
+                Code: document.getElementById('Code').value,
+                Name: document.getElementById('Name').value,
+                Description: document.getElementById('Description').value,
+                Price: parseFloat(document.getElementById('Price').value) || 0,
+                BranchId: document.getElementById('BranchId').value ? parseInt(document.getElementById('BranchId').value) : null,
+                StatusCode: document.getElementById('StatusCode').value,
+                Components: components.length > 0 ? components : null
+            };
+
+            // Disable submit button
+            const submitBtn = document.querySelector('#editForm button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+
+            fetch(`/ServicePackages/Update/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/ServicePackages';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || 'Không thể cập nhật!', 'danger');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Lỗi khi gọi API: ' + error.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Cập nhật';
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}
+

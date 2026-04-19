@@ -1,0 +1,55 @@
+﻿@model FE.viewmodels.CarOfAutoOwnerViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa xe";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <h3>Chỉnh sửa thông tin xe</h3>
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="UserId" />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CarName" class="form-label">Tên xe</label>
+                <input asp-for="CarName" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="CarModel" class="form-label">Model</label>
+                <input asp-for="CarModel" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="LicensePlate" class="form-label">Biển số</label>
+                <input asp-for="LicensePlate" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="Color" class="form-label">Màu xe</label>
+                <input asp-for="Color" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="VehicleEngineNumber" class="form-label">Số động cơ</label>
+                <input asp-for="VehicleEngineNumber" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="VinNumber" class="form-label">Số khung (VIN)</label>
+                <input asp-for="VinNumber" class="form-control" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="YearOfManufacture" class="form-label">Năm sản xuất</label>
+                <input asp-for="YearOfManufacture" type="number" class="form-control" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-outline-primary">Lưu</button>
+        <a asp-action="Index" asp-route-ownerId="@Model.UserId" class="btn btn-secondary">Hủy</a>
+    </form>
+</div>

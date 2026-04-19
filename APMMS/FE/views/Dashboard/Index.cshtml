@@ -1,0 +1,881 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<!-- Welcome Page (Default) -->
+@await Html.PartialAsync("_WelcomePage")
+
+@section Scripts {
+    <script>
+        // APMMS Logo click - quay về trang welcome
+        // Define globally BEFORE DOMContentLoaded so inline onclick can access it
+        window.goToWelcomePage = function() {
+            console.log('goToWelcomePage called');
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none';
+                page.style.visibility = 'hidden';
+                page.style.opacity = '0';
+                page.style.position = 'absolute';
+                page.style.left = '-9999px';
+            });
+            
+            // Show welcome page
+            const welcomePage = document.getElementById('welcome-page');
+            if (welcomePage) {
+                welcomePage.classList.add('active');
+                welcomePage.style.display = 'block';
+                welcomePage.style.visibility = 'visible';
+                welcomePage.style.opacity = '1';
+                welcomePage.style.position = 'relative';
+                welcomePage.style.left = 'auto';
+                console.log('Welcome page shown');
+            } else {
+                console.error('Welcome page not found!');
+            }
+            
+            // Update page title
+            const titleElement = document.getElementById('pageTitle');
+            if (titleElement) {
+                titleElement.textContent = 'Dashboard';
+            }
+            
+            // Close mobile sidebar
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768 && sidebar) {
+                sidebar.classList.remove('show');
+            }
+            
+            return false;
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard JavaScript loaded');
+            
+            // Sidebar toggle
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            console.log('Sidebar element:', sidebar);
+            
+            // Navigation functionality - show partial views
+            function showPage(pageId) {
+                console.log('Showing page:', pageId);
+                try {
+                    // Hide all pages with strong CSS rules
+                    document.querySelectorAll('.page-content').forEach(page => {
+                        page.classList.remove('active');
+                        page.style.display = 'none';
+                        page.style.visibility = 'hidden';
+                        page.style.opacity = '0';
+                        page.style.position = 'absolute';
+                        page.style.left = '-9999px';
+                    });
+                    
+                    // Show selected page
+                    const page = document.getElementById(pageId + '-page');
+                    console.log('Page element:', page);
+                    if (page) {
+                        page.classList.add('active');
+                        page.style.display = 'block';
+                        page.style.visibility = 'visible';
+                        page.style.opacity = '1';
+                        page.style.position = 'relative';
+                        page.style.left = 'auto';
+                        console.log('Page shown successfully');
+                    } else {
+                        console.warn(`Page with id "${pageId}-page" not found`);
+                    }
+                    
+                    // Update page title
+                    const pageTitle = document.querySelector(`[data-page="${pageId}"]`)?.textContent?.trim() || 'Dashboard';
+                    const titleElement = document.getElementById('pageTitle');
+                    if (titleElement) {
+                        titleElement.textContent = pageTitle;
+                    }
+                } catch (error) {
+                    console.error('Error showing page:', error);
+                }
+            }
+
+            function setActiveNavLink(activeLink) {
+                try {
+                    // Remove active class from all links
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    if (activeLink) {
+                        activeLink.classList.add('active');
+                    }
+                } catch (error) {
+                    console.error('Error setting active nav link:', error);
+                }
+            }
+
+            // APMMS logo already has inline onclick, but add backup handlers too
+            setTimeout(function() {
+                const apmmsLogo = document.getElementById('apmmsLogo');
+                if (apmmsLogo) {
+                    console.log('APMMS logo found, adding backup handlers');
+                    apmmsLogo.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('APMMS clicked via addEventListener backup');
+                        window.goToWelcomePage();
+                    });
+                } else {
+                    console.warn('APMMS logo not found');
+                }
+            }, 100);
+
+            // Navigation links
+            const navLinks = document.querySelectorAll('.nav-link[data-page]');
+            console.log('Found nav links:', navLinks.length);
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Nav link clicked:', this);
+                    
+                    const pageId = this.getAttribute('data-page');
+                    console.log('Page ID:', pageId);
+                    
+                    if (pageId) {
+                        setActiveNavLink(this);
+                        showPage(pageId);
+                        
+                        // Close mobile sidebar after navigation
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('show');
+                        }
+                    }
+                });
+            });
+
+            // Handle stat card clicks
+            document.querySelectorAll('.stat-content a[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const pageId = this.getAttribute('data-page');
+                    if (pageId) {
+                        const navLink = document.querySelector(`[data-page="${pageId}"]`);
+                        
+                        setActiveNavLink(navLink);
+                        showPage(pageId);
+                        
+                        // Close mobile sidebar after navigation
+                        if (window.innerWidth <= 768) {
+                            sidebar.classList.remove('show');
+                        }
+                    }
+                });
+            });
+
+            // Sidebar toggle functionality
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    if (window.innerWidth > 768) {
+                        sidebar.classList.toggle('collapsed');
+                    } else {
+                        sidebar.classList.toggle('show');
+                    }
+                });
+            }
+            
+            // Handle mobile sidebar toggle
+            const mobileToggle = document.querySelector('.mobile-sidebar-toggle');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(e.target) && 
+                        !sidebarToggle.contains(e.target) && 
+                        !mobileToggle.contains(e.target)) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Initialize with welcome page and hide all other pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none';
+                page.style.visibility = 'hidden';
+                page.style.opacity = '0';
+                page.style.position = 'absolute';
+                page.style.left = '-9999px';
+            });
+            
+            // Show welcome page by default
+            const welcomePage = document.getElementById('welcome-page');
+            console.log('Welcome page element:', welcomePage);
+            
+            if (welcomePage) {
+                welcomePage.classList.add('active');
+                welcomePage.style.display = 'block';
+                welcomePage.style.visibility = 'visible';
+                welcomePage.style.opacity = '1';
+                welcomePage.style.position = 'relative';
+                welcomePage.style.left = 'auto';
+                console.log('Welcome page shown');
+            } else {
+                console.error('Welcome page not found!');
+            }
+            
+            // Add loading states for better UX
+            function addLoadingState(element) {
+                if (element) {
+                    element.style.opacity = '0.7';
+                    element.style.pointerEvents = 'none';
+                }
+            }
+            
+            function removeLoadingState(element) {
+                if (element) {
+                    element.style.opacity = '1';
+                    element.style.pointerEvents = 'auto';
+                }
+            }
+            
+            // Add loading states to navigation links
+            document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+                link.addEventListener('click', function() {
+                    addLoadingState(this);
+                    setTimeout(() => {
+                        removeLoadingState(this);
+                    }, 300);
+                });
+            });
+            
+            // Add keyboard navigation support
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && window.innerWidth <= 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Add smooth scrolling for better UX
+            document.documentElement.style.scrollBehavior = 'smooth';
+            
+            // Add tooltip functionality for better UX
+            document.querySelectorAll('[title]').forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    this.style.cursor = 'help';
+                });
+            });
+            
+            // Add confirmation for important actions
+            document.querySelectorAll('.btn-danger, .btn-warning').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (!confirm('Bạn có chắc chắn muốn thực hiện hành động này?')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // ✅ Kiểm tra role để ẩn "Lịch hẹn hôm nay" cho thủ kho (roleId = 5)
+            try {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                    const roleName = (payload['RoleName'] || payload['role_name'] || '').toString().toUpperCase();
+                    const isWarehouseKeeper = roleId === 5 || roleName === 'WAREHOUSE_KEEPER' || roleName.includes('WAREHOUSE');
+                    
+                    if (isWarehouseKeeper) {
+                        // Ẩn card "Lịch hẹn hôm nay"
+                        const cardTodaySchedules = document.getElementById('card-todaySchedules');
+                        if (cardTodaySchedules) {
+                            cardTodaySchedules.style.display = 'none';
+                        }
+                        // Ẩn phần alert chi tiết lịch hẹn
+                        const todayScheduleAlert = document.getElementById('todayScheduleAlert');
+                        if (todayScheduleAlert) {
+                            todayScheduleAlert.style.display = 'none';
+                        }
+                        console.log('Warehouse Keeper detected -> hide today schedules');
+                    } else {
+                        // Chỉ load lịch hẹn nếu không phải thủ kho
+                        loadTodaySchedules();
+                    }
+                } else {
+                    loadTodaySchedules();
+                }
+            } catch (error) {
+                console.warn('Error checking role for schedules:', error);
+                loadTodaySchedules();
+            }
+            
+            // Load stats sau khi DOM ready
+            setTimeout(() => {
+                loadDashboardStats();
+            }, 500);
+        });
+
+        // Load lịch hẹn hôm nay
+        function loadTodaySchedules() {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+
+            // Lấy branchId từ userInfo hoặc JWT token
+            let userBranchId = null;
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    userBranchId = userInfo.branchId || userInfo.BranchId;
+                }
+                
+                if (!userBranchId && token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        userBranchId = payload['BranchId'] || payload['branchId'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/branchid'];
+                        if (userBranchId) {
+                            userBranchId = parseInt(userBranchId, 10);
+                        }
+                    } catch (e) {
+                        console.warn('Could not get branchId from token:', e);
+                    }
+                }
+            } catch (error) {
+                console.warn('Error getting branchId:', error);
+            }
+
+            // Sử dụng window.API_BASE_URL nếu có, nếu không thì dùng apiBaseUrl từ ViewBag
+            const apiBaseUrl = window.API_BASE_URL || '@apiBaseUrl';
+            let url = `${apiBaseUrl}/ServiceSchedule/today`;
+            if (userBranchId) {
+                url += `?branchId=${userBranchId}`;
+            }
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        return; // Không hiển thị nếu không có quyền
+                    }
+                    throw new Error('Failed to load today schedules');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Today schedules data:', data);
+                if (data && data.success && data.data) {
+                    const schedules = data.data;
+                    const count = data.count || schedules.length;
+                    
+                    console.log(`Found ${count} schedules for today`);
+                    if (count > 0) {
+                        displayTodaySchedules(schedules, count);
+                    } else {
+                        // Nếu không có lịch, vẫn hiển thị thông báo
+                        const alertDiv = document.getElementById('todayScheduleAlert');
+                        if (alertDiv) {
+                            const messageDiv = document.getElementById('todayScheduleMessage');
+                            if (messageDiv) {
+                                messageDiv.textContent = 'Hôm nay không có lịch hẹn nào.';
+                                alertDiv.style.display = 'block';
+                                alertDiv.querySelector('.alert').classList.remove('alert-info');
+                                alertDiv.querySelector('.alert').classList.add('alert-success');
+                            }
+                        }
+                    }
+                } else {
+                    console.warn('No data returned from API');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading today schedules:', error);
+                // Hiển thị lỗi để debug
+                const alertDiv = document.getElementById('todayScheduleAlert');
+                if (alertDiv) {
+                    const messageDiv = document.getElementById('todayScheduleMessage');
+                    if (messageDiv) {
+                        messageDiv.textContent = 'Không thể tải lịch hẹn hôm nay. Vui lòng thử lại sau.';
+                        alertDiv.style.display = 'block';
+                        alertDiv.querySelector('.alert').classList.remove('alert-info');
+                        alertDiv.querySelector('.alert').classList.add('alert-warning');
+                    }
+                }
+            });
+        }
+
+        // Hiển thị lịch hẹn hôm nay
+        function displayTodaySchedules(schedules, count) {
+            const alertDiv = document.getElementById('todayScheduleAlert');
+            const messageDiv = document.getElementById('todayScheduleMessage');
+            const listDiv = document.getElementById('todayScheduleList');
+
+            if (!alertDiv || !messageDiv || !listDiv) return;
+
+            // Hiển thị thông báo
+            messageDiv.textContent = `Hôm nay có ${count} lịch hẹn cần xử lý:`;
+
+            // Hiển thị danh sách (tối đa 5 lịch đầu tiên)
+            const displaySchedules = schedules.slice(0, 5);
+            let listHtml = '<ul class="list-unstyled mb-0">';
+            displaySchedules.forEach(schedule => {
+                const time = new Date(schedule.scheduledDate).toLocaleTimeString('vi-VN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const customerName = schedule.userName || 'Khách hàng';
+                const carInfo = schedule.licensePlate ? ` - ${schedule.licensePlate}` : '';
+                const statusBadge = getStatusBadge(schedule.statusCode);
+                
+                listHtml += `
+                    <li class="mb-2">
+                        <i class="fas fa-clock text-primary me-2"></i>
+                        <strong>${time}</strong> - ${customerName}${carInfo}
+                        ${statusBadge}
+                    </li>
+                `;
+            });
+            if (schedules.length > 5) {
+                listHtml += `<li class="text-muted"><small>... và ${schedules.length - 5} lịch hẹn khác</small></li>`;
+            }
+            listHtml += '</ul>';
+
+            listDiv.innerHTML = listHtml;
+            alertDiv.style.display = 'block';
+        }
+
+        // Tạo badge trạng thái
+        function getStatusBadge(statusCode) {
+            const badges = {
+                'PENDING': '<span class="badge bg-warning">Chờ xử lý</span>',
+                'IN_PROGRESS': '<span class="badge bg-info">Đang xử lý</span>',
+                'COMPLETED': '<span class="badge bg-success">Hoàn thành</span>',
+                'CANCELLED': '<span class="badge bg-secondary">Đã hủy</span>'
+            };
+            return badges[statusCode] || '';
+        }
+
+        // Load thống kê hôm nay (chỉ cho giám đốc và quản lý chi nhánh)
+        function loadTodayStats() {
+            console.log('loadTodayStats called');
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.warn('No token found');
+                return;
+            }
+
+            // Kiểm tra role - chỉ Admin (1) và Branch Manager (2) mới được xem
+            let roleId = null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                console.log('Current roleId:', roleId);
+            } catch (e) {
+                console.warn('Could not get roleId from token:', e);
+                return;
+            }
+
+            // Chỉ hiển thị cho Admin (1) và Branch Manager (2)
+            if (roleId !== 1 && roleId !== 2) {
+                console.log('User is not Admin or Branch Manager, hiding stats');
+                const statsSection = document.getElementById('todayStatsSection');
+                if (statsSection) {
+                    statsSection.style.display = 'none';
+                }
+                return;
+            }
+
+            const apiBaseUrl = '@apiBaseUrl';
+            const url = `${apiBaseUrl}/Home/today-stats`;
+            console.log('Fetching stats from:', url);
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(async response => {
+                console.log('Stats response status:', response.status);
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.warn('Unauthorized or Forbidden');
+                        // Không có quyền, ẩn section
+                        const statsSection = document.getElementById('todayStatsSection');
+                        if (statsSection) {
+                            statsSection.style.display = 'none';
+                        }
+                        return;
+                    }
+                    const errorText = await response.text();
+                    console.error('Failed to load today stats:', errorText);
+                    throw new Error('Failed to load today stats');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Today stats data:', data);
+                if (data && data.success && data.data) {
+                    displayTodayStats(data.data);
+                } else {
+                    console.warn('No data returned from API');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading today stats:', error);
+                // Ẩn section nếu có lỗi
+                const statsSection = document.getElementById('todayStatsSection');
+                if (statsSection) {
+                    statsSection.style.display = 'none';
+                }
+            });
+        }
+
+        // Hiển thị thống kê hôm nay
+        function displayTodayStats(stats) {
+            console.log('displayTodayStats called with:', stats);
+            const statsSection = document.getElementById('todayStatsSection');
+            const revenueEl = document.getElementById('todayRevenue');
+            const orderCountEl = document.getElementById('todayOrderCount');
+
+            console.log('Elements found:', {
+                statsSection: !!statsSection,
+                revenueEl: !!revenueEl,
+                orderCountEl: !!orderCountEl
+            });
+
+            if (!statsSection || !revenueEl || !orderCountEl) {
+                console.error('Missing elements for stats display');
+                return;
+            }
+
+            // Format số tiền
+            const revenue = stats.revenue || 0;
+            const formattedRevenue = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(revenue);
+
+            revenueEl.textContent = formattedRevenue;
+            orderCountEl.textContent = stats.orderCount || 0;
+
+            // Hiển thị section
+            statsSection.style.display = 'block';
+            console.log('Stats section displayed');
+        }
+
+        // Áp dụng phân quyền hiển thị thống kê Dashboard theo RoleId
+        function applyDashboardRoleVisibility(roleId) {
+            try {
+                const cardIds = {
+                    revenueToday: 'card-todayRevenue',
+                    revenueMonth: 'card-monthRevenue',
+                    maintInProgress: 'card-maintenanceInProgress',
+                    maintPending: 'card-maintenancePending',
+                    maintCompleted: 'card-maintenanceCompletedToday',
+                    schedToday: 'card-todaySchedules',
+                    schedWeek: 'card-weekSchedules',
+                    partsCount: 'card-totalPartsIssuedToday',
+                    partsValue: 'card-totalPartsValueToday'
+                };
+
+                const setVisible = (id, visible) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.style.display = visible ? '' : 'none';
+                };
+
+                // Nếu không xác định được role, mặc định hiển thị các thống kê bảo dưỡng
+                if (!roleId || Number.isNaN(Number(roleId))) {
+                    Object.values(cardIds).forEach(id => setVisible(id, false));
+                    setVisible(cardIds.maintInProgress, true);
+                    setVisible(cardIds.maintPending, true);
+                    setVisible(cardIds.maintCompleted, true);
+                    return;
+                }
+
+                roleId = Number(roleId);
+
+                const isAdmin = roleId === 1;
+                const isBranchManager = roleId === 2;
+                const isAccountant = roleId === 3;
+                const isTechnician = roleId === 4;
+                const isWarehouseKeeper = roleId === 5;
+                const isConsulter = roleId === 6;
+
+                // Admin & Branch Manager: xem được tất cả
+                if (isAdmin || isBranchManager) {
+                    Object.values(cardIds).forEach(id => setVisible(id, true));
+                    return;
+                }
+
+                // Mặc định ẩn tất cả, sau đó bật theo từng role
+                Object.values(cardIds).forEach(id => setVisible(id, false));
+
+                if (isAccountant) {
+                    // Kế toán: chỉ cần doanh thu ngày / tháng
+                    setVisible(cardIds.revenueToday, true);
+                    setVisible(cardIds.revenueMonth, true);
+                    return;
+                }
+
+                if (isTechnician) {
+                    // Kỹ thuật: chỉ cần tình trạng bảo dưỡng
+                    setVisible(cardIds.maintInProgress, true);
+                    setVisible(cardIds.maintPending, true);
+                    setVisible(cardIds.maintCompleted, true);
+                    return;
+                }
+
+                if (isWarehouseKeeper) {
+                    // Thủ kho: xem phụ tùng + trạng thái & số phiếu hoàn thành
+                    setVisible(cardIds.maintInProgress, true);
+                    setVisible(cardIds.maintPending, true);
+                    setVisible(cardIds.maintCompleted, true);
+                    setVisible(cardIds.partsCount, true);
+                    setVisible(cardIds.partsValue, true);
+                    return;
+                }
+
+                if (isConsulter) {
+                    // Tư vấn: xem tình trạng bảo dưỡng + lịch hẹn
+                    setVisible(cardIds.maintInProgress, true);
+                    setVisible(cardIds.maintPending, true);
+                    setVisible(cardIds.maintCompleted, true);
+                    setVisible(cardIds.schedToday, true);
+                    setVisible(cardIds.schedWeek, true);
+                    return;
+                }
+
+                // Các role khác (nếu sau này có): chỉ hiển thị tình trạng bảo dưỡng
+                setVisible(cardIds.maintInProgress, true);
+                setVisible(cardIds.maintPending, true);
+                setVisible(cardIds.maintCompleted, true);
+            } catch (e) {
+                console.error('Error applying dashboard role visibility:', e);
+            }
+        }
+
+        // Load thống kê dashboard
+        function loadDashboardStats() {
+            console.log('loadDashboardStats called');
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.warn('No token found');
+                return;
+            }
+
+            // Lấy roleId và branchId từ token
+            let roleId = null;
+            let userBranchId = null;
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                roleId = parseInt(payload['RoleId'] || payload['role_id'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/roleid'] || '0');
+                
+                // Lấy branchId từ userInfo hoặc JWT token
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    userBranchId = userInfo.branchId || userInfo.BranchId;
+                }
+                
+                if (!userBranchId && token) {
+                    userBranchId = payload['BranchId'] || payload['branchId'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/branchid'];
+                    if (userBranchId) {
+                        userBranchId = parseInt(userBranchId, 10);
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not get roleId or branchId from token:', e);
+                return;
+            }
+
+            // Áp dụng phân quyền hiển thị thống kê theo RoleId
+            applyDashboardRoleVisibility(roleId);
+
+            // Sử dụng window.API_BASE_URL nếu có, nếu không thì dùng apiBaseUrl từ ViewBag
+            const apiBaseUrl = window.API_BASE_URL || '@apiBaseUrl';
+            let url = `${apiBaseUrl}/Home/dashboard-stats`;
+            console.log('Using API Base URL:', apiBaseUrl);
+            
+            // Admin (roleId = 1): không truyền branchId để lấy tất cả chi nhánh
+            // Branch Manager (roleId = 2): truyền branchId của họ
+            // Các role khác: truyền branchId của họ
+            if (roleId === 1) {
+                // Admin: không truyền branchId
+                console.log('Admin user - loading stats for all branches');
+            } else if (roleId === 2 && userBranchId) {
+                // Branch Manager: chỉ lấy thống kê của chi nhánh của họ
+                url += `?branchId=${userBranchId}`;
+                console.log('Branch Manager - loading stats for branch:', userBranchId);
+            } else if (userBranchId) {
+                // Các role khác: lấy thống kê của chi nhánh của họ
+                url += `?branchId=${userBranchId}`;
+                console.log('Other role - loading stats for branch:', userBranchId);
+            }
+            
+            console.log('Fetching stats from:', url);
+
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(async response => {
+                console.log('Stats response status:', response.status);
+                console.log('Stats response headers:', response.headers);
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.warn('Unauthorized or Forbidden');
+                        return null;
+                    }
+                    const errorText = await response.text();
+                    console.error('Failed to load dashboard stats. Status:', response.status, 'Error:', errorText);
+                    throw new Error(`Failed to load dashboard stats: ${response.status} - ${errorText}`);
+                }
+                const jsonData = await response.json();
+                console.log('Raw JSON response:', jsonData);
+                return jsonData;
+            })
+            .then(data => {
+                console.log('Dashboard stats data:', data);
+                if (data && data.success && data.data) {
+                    console.log('Stats data received:', data.data);
+                    displayDashboardStats(data.data);
+                } else {
+                    console.warn('No data returned from API or invalid format:', data);
+                    // Hiển thị 0 nếu không có dữ liệu
+                    displayDashboardStats({
+                        todayRevenue: 0,
+                        monthRevenue: 0,
+                        maintenanceInProgress: 0,
+                        maintenancePending: 0,
+                        maintenanceCompletedToday: 0,
+                        todaySchedules: 0,
+                        weekSchedules: 0,
+                        totalPartsIssuedToday: 0,
+                        totalPartsValueToday: 0
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading dashboard stats:', error);
+                // Hiển thị 0 nếu có lỗi
+                displayDashboardStats({
+                    todayRevenue: 0,
+                    monthRevenue: 0,
+                    maintenanceInProgress: 0,
+                    maintenancePending: 0,
+                    maintenanceCompletedToday: 0,
+                    todaySchedules: 0,
+                    weekSchedules: 0,
+                    totalPartsIssuedToday: 0,
+                    totalPartsValueToday: 0
+                });
+            });
+        }
+
+        // Hiển thị thống kê dashboard
+        function displayDashboardStats(stats) {
+            console.log('displayDashboardStats called with:', stats);
+            
+            if (!stats) {
+                console.error('Stats is null or undefined');
+                return;
+            }
+            
+            // Format số tiền
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).format(amount || 0);
+            };
+
+            // Doanh thu
+            const todayRevenueEl = document.getElementById('todayRevenue');
+            const monthRevenueEl = document.getElementById('monthRevenue');
+            
+            if (todayRevenueEl) {
+                todayRevenueEl.textContent = formatCurrency(stats.todayRevenue || stats.TodayRevenue || 0);
+            }
+            
+            if (monthRevenueEl) {
+                monthRevenueEl.textContent = formatCurrency(stats.monthRevenue || stats.MonthRevenue || 0);
+            }
+
+            // Tình trạng bảo dưỡng
+            const maintenanceInProgressEl = document.getElementById('maintenanceInProgress');
+            const maintenancePendingEl = document.getElementById('maintenancePending');
+            const maintenanceCompletedTodayEl = document.getElementById('maintenanceCompletedToday');
+            
+            if (maintenanceInProgressEl) {
+                maintenanceInProgressEl.textContent = stats.maintenanceInProgress || stats.MaintenanceInProgress || 0;
+            }
+            
+            if (maintenancePendingEl) {
+                maintenancePendingEl.textContent = stats.maintenancePending || stats.MaintenancePending || 0;
+            }
+            
+            if (maintenanceCompletedTodayEl) {
+                maintenanceCompletedTodayEl.textContent = stats.maintenanceCompletedToday || stats.MaintenanceCompletedToday || 0;
+            }
+
+            // Lịch hẹn
+            const todaySchedulesEl = document.getElementById('todaySchedules');
+            const weekSchedulesEl = document.getElementById('weekSchedules');
+            
+            if (todaySchedulesEl) {
+                todaySchedulesEl.textContent = stats.todaySchedules || stats.TodaySchedules || 0;
+            }
+            
+            if (weekSchedulesEl) {
+                weekSchedulesEl.textContent = stats.weekSchedules || stats.WeekSchedules || 0;
+            }
+
+            // Phụ tùng (Mới)
+            const totalPartsIssuedTodayEl = document.getElementById('totalPartsIssuedToday');
+            const totalPartsValueTodayEl = document.getElementById('totalPartsValueToday');
+
+            if (totalPartsIssuedTodayEl) {
+                const count = stats.totalPartsIssuedToday || stats.TotalPartsIssuedToday || 0;
+                totalPartsIssuedTodayEl.textContent = count + ' món';
+            }
+
+            if (totalPartsValueTodayEl) {
+                const value = stats.totalPartsValueToday || stats.TotalPartsValueToday || 0;
+                totalPartsValueTodayEl.textContent = formatCurrency(value);
+            }
+
+            // Hiển thị section
+            const statsSection = document.getElementById('dashboardStatsSection');
+            if (statsSection) {
+                statsSection.style.display = 'block';
+            }
+            console.log('Dashboard stats displayed');
+        }
+    </script>
+}

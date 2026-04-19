@@ -1,0 +1,2584 @@
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+}
+
+<!-- Profile Section with Sidebar -->
+<section class="profile-section">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="profile-sidebar">
+                    <div class="sidebar-header">
+                        <h5 class="mb-0">Tài khoản của tôi</h5>
+                    </div>
+                    <ul class="sidebar-menu">
+                        <li>
+                            <a href="#" class="sidebar-menu-item active" data-section="profile" onclick="showSection('profile', event)">
+                                <i class="fas fa-user"></i>
+                                <span>Hồ sơ</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="sidebar-menu-item" data-section="cars" onclick="showSection('cars', event)">
+                                <i class="fas fa-car"></i>
+                                <span>Xe</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="sidebar-menu-item" data-section="maintenance-history" onclick="showSection('maintenance-history', event)">
+                                <i class="fas fa-cog"></i>
+                                <span>Lịch sử bảo dưỡng</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="sidebar-menu-item" data-section="repair-history" onclick="showSection('repair-history', event)">
+                                <i class="fas fa-wrench"></i>
+                                <span>Lịch sử sửa chữa</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="sidebar-menu-item" data-section="schedule-history" onclick="showSection('schedule-history', event)">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Lịch sử đặt lịch</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Profile Section -->
+                <div class="content-section active" id="profile-section" style="display: block;">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <h4 class="mb-0">Thông tin cá nhân</h4>
+                        </div>
+                        <div class="profile-card-body">
+                            <!-- Avatar Section - Improved -->
+                            <div class="text-center mb-5">
+                                <div class="avatar-container position-relative d-inline-block">
+                                    <div class="avatar-wrapper">
+                                        <img src="https://via.placeholder.com/120/6366f1/ffffff?text=User" 
+                                             alt="Avatar" 
+                                             class="profile-avatar-img" 
+                                             id="userAvatar">
+                                        <div class="avatar-overlay" id="avatarOverlay" style="display: none;">
+                                            <button class="btn btn-light avatar-change-btn" 
+                                                    onclick="document.getElementById('avatarInput').click()" 
+                                                    id="changeAvatarBtn"
+                                                    title="Thay đổi ảnh đại diện">
+                                                <i class="fas fa-camera"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="file" 
+                                           id="avatarInput" 
+                                           accept="image/*" 
+                                           style="display: none;" 
+                                           onchange="previewAvatar(this)">
+                                </div>
+                                <h5 class="mt-3 mb-1" id="userFullName">Người dùng</h5>
+                                <p class="text-muted mb-0 small" id="userEmailDisplay">user@example.com</p>
+                                <p class="text-muted mt-2 mb-0" id="avatarHint" style="display: none;">
+                                    <small><i class="fas fa-info-circle"></i> Nhấn vào ảnh để thay đổi ảnh đại diện</small>
+                                </p>
+                            </div>
+
+                            <!-- Profile Form - Improved Layout -->
+                            <form id="profileForm">
+                                <!-- Personal Info Section -->
+                                <div class="form-section mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="fas fa-user-circle me-2 text-primary"></i>
+                                        Thông tin cơ bản
+                                    </h6>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="firstName" class="form-label fw-semibold">
+                                                <i class="fas fa-user me-1 text-muted"></i>
+                                                Họ <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </span>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="firstName" 
+                                                       name="firstName" 
+                                                       placeholder="Nhập họ của bạn"
+                                                       readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="lastName" class="form-label fw-semibold">
+                                                <i class="fas fa-user me-1 text-muted"></i>
+                                                Tên <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-user text-muted"></i>
+                                                </span>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="lastName" 
+                                                       name="lastName" 
+                                                       placeholder="Nhập tên của bạn"
+                                                       readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Contact Info Section -->
+                                <div class="form-section mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="fas fa-address-book me-2 text-primary"></i>
+                                        Thông tin liên hệ
+                                    </h6>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="email" class="form-label fw-semibold">
+                                                <i class="fas fa-envelope me-1 text-muted"></i>
+                                                Email <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-envelope text-muted"></i>
+                                                </span>
+                                                <input type="email" 
+                                                       class="form-control" 
+                                                       id="email" 
+                                                       name="email" 
+                                                       placeholder="email@example.com"
+                                                       readonly>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                <i class="fas fa-lock me-1"></i>Email không thể thay đổi
+                                            </small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="phone" class="form-label fw-semibold">
+                                                <i class="fas fa-phone me-1 text-muted"></i>
+                                                Số điện thoại <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-phone text-muted"></i>
+                                                </span>
+                                                <input type="tel" 
+                                                       class="form-control" 
+                                                       id="phone" 
+                                                       name="phone" 
+                                                       placeholder="0123456789"
+                                                       readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Additional Info Section -->
+                                <div class="form-section mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                                        Thông tin bổ sung
+                                    </h6>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="birthDate" class="form-label fw-semibold">
+                                                <i class="fas fa-calendar me-1 text-muted"></i>
+                                                Ngày sinh
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-calendar text-muted"></i>
+                                                </span>
+                                                <input type="date" 
+                                                       class="form-control" 
+                                                       id="birthDate" 
+                                                       name="birthDate" 
+                                                       readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="gender" class="form-label fw-semibold">
+                                                <i class="fas fa-venus-mars me-1 text-muted"></i>
+                                                Giới tính
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-venus-mars text-muted"></i>
+                                                </span>
+                                                <select class="form-select" 
+                                                        id="gender" 
+                                                        name="gender" 
+                                                        disabled>
+                                                    <option value="">-- Chọn giới tính --</option>
+                                                    <option value="Male">Nam</option>
+                                                    <option value="Female">Nữ</option>
+                                                    <option value="Other">Khác</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mt-1">
+                                        <div class="col-12">
+                                            <label for="address" class="form-label fw-semibold">
+                                                <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                                                Địa chỉ
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light align-items-start pt-3">
+                                                    <i class="fas fa-map-marker-alt text-muted"></i>
+                                                </span>
+                                                <textarea class="form-control" 
+                                                          id="address" 
+                                                          name="address" 
+                                                          rows="3" 
+                                                          placeholder="Nhập địa chỉ của bạn"
+                                                          readonly></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons - Improved -->
+                                <div class="profile-actions mt-5 pt-4 border-top">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                        <button type="button" 
+                                                class="btn btn-outline-primary btn-lg px-4" 
+                                                onclick="changePassword()"
+                                                id="changePasswordBtn">
+                                            <i class="fas fa-key me-2"></i>
+                                            Đổi mật khẩu
+                                        </button>
+                                        <div class="btn-group">
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary btn-lg px-4" 
+                                                    onclick="cancelEdit()" 
+                                                    id="cancelBtn" 
+                                                    style="display: none;">
+                                                <i class="fas fa-times me-2"></i>
+                                                Hủy
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-primary btn-lg px-4" 
+                                                    onclick="toggleEditMode()" 
+                                                    id="editToggleBtn">
+                                                <i class="fas fa-edit me-2"></i>
+                                                Chỉnh sửa
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-success btn-lg px-4" 
+                                                    onclick="saveProfile()" 
+                                                    id="saveBtn" 
+                                                    style="display: none;">
+                                                <i class="fas fa-save me-2"></i>
+                                                Lưu thay đổi
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cars Section -->
+                <div class="content-section" id="cars-section" style="display: none;">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0">Danh sách xe của tôi</h4>
+                                <button class="btn btn-primary btn-sm" onclick="showAddCarModal()">Thêm xe mới</button>
+                            </div>
+                        </div>
+                        <div class="profile-card-body">
+                            <div id="carsListContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Đang tải danh sách xe...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance History Section -->
+                <div class="content-section" id="maintenance-history-section" style="display: none;">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <h4 class="mb-0">Lịch sử bảo dưỡng</h4>
+                        </div>
+                        <div class="profile-card-body">
+                            <div id="maintenanceHistoryContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Đang tải lịch sử bảo dưỡng...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repair History Section -->
+                <div class="content-section" id="repair-history-section" style="display: none;">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <h4 class="mb-0">Lịch sử sửa chữa</h4>
+                        </div>
+                        <div class="profile-card-body">
+                            <div id="repairHistoryContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Đang tải lịch sử sửa chữa...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule History Section -->
+                <div class="content-section" id="schedule-history-section" style="display: none;">
+                    <div class="profile-card">
+                        <div class="profile-card-header">
+                            <h4 class="mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Lịch sử đặt lịch hẹn
+                            </h4>
+                        </div>
+                        <div class="profile-card-body">
+                            <!-- Filter -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="scheduleStatusFilter" class="form-label">Lọc theo trạng thái</label>
+                                    <select class="form-select" id="scheduleStatusFilter" onchange="filterSchedules()">
+                                        <option value="">Tất cả</option>
+                                        <option value="PENDING">Chờ xử lý</option>
+                                        <option value="IN_PROGRESS">Đang xử lý</option>
+                                        <option value="COMPLETED">Hoàn thành</option>
+                                        <option value="CANCELLED">Đã hủy</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Schedule List -->
+                            <div id="scheduleHistoryContainer">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                    <p class="mt-3 text-muted">Đang tải lịch sử đặt lịch...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal xác nhận hủy lịch -->
+                <div class="modal fade" id="cancelScheduleModal" tabindex="-1" aria-labelledby="cancelScheduleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cancelScheduleModalLabel">Xác nhận hủy lịch hẹn</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Bạn có chắc chắn muốn hủy lịch hẹn này?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+                                <button type="button" class="btn btn-danger" id="confirmCancelBtn">Có, hủy lịch</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Thêm xe mới -->
+                <div class="modal fade" id="addCarModal" tabindex="-1" aria-labelledby="addCarModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="addCarModalLabel">
+                                    <i class="fas fa-car me-2"></i>Thêm xe mới
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addCarForm">
+                                    <div class="mb-3">
+                                        <label for="newCarName" class="form-label">Tên xe <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="newCarName" required placeholder="VD: Toyota Camry">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="newLicensePlate" class="form-label">Biển số xe <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="newLicensePlate" required 
+                                               pattern="^[0-9]{2}[A-Z]{1,2}-[0-9]{4,5}$" 
+                                               placeholder="VD: 30A-12345" maxlength="15">
+                                        <small class="form-text text-muted">Định dạng: XX[A-Z]-XXXX hoặc XX[A-Z]-XXXXX</small>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                <button type="button" class="btn btn-primary" id="submitAddCarBtn">
+                                    <i class="fas fa-save me-2"></i>Lưu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Đổi mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group mb-3">
+                        <label for="currentPassword" class="form-label">
+                            Mật khẩu hiện tại <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" 
+                               class="form-control form-control-lg" 
+                               id="currentPassword" 
+                               name="currentPassword" 
+                               placeholder="Nhập mật khẩu hiện tại"
+                               required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="newPassword" class="form-label">
+                            Mật khẩu mới <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" 
+                               class="form-control form-control-lg" 
+                               id="newPassword" 
+                               name="newPassword" 
+                               placeholder="Nhập mật khẩu mới"
+                               required>
+                        <small class="text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="confirmPassword" class="form-label">
+                            Xác nhận mật khẩu mới <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" 
+                               class="form-control form-control-lg" 
+                               id="confirmPassword" 
+                               name="confirmPassword" 
+                               placeholder="Nhập lại mật khẩu mới"
+                               required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="savePassword()">Đổi mật khẩu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service History Modal -->
+<div class="modal fade" id="serviceHistoryModal" tabindex="-1" aria-labelledby="serviceHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="serviceHistoryModalLabel">Lịch sử sửa chữa & bảo dưỡng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="serviceHistoryList">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải lịch sử dịch vụ...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Detail Modal -->
+<div class="modal fade" id="receiptDetailModal" tabindex="-1" aria-labelledby="receiptDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptDetailModalLabel">Chi tiết hóa đơn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="receiptDetailContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Đang tải chi tiết hóa đơn...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        /* Profile Section Styles - Basic & Clean */
+        .profile-section {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 200px);
+            padding: 30px 0;
+        }
+
+        .profile-background,
+        .profile-overlay {
+            display: none;
+        }
+
+        /* Sidebar Styles */
+        .profile-sidebar {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            color: #212529;
+            padding: 16px 20px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-menu li:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #495057;
+            text-decoration: none;
+            transition: none;
+            border-left: 2px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-menu-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .sidebar-menu-item.active {
+            background-color: #f8f9fa;
+            color: #212529;
+            border-left-color: #212529;
+            font-weight: 500;
+        }
+
+        .sidebar-menu-item i {
+            width: 18px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .sidebar-menu-item.active i {
+            color: #212529;
+        }
+
+        /* Content Section Styles */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .profile-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        .profile-card-header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            color: #212529;
+            padding: 16px 24px;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .profile-card-body {
+            padding: 32px;
+        }
+
+        .profile-card-header h4 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #212529;
+            margin: 0;
+        }
+
+        /* Avatar Styles - Improved */
+        .avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .profile-avatar-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #6366f1;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .profile-avatar-img {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+            transform: scale(1.05);
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-overlay {
+            opacity: 1;
+        }
+
+        .avatar-change-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            background: #6366f1;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .avatar-change-btn:hover {
+            background: #4f46e5;
+            transform: scale(1.1);
+        }
+
+        /* Form Styles - Improved */
+        .form-section {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-label i {
+            width: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group-text {
+            border-right: none;
+            min-width: 45px;
+            justify-content: center;
+        }
+
+        .input-group .form-control,
+        .input-group .form-select {
+            border-left: none;
+            padding-left: 12px;
+        }
+
+        .input-group .form-control:focus,
+        .input-group .form-select:focus {
+            border-left: 1px solid #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+        }
+
+        .form-control:read-only,
+        .form-select:disabled {
+            background-color: #ffffff;
+            cursor: default;
+            border-color: #dee2e6;
+            color: #495057;
+        }
+
+        .form-control:not(:read-only):focus,
+        .form-select:not(:disabled):focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+        }
+
+        .input-group-lg .form-control,
+        .input-group-lg .form-select {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+
+        .form-control:not(:read-only),
+        .form-select:not(:disabled) {
+            background-color: #fff;
+            border-color: #ced4da;
+        }
+
+        .form-control:not(:read-only):focus,
+        .form-select:not(:disabled):focus {
+            border-color: #212529;
+            box-shadow: 0 0 0 0.1rem rgba(33,37,41,.1);
+            outline: none;
+        }
+
+        .form-control-lg {
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            border-radius: 0;
+        }
+
+        .form-select-lg {
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            border-radius: 0;
+        }
+
+        /* Car Card Styles */
+        .car-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fff;
+        }
+
+        .car-card:hover {
+            border-color: #ced4da;
+        }
+
+        .car-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .car-card-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #212529;
+            margin: 0;
+        }
+
+        .car-card-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .car-info-item {
+            display: flex;
+            align-items: center;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        .car-info-item i {
+            color: #6c757d;
+            margin-right: 8px;
+            width: 16px;
+        }
+
+        /* Car Detail Card Styles */
+        .car-detail-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 0;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .car-detail-card:hover {
+            border-color: #ced4da;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .car-detail-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #212529;
+        }
+
+        .car-detail-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .car-detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .car-detail-label {
+            min-width: 100px;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+
+        .car-detail-value {
+            color: #212529;
+            font-size: 0.95rem;
+            flex: 1;
+        }
+
+        /* History Card Styles */
+        .history-card {
+            border: 1px solid #e0e0e0;
+            border-left: 2px solid #212529;
+            border-radius: 0;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fff;
+        }
+
+        .history-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .history-card-title {
+            font-weight: 500;
+            color: #212529;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .history-card-date {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+
+        .history-card-body {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        /* Service History Styles */
+        .service-history-item {
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .service-history-item:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-color: #ced4da !important;
+        }
+
+        .receipt-detail {
+            color: #212529;
+        }
+
+        .receipt-detail h6 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .receipt-summary {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .receipt-item {
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .receipt-item:hover {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 0;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* Button Styles - Basic */
+        .btn-primary {
+            background-color: #212529;
+            border-color: #212529;
+            color: #fff;
+            font-weight: 400;
+            border-radius: 0;
+            padding: 10px 24px;
+        }
+
+        .btn-primary:hover {
+            background-color: #000;
+            border-color: #000;
+            color: #fff;
+        }
+
+        .btn-outline-primary {
+            border-color: #212529;
+            color: #212529;
+            font-weight: 400;
+            border-radius: 0;
+            padding: 10px 24px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #212529;
+            border-color: #212529;
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #fff;
+            font-weight: 400;
+            border-radius: 0;
+            padding: 10px 24px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #5a6268;
+            color: #fff;
+        }
+
+        .btn-lg {
+            padding: 10px 24px;
+            font-size: 0.95rem;
+        }
+
+        /* Profile Actions */
+        .profile-actions {
+            border-top: 2px solid #e9ecef;
+            padding-top: 24px;
+        }
+
+        .profile-actions .btn {
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-actions .btn-primary {
+            background: #6366f1;
+            border-color: #6366f1;
+        }
+
+        .profile-actions .btn-primary:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+
+        .profile-actions .btn-success {
+            background: #10b981;
+            border-color: #10b981;
+        }
+
+        .profile-actions .btn-success:hover {
+            background: #059669;
+            border-color: #059669;
+        }
+
+        /* User Info Display */
+        #userFullName {
+            color: #212529;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        #userEmailDisplay {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .profile-section {
+                padding: 20px 0;
+            }
+
+            .profile-card-body {
+                padding: 16px;
+            }
+
+            .sidebar-menu-item {
+                padding: 10px 16px;
+            }
+        }
+    </style>
+
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        const SERVICE_CATEGORY_MAINTENANCE = 1;
+        const SERVICE_CATEGORY_REPAIR = 2;
+        let isEditMode = false;
+        let originalData = {};
+        let currentUserId = null;
+
+        // Show Section
+        function showSection(sectionName, event) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+                section.style.display = 'none';
+            });
+
+            // Remove active class from all menu items
+            document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected section
+            const section = document.getElementById(sectionName + '-section');
+            if (section) {
+                section.classList.add('active');
+                section.style.display = 'block';
+            }
+
+            // Add active class to clicked menu item
+            const menuItem = document.querySelector(`[data-section="${sectionName}"]`);
+            if (menuItem) {
+                menuItem.classList.add('active');
+            }
+
+            // Load data for the section
+            loadSectionData(sectionName);
+        }
+
+        // Load Section Data
+        function loadSectionData(sectionName) {
+            switch(sectionName) {
+                case 'profile':
+                    loadProfileData();
+                    break;
+                case 'cars':
+                    loadCarsData();
+                    break;
+                case 'maintenance-history':
+                    loadMaintenanceHistory();
+                    break;
+                case 'repair-history':
+                    loadRepairHistory();
+                    break;
+                case 'schedule-history':
+                    loadScheduleHistory();
+                    break;
+            }
+        }
+
+        // Load Profile Data
+        async function loadProfileData() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    let userId = userInfo.userId || userInfo.id;
+                    
+                    // Clean and validate userId - remove any non-numeric characters
+                    if (userId) {
+                        const idStr = String(userId).replace(/[^0-9]/g, '');
+                        userId = parseInt(idStr, 10);
+                        if (isNaN(userId) || userId <= 0) {
+                            console.error('Invalid user ID:', userInfo.userId || userInfo.id);
+                            showError('ID người dùng không hợp lệ');
+                            return;
+                        }
+                    }
+                    
+                    currentUserId = userId;
+                    
+                    // Load user profile from API
+                    const response = await fetch(`${API_BASE_URL}/AutoOwner/${currentUserId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const profile = await response.json();
+                        populateProfileForm(profile);
+                    } else {
+                        // Use data from localStorage as fallback
+                        populateProfileFormFromUserInfo(userInfo);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        function populateProfileForm(profile) {
+            // Xử lý firstName và lastName (có thể là camelCase hoặc PascalCase)
+            const firstName = profile.firstName || profile.FirstName;
+            const lastName = profile.lastName || profile.LastName;
+            const email = profile.email || profile.Email;
+            const phone = profile.phone || profile.Phone;
+            const dob = profile.dob || profile.Dob;
+            const gender = profile.gender || profile.Gender;
+            const address = profile.address || profile.Address;
+
+            if (firstName) {
+                document.getElementById('firstName').value = firstName;
+                originalData['firstName'] = firstName;
+            }
+            if (lastName) {
+                document.getElementById('lastName').value = lastName;
+                originalData['lastName'] = lastName;
+            }
+            if (email) {
+                document.getElementById('email').value = email;
+                originalData['email'] = email;
+            }
+            if (phone) {
+                document.getElementById('phone').value = phone;
+                originalData['phone'] = phone;
+            }
+            if (dob) {
+                // Xử lý DateOnly format (YYYY-MM-DD) hoặc Date object
+                let dateValue = dob;
+                if (typeof dob === 'string') {
+                    dateValue = dob.split('T')[0]; // Lấy phần date nếu có time
+                } else if (dob instanceof Date) {
+                    dateValue = dob.toISOString().split('T')[0];
+                }
+                document.getElementById('birthDate').value = dateValue;
+                originalData['birthDate'] = dateValue;
+            }
+            if (gender) {
+                document.getElementById('gender').value = gender;
+                originalData['gender'] = gender;
+            }
+            if (address) {
+                document.getElementById('address').value = address;
+                originalData['address'] = address;
+            }
+
+            // ✅ Cập nhật tên và email trong phần avatar
+            updateAvatarDisplay(firstName, lastName, email);
+        }
+
+        function populateProfileFormFromUserInfo(userInfo) {
+            let firstName = userInfo.firstName;
+            let lastName = userInfo.lastName;
+            
+            if (userInfo.fullName && (!firstName || !lastName)) {
+                const nameParts = userInfo.fullName.split(' ');
+                lastName = nameParts.pop() || '';
+                firstName = nameParts.join(' ') || '';
+            }
+            
+            if (firstName) document.getElementById('firstName').value = firstName;
+            if (lastName) document.getElementById('lastName').value = lastName;
+            if (userInfo.email) document.getElementById('email').value = userInfo.email;
+            if (userInfo.phone) document.getElementById('phone').value = userInfo.phone;
+
+            // ✅ Cập nhật tên và email trong phần avatar
+            updateAvatarDisplay(firstName, lastName, userInfo.email);
+        }
+
+        // ✅ Hàm cập nhật hiển thị tên và email trong phần avatar
+        function updateAvatarDisplay(firstName, lastName, email) {
+            const fullNameEl = document.getElementById('userFullName');
+            const emailEl = document.getElementById('userEmailDisplay');
+            
+            if (fullNameEl) {
+                if (firstName && lastName) {
+                    fullNameEl.textContent = `${firstName} ${lastName}`.trim();
+                } else if (firstName) {
+                    fullNameEl.textContent = firstName;
+                } else if (lastName) {
+                    fullNameEl.textContent = lastName;
+                } else {
+                    fullNameEl.textContent = 'Người dùng';
+                }
+            }
+            
+            if (emailEl && email) {
+                emailEl.textContent = email;
+            }
+        }
+
+        // Load Cars Data
+        async function loadCarsData() {
+            const container = document.getElementById('carsListContainer');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải danh sách xe...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (!userInfoStr) {
+                    container.innerHTML = '<div class="alert alert-warning">Vui lòng đăng nhập để xem danh sách xe</div>';
+                    return;
+                }
+
+                const userInfo = JSON.parse(userInfoStr);
+                const userId = userInfo.userId || userInfo.id;
+
+                const response = await fetch(`${API_BASE_URL}/CarOfAutoOwner/user/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const cars = result.success && Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+                    
+                    // Debug: Log để kiểm tra dữ liệu
+                    console.log('Cars data:', cars);
+                    if (cars.length > 0) {
+                        console.log('First car:', cars[0]);
+                    }
+
+                    if (cars.length === 0) {
+                        container.innerHTML = '<div class="alert alert-info">Bạn chưa có xe nào. Hãy thêm xe mới!</div>';
+                    } else {
+                        renderCarsList(cars, container);
+                    }
+                } else {
+                    container.innerHTML = '<div class="alert alert-danger">Không thể tải danh sách xe. Vui lòng thử lại sau.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading cars:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải danh sách xe.</div>';
+            }
+        }
+
+        function renderCarsList(cars, container) {
+            if (!cars || cars.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">Bạn chưa có xe nào. Hãy thêm xe mới!</div>';
+                return;
+            }
+
+            let html = `<div class="mb-3"><strong>${cars.length} XE</strong></div>`;
+            
+            cars.forEach(car => {
+                const carName = car.carName || car.CarName || 'N/A';
+                const vinNumber = car.vinNumber || car.VinNumber || 'N/A';
+                const engineNumber = car.vehicleEngineNumber || car.VehicleEngineNumber || 'N/A';
+                // Xử lý cả camelCase và PascalCase cho vehicleTypeName
+                const vehicleType = car.vehicleTypeName || car.VehicleTypeName || car.vehicleType || car.VehicleType || 'N/A';
+                const createdDateValue = car.createdDate || car.CreatedDate;
+                const createdDate = createdDateValue ? new Date(createdDateValue).toLocaleString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) : 'N/A';
+
+                html += `
+                    <div class="car-detail-card mb-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="car-detail-title mb-0">${carName}</h5>
+                            <button class="btn btn-primary btn-sm" onclick="viewServiceHistory(${car.id})">
+                                Lịch sử dịch vụ
+                            </button>
+                        </div>
+                        <div class="car-detail-info">
+                            <div class="car-detail-row">
+                                <span class="car-detail-label"><strong>Số khung:</strong></span>
+                                <span class="car-detail-value">${vinNumber}</span>
+                            </div>
+                            <div class="car-detail-row">
+                                <span class="car-detail-label"><strong>Số máy:</strong></span>
+                                <span class="car-detail-value">${engineNumber}</span>
+                            </div>
+                            <div class="car-detail-row">
+                                <span class="car-detail-label"><strong>Loại xe:</strong></span>
+                                <span class="car-detail-value">${vehicleType}</span>
+                            </div>
+                            <div class="car-detail-row">
+                                <span class="car-detail-label"><strong>Ngày tạo:</strong></span>
+                                <span class="car-detail-value">${createdDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        async function viewServiceHistory(carId) {
+            const modal = new bootstrap.Modal(document.getElementById('serviceHistoryModal'));
+            modal.show();
+            
+            const container = document.getElementById('serviceHistoryList');
+            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải lịch sử dịch vụ...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                
+                // Lấy danh sách maintenance tickets theo carId
+                const ticketsResponse = await fetch(`${API_BASE_URL}/MaintenanceTicket/by-car/${carId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!ticketsResponse.ok) {
+                    container.innerHTML = '<div class="alert alert-danger">Không thể tải lịch sử dịch vụ. Vui lòng thử lại sau.</div>';
+                    return;
+                }
+
+                const ticketsResult = await ticketsResponse.json();
+                const tickets = ticketsResult.success && Array.isArray(ticketsResult.data) ? ticketsResult.data : (Array.isArray(ticketsResult) ? ticketsResult : []);
+
+                if (tickets.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">Chưa có lịch sử dịch vụ nào cho xe này.</div>';
+                    return;
+                }
+
+                // Lấy hóa đơn cho từng ticket
+                let receipts = [];
+                for (const ticket of tickets) {
+                    if (ticket.id || ticket.Id) {
+                        const ticketId = ticket.id || ticket.Id;
+                        try {
+                            const receiptResponse = await fetch(`${API_BASE_URL}/TotalReceipt/by-ticket/${ticketId}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (receiptResponse.ok) {
+                                const receiptResult = await receiptResponse.json();
+                                if (receiptResult.success && receiptResult.data) {
+                                    receipts.push(receiptResult.data);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error loading receipt for ticket:', ticketId, error);
+                        }
+                    }
+                }
+
+                // Chỉ hiển thị các hóa đơn đã thanh toán (PAID)
+                const paidReceipts = receipts.filter(r => {
+                    const status = r.statusCode || r.StatusCode || '';
+                    return status.toUpperCase() === 'PAID' || status.toUpperCase() === 'ĐÃ THANH TOÁN';
+                });
+
+                if (paidReceipts.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info">Chưa có hóa đơn đã hoàn thành nào cho xe này.</div>';
+                    return;
+                }
+
+                renderServiceHistory(paidReceipts, container);
+            } catch (error) {
+                console.error('Error loading service history:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải lịch sử dịch vụ.</div>';
+            }
+        }
+
+        function renderServiceHistory(receipts, container) {
+            let html = '';
+            receipts.forEach(receipt => {
+                const receiptId = receipt.id || receipt.Id;
+                const createdAt = receipt.createdAt || receipt.CreatedAt;
+                const finalAmount = receipt.finalAmount || receipt.FinalAmount || 0;
+                const statusName = receipt.statusName || receipt.StatusName || 'Đã thanh toán';
+                
+                const formattedDate = createdAt ? new Date(createdAt).toLocaleString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) : 'N/A';
+                
+                const formattedAmount = new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).format(finalAmount);
+
+                html += `
+                    <div class="service-history-item mb-3 p-3 border rounded">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="mb-2">
+                                    <strong>Ngày tạo:</strong> ${formattedDate}
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Tổng hóa đơn:</strong> ${formattedAmount}
+                                </div>
+                                <div>
+                                    <strong>Tình trạng:</strong> ${statusName}
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button class="btn btn-primary btn-sm" onclick="viewReceiptDetail(${receiptId})">
+                                    Xem chi tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        async function viewReceiptDetail(receiptId) {
+            const modal = new bootstrap.Modal(document.getElementById('receiptDetailModal'));
+            modal.show();
+            
+            const container = document.getElementById('receiptDetailContent');
+            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải chi tiết hóa đơn...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                
+                // Lấy thông tin hóa đơn
+                const response = await fetch(`${API_BASE_URL}/TotalReceipt/${receiptId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    container.innerHTML = '<div class="alert alert-danger">Không thể tải chi tiết hóa đơn. Vui lòng thử lại sau.</div>';
+                    return;
+                }
+
+                const result = await response.json();
+                const receipt = result.success && result.data ? result.data : result;
+
+                // Lấy maintenanceTicketId từ receipt
+                const maintenanceTicketId = receipt.maintenanceTicketId || receipt.MaintenanceTicketId;
+                
+                let components = [];
+                let serviceTasks = [];
+
+                // Load components và service tasks nếu có maintenanceTicketId
+                if (maintenanceTicketId) {
+                    try {
+                        // Load components
+                        const componentsResponse = await fetch(`${API_BASE_URL}/TicketComponent/by-maintenance-ticket/${maintenanceTicketId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (componentsResponse.ok) {
+                            const componentsResult = await componentsResponse.json();
+                            components = componentsResult.success && Array.isArray(componentsResult.data) 
+                                ? componentsResult.data 
+                                : (Array.isArray(componentsResult) ? componentsResult : []);
+                        }
+
+                        // Load service tasks
+                        const tasksResponse = await fetch(`${API_BASE_URL}/ServiceTask/by-ticket/${maintenanceTicketId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (tasksResponse.ok) {
+                            const tasksResult = await tasksResponse.json();
+                            serviceTasks = tasksResult.success && Array.isArray(tasksResult.data) 
+                                ? tasksResult.data 
+                                : (Array.isArray(tasksResult) ? tasksResult : []);
+                        }
+                    } catch (error) {
+                        console.error('Error loading receipt items:', error);
+                    }
+                }
+
+                renderReceiptDetail(receipt, container, components, serviceTasks);
+            } catch (error) {
+                console.error('Error loading receipt detail:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải chi tiết hóa đơn.</div>';
+            }
+        }
+
+        function renderReceiptDetail(receipt, container, components = [], serviceTasks = []) {
+            const code = receipt.code || receipt.Code || 'N/A';
+            const createdAt = receipt.createdAt || receipt.CreatedAt;
+            const customerName = receipt.customerName || receipt.CustomerName || 'N/A';
+            const customerPhone = receipt.customerPhone || receipt.CustomerPhone || 'N/A';
+            const carName = receipt.carName || receipt.CarName || 'N/A';
+            const licensePlate = receipt.licensePlate || receipt.LicensePlate || 'N/A';
+            const subtotal = receipt.subtotal || receipt.Subtotal || 0;
+            const discountAmount = receipt.discountAmount || receipt.DiscountAmount || 0;
+            const surchargeAmount = receipt.surchargeAmount || receipt.SurchargeAmount || 0;
+            const statusName = receipt.statusName || receipt.StatusName || 'N/A';
+            const note = receipt.note || receipt.Note || '';
+            const servicePackageName = receipt.servicePackageName || receipt.ServicePackageName;
+            const servicePackageId = receipt.servicePackageId || receipt.ServicePackageId;
+            const packageDiscountAmount = receipt.packageDiscountAmount || receipt.PackageDiscountAmount || 0;
+            const servicePackagePrice = receipt.servicePackagePrice || receipt.ServicePackagePrice || 0;
+            const vatPercent = receipt.vatPercent || receipt.VatPercent || 10;
+
+            // Tính lại VAT và tổng giống màn chi tiết hóa đơn
+            const totalDiscount = (packageDiscountAmount || 0) + (discountAmount || 0);
+            const amountAfterDiscount = Math.max(0, subtotal - totalDiscount);
+            const vatAmount = (vatPercent * amountAfterDiscount) / 100;
+            const finalAmount = amountAfterDiscount + vatAmount + (surchargeAmount || 0);
+
+            const formattedDate = createdAt ? new Date(createdAt).toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }) : 'N/A';
+
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).format(amount);
+            };
+
+            let html = `
+                <div class="receipt-detail">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Mã hóa đơn</h6>
+                        <p class="h5">${code}</p>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Ngày tạo</h6>
+                            <p>${formattedDate}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Tình trạng</h6>
+                            <p>${statusName}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Khách hàng</h6>
+                            <p>${customerName}</p>
+                            <p class="text-muted small">${customerPhone}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Xe</h6>
+                            <p>${carName}</p>
+                            <p class="text-muted small">${licensePlate}</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-3"><strong>Chi tiết đơn hàng</strong></h6>
+            `;
+
+            // Hiển thị Service Package nếu có
+            if (servicePackageName) {
+                html += `
+                    <div class="receipt-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${servicePackageName}</h6>
+                                <small class="text-muted">Gói dịch vụ</small>
+                            </div>
+                            <div class="text-end">
+                                <strong>${formatCurrency(servicePackagePrice)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Hiển thị Service Tasks
+            if (serviceTasks && serviceTasks.length > 0) {
+                html += `<h6 class="mt-4 mb-2"><strong>Công việc dịch vụ</strong></h6>`;
+                serviceTasks.forEach(task => {
+                    const taskName = task.taskName || task.TaskName || 'N/A';
+                    const description = task.description || task.Description || '';
+                    const laborCost = task.laborCost || task.LaborCost || 0;
+                    
+                    html += `
+                        <div class="receipt-item mb-2 p-2 border rounded">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>${taskName}</strong>
+                                    ${description ? `<p class="mb-0 text-muted small">${description}</p>` : ''}
+                                </div>
+                                <div class="text-end ms-3">
+                                    <strong>${formatCurrency(laborCost)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Hiển thị Components
+            if (components && components.length > 0) {
+                html += `<h6 class="mt-4 mb-2"><strong>Phụ tùng & Linh kiện</strong></h6>`;
+                components.forEach(component => {
+                    const componentName = component.componentName || component.ComponentName || 'N/A';
+                    const quantity = component.quantity || component.Quantity || 0;
+                    const actualQuantity = component.actualQuantity || component.ActualQuantity || quantity;
+                    const unitPrice = component.unitPrice || component.UnitPrice || 0;
+                    const totalPrice = component.totalPrice || component.TotalPrice || (actualQuantity * unitPrice);
+                    const typeComponentName = component.typeComponentName || component.TypeComponentName || '';
+                    
+                    html += `
+                        <div class="receipt-item mb-2 p-2 border rounded">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <strong>${componentName}</strong>
+                                    ${typeComponentName ? `<p class="mb-0 text-muted small">${typeComponentName}</p>` : ''}
+                                    <p class="mb-0 text-muted small">Số lượng: ${actualQuantity} x ${formatCurrency(unitPrice)}</p>
+                                </div>
+                                <div class="text-end ms-3">
+                                    <strong>${formatCurrency(totalPrice)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Tổng hợp
+            html += `
+                    <hr>
+                    <div class="receipt-summary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tạm tính:</span>
+                            <span>${formatCurrency(subtotal)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>VAT:</span>
+                            <span>${formatCurrency(vatAmount)}</span>
+                        </div>
+                        ${servicePackageId || packageDiscountAmount ? `
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Trừ gói bảo dưỡng${servicePackageName ? ` (${servicePackageName})` : ''}:</span>
+                            <span class="text-danger">-${formatCurrency(packageDiscountAmount)}</span>
+                        </div>` : ''}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Giảm giá:</span>
+                            <span>${formatCurrency(discountAmount)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phụ thu:</span>
+                            <span>${formatCurrency(surchargeAmount)}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Tổng cộng:</strong>
+                            <strong class="h5">${formatCurrency(finalAmount)}</strong>
+                        </div>
+                    </div>
+            `;
+
+            if (note) {
+                html += `
+                    <hr>
+                    <div>
+                        <h6 class="text-muted mb-2">Ghi chú</h6>
+                        <p>${note}</p>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function filterHistoryByCategory(history, targetCategoryId) {
+            if (!Array.isArray(history)) {
+                return [];
+            }
+
+            return history.filter(item => {
+                const categoryId = Number(item.serviceCategoryId ?? item.ServiceCategoryId ?? 0);
+                if (categoryId) {
+                    return categoryId === targetCategoryId;
+                }
+
+                const categoryName = (item.serviceCategoryName ?? item.ServiceCategoryName ?? '').toLowerCase();
+                if (!categoryName) return false;
+
+                if (targetCategoryId === SERVICE_CATEGORY_REPAIR) {
+                    return categoryName.includes('sửa chữa') || categoryName.includes('repair');
+                }
+
+                if (targetCategoryId === SERVICE_CATEGORY_MAINTENANCE) {
+                    return categoryName.includes('bảo dưỡng') || categoryName.includes('maintenance');
+                }
+
+                return false;
+            });
+        }
+
+        // Load Maintenance History
+        async function loadMaintenanceHistory() {
+            const container = document.getElementById('maintenanceHistoryContainer');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải lịch sử bảo dưỡng...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (!userInfoStr) {
+                    container.innerHTML = '<div class="alert alert-warning">Vui lòng đăng nhập để xem lịch sử bảo dưỡng.</div>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/MaintenanceTicket/customer/history`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                const history = result.success && Array.isArray(result.data)
+                    ? result.data
+                    : (Array.isArray(result) ? result : []);
+
+                const maintenanceHistory = filterHistoryByCategory(history, SERVICE_CATEGORY_MAINTENANCE);
+
+                if (!maintenanceHistory.length) {
+                    container.innerHTML = '<div class="alert alert-info mb-0">Bạn chưa có lịch sử bảo dưỡng nào.</div>';
+                    return;
+                }
+
+                const itemsHtml = maintenanceHistory.map(item => renderMaintenanceHistoryItem(item)).join('');
+                container.innerHTML = `<div class="maintenance-history-list">${itemsHtml}</div>`;
+            } catch (error) {
+                console.error('Error loading maintenance history:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải lịch sử bảo dưỡng.</div>';
+            }
+        }
+
+        // Load Repair History
+        async function loadRepairHistory() {
+            const container = document.getElementById('repairHistoryContainer');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải lịch sử sửa chữa...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (!userInfoStr) {
+                    container.innerHTML = '<div class="alert alert-warning">Vui lòng đăng nhập để xem lịch sử sửa chữa</div>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/MaintenanceTicket/customer/history`, {
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const message = await response.text();
+                    throw new Error(message || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                const history = result.success && Array.isArray(result.data)
+                    ? result.data
+                    : (Array.isArray(result) ? result : []);
+
+                const repairHistory = filterHistoryByCategory(history, SERVICE_CATEGORY_REPAIR);
+
+                if (!repairHistory.length) {
+                    container.innerHTML = '<div class="alert alert-info mb-0">Bạn chưa có lịch sử sửa chữa nào.</div>';
+                    return;
+                }
+
+                const itemsHtml = repairHistory.map(item => renderMaintenanceHistoryItem(item)).join('');
+                container.innerHTML = `<div class="maintenance-history-list">${itemsHtml}</div>`;
+            } catch (error) {
+                console.error('Error loading repair history:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải lịch sử sửa chữa.</div>';
+            }
+        }
+
+        // Load Schedule History
+        let allSchedules = [];
+        async function loadScheduleHistory() {
+            const container = document.getElementById('scheduleHistoryContainer');
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Đang tải lịch sử đặt lịch...</p></div>';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (!token || !userInfoStr) {
+                    container.innerHTML = '<div class="alert alert-warning">Vui lòng đăng nhập để xem lịch sử đặt lịch</div>';
+                    return;
+                }
+
+                const userInfo = JSON.parse(userInfoStr);
+                const userId = userInfo.userId || userInfo.id;
+
+                if (!userId) {
+                    container.innerHTML = '<div class="alert alert-warning">Không tìm thấy thông tin người dùng</div>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/ServiceSchedule/by-user/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load schedules');
+                }
+
+                const result = await response.json();
+                
+                if (result && result.success && result.data) {
+                    allSchedules = result.data;
+                    displaySchedules(allSchedules);
+                } else {
+                    container.innerHTML = '<div class="alert alert-info">Bạn chưa có lịch hẹn nào.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading schedule history:', error);
+                container.innerHTML = '<div class="alert alert-danger">Đã xảy ra lỗi khi tải lịch sử đặt lịch: ' + error.message + '</div>';
+            }
+        }
+
+        // Display Schedules
+        function displaySchedules(schedules) {
+            const container = document.getElementById('scheduleHistoryContainer');
+            
+            if (!schedules || schedules.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">Bạn chưa có lịch hẹn nào.</div>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sortedSchedules = [...schedules].sort((a, b) => 
+                new Date(b.scheduledDate) - new Date(a.scheduledDate)
+            );
+
+            let html = '<div class="table-responsive"><table class="table table-hover">';
+            html += '<thead class="table-light"><tr>';
+            html += '<th>Ngày hẹn</th>';
+            html += '<th>Giờ hẹn</th>';
+            html += '<th>Xe</th>';
+            html += '<th>Biển số</th>';
+            html += '<th>Chi nhánh</th>';
+            html += '<th>Trạng thái</th>';
+            html += '<th>Thao tác</th>';
+            html += '</tr></thead><tbody>';
+
+            sortedSchedules.forEach(schedule => {
+                const date = new Date(schedule.scheduledDate);
+                const dateStr = date.toLocaleDateString('vi-VN');
+                const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                
+                const statusBadge = getScheduleStatusBadge(schedule.statusCode);
+                const canCancel = schedule.statusCode === 'PENDING' || schedule.statusCode === 'IN_PROGRESS';
+                
+                html += '<tr>';
+                html += `<td>${dateStr}</td>`;
+                html += `<td>${timeStr}</td>`;
+                html += `<td>${schedule.carName || '—'}</td>`;
+                html += `<td>${schedule.licensePlate || '—'}</td>`;
+                html += `<td>${schedule.branchName || '—'}</td>`;
+                html += `<td>${statusBadge}</td>`;
+                html += '<td>';
+                // ✅ Đã xóa link "Xem chi tiết" - khách hàng không được xem chi tiết
+                if (canCancel) {
+                    html += `<button class="btn btn-sm btn-outline-danger" onclick="cancelSchedule(${schedule.id})" title="Hủy lịch">
+                                <i class="fas fa-times"></i>
+                             </button>`;
+                } else {
+                    html += '<span class="text-muted">—</span>';
+                }
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Get Schedule Status Badge
+        function getScheduleStatusBadge(statusCode) {
+            const badges = {
+                'PENDING': '<span class="badge bg-warning">Chờ xử lý</span>',
+                'IN_PROGRESS': '<span class="badge bg-info">Đang xử lý</span>',
+                'COMPLETED': '<span class="badge bg-success">Hoàn thành</span>',
+                'CANCELLED': '<span class="badge bg-secondary">Đã hủy</span>'
+            };
+            return badges[statusCode] || '<span class="badge bg-secondary">' + statusCode + '</span>';
+        }
+
+        // Filter Schedules
+        function filterSchedules() {
+            const statusFilter = document.getElementById('scheduleStatusFilter').value;
+            
+            if (!statusFilter) {
+                displaySchedules(allSchedules);
+                return;
+            }
+
+            const filtered = allSchedules.filter(s => s.statusCode === statusFilter);
+            displaySchedules(filtered);
+        }
+
+        // Cancel Schedule - Mở modal xác nhận
+        let currentScheduleIdToCancel = null;
+        
+        function cancelSchedule(scheduleId) {
+            currentScheduleIdToCancel = scheduleId;
+            const modal = new bootstrap.Modal(document.getElementById('cancelScheduleModal'));
+            modal.show();
+        }
+
+        // Xác nhận hủy lịch
+        async function confirmCancelSchedule() {
+            if (!currentScheduleIdToCancel) {
+                return;
+            }
+
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
+
+            try {
+                const token = localStorage.getItem('authToken');
+                // ✅ Sử dụng endpoint riêng cho AutoOwner
+                const response = await fetch(`${API_BASE_URL}/ServiceSchedule/${currentScheduleIdToCancel}/cancel-by-owner`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: 'Khách hàng hủy lịch' })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to cancel schedule');
+                }
+
+                // Đóng modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('cancelScheduleModal'));
+                if (modal) {
+                    modal.hide();
+                }
+
+                showAlert('Hủy lịch hẹn thành công!', 'success');
+                loadScheduleHistory(); // Reload
+                currentScheduleIdToCancel = null;
+            } catch (error) {
+                console.error('Error canceling schedule:', error);
+                showAlert('Đã xảy ra lỗi khi hủy lịch hẹn: ' + error.message, 'danger');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalText;
+            }
+        }
+
+        // Gắn event listener cho nút xác nhận
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', confirmCancelSchedule);
+            }
+        });
+
+        // Toggle Edit Mode
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const inputs = document.querySelectorAll('#profileForm input, #profileForm select, #profileForm textarea');
+            const editBtn = document.getElementById('editToggleBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const changeAvatarBtn = document.getElementById('changeAvatarBtn');
+            const avatarOverlay = document.getElementById('avatarOverlay');
+            const avatarHint = document.getElementById('avatarHint');
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+
+            if (isEditMode) {
+                inputs.forEach(input => {
+                    if (input.id === 'email') {
+                        input.setAttribute('readonly', 'readonly');
+                    } else {
+                        input.removeAttribute('readonly');
+                        input.removeAttribute('disabled');
+                        // Thêm placeholder khi chuyển sang chế độ edit
+                        if (input.id === 'firstName') {
+                            input.setAttribute('placeholder', 'Nhập họ của bạn');
+                        } else if (input.id === 'lastName') {
+                            input.setAttribute('placeholder', 'Nhập tên của bạn');
+                        } else if (input.id === 'phone') {
+                            input.setAttribute('placeholder', '0123456789');
+                        } else if (input.id === 'address') {
+                            input.setAttribute('placeholder', 'Nhập địa chỉ của bạn');
+                        }
+                    }
+                });
+                editBtn.style.display = 'none';
+                cancelBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'inline-block';
+                if (avatarOverlay) avatarOverlay.style.display = 'flex';
+                if (avatarHint) avatarHint.style.display = 'block';
+                changePasswordBtn.disabled = true;
+            } else {
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', 'readonly');
+                    if (input.tagName === 'SELECT') {
+                        input.setAttribute('disabled', 'disabled');
+                    }
+                    // Xóa placeholder khi quay lại chế độ xem
+                    input.removeAttribute('placeholder');
+                });
+                editBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'none';
+                saveBtn.style.display = 'none';
+                if (avatarOverlay) avatarOverlay.style.display = 'none';
+                if (avatarHint) avatarHint.style.display = 'none';
+                changePasswordBtn.disabled = false;
+            }
+        }
+
+        // Cancel Edit
+        function cancelEdit() {
+            Object.keys(originalData).forEach(key => {
+                const input = document.getElementById(key);
+                if (input) {
+                    input.value = originalData[key];
+                }
+            });
+            toggleEditMode();
+            showAlert('Đã hủy các thay đổi', 'info');
+        }
+
+        // Helpers for Maintenance History
+        function formatDateTimeVi(value) {
+            if (!value) return '—';
+            const date = new Date(value);
+            if (Number.isNaN(date)) return '—';
+            return date.toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatCurrencyVi(value) {
+            if (value === null || value === undefined) return '—';
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(value);
+        }
+
+        function getTicketStatusBadge(statusCode, statusName) {
+            const map = {
+                PENDING: 'warning',
+                ASSIGNED: 'secondary',
+                IN_PROGRESS: 'primary',
+                WAITING_PAYMENT: 'info',
+                PAID: 'success',
+                COMPLETED: 'success',
+                CANCELLED: 'danger'
+            };
+            const variant = map[(statusCode || '').toUpperCase()] || 'secondary';
+            return `<span class="badge bg-${variant}">${statusName || statusCode || 'Không xác định'}</span>`;
+        }
+
+        function renderMaintenanceHistoryItem(item) {
+            const ticketCode = item.ticketCode || item.TicketCode || 'N/A';
+            const statusCode = item.statusCode || item.StatusCode || '';
+            const statusName = item.statusName || item.StatusName || statusCode || 'Không xác định';
+            const carName = item.carName || item.CarName || 'Không rõ';
+            const licensePlate = item.licensePlate || item.LicensePlate || '-';
+            const branchName = item.branchName || item.BranchName || '-';
+            const createdDate = item.createdDate || item.CreatedDate;
+            const endTime = item.endTime || item.EndTime;
+            const serviceCategoryName = item.serviceCategoryName || item.ServiceCategoryName || 'Bảo dưỡng';
+            const receiptAmount = item.receiptAmount ?? item.ReceiptAmount;
+            const receiptId = item.receiptId || item.ReceiptId;
+            const receiptCode = item.receiptCode || item.ReceiptCode;
+
+            const statusBadge = getTicketStatusBadge(statusCode, statusName);
+            const createdText = formatDateTimeVi(createdDate);
+            const completedText = endTime ? formatDateTimeVi(endTime) : '<span class="text-muted">Đang xử lý</span>';
+
+            const receiptAction = receiptId
+                ? `<button type="button" class="btn btn-sm btn-outline-primary" onclick="viewReceiptDetail(${receiptId})">
+                        <i class="fas fa-receipt me-1"></i> Xem hóa đơn
+                   </button>`
+                : '<span class="text-muted small">Chưa tạo hóa đơn</span>';
+
+            return `
+                <div class="card shadow-sm mb-3 maintenance-history-item">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <div class="text-muted small">Mã phiếu</div>
+                                <div class="h5 mb-0">${ticketCode}</div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <div class="text-muted small">Xe</div>
+                                <div class="fw-semibold">${carName}</div>
+                                <div class="text-muted small">${licensePlate}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">Chi nhánh</div>
+                                <div class="fw-semibold">${branchName}</div>
+                                <div class="text-muted small">${serviceCategoryName}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-muted small">Ngày tạo</div>
+                                <div>${createdText}</div>
+                                <div class="text-muted small">Hoàn thành: ${completedText}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <div class="text-muted small">Tổng thanh toán</div>
+                                <div class="h6 mb-0">${formatCurrencyVi(receiptAmount)}</div>
+                            </div>
+                            ${receiptAction}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Save Profile
+        async function saveProfile() {
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
+            
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!firstName || !lastName) {
+                showAlert('Vui lòng nhập đầy đủ họ và tên', 'danger');
+                return;
+            }
+
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang lưu...';
+            saveBtn.disabled = true;
+
+            try {
+                const token = localStorage.getItem('authToken');
+                const userInfoStr = localStorage.getItem('userInfo');
+                
+                if (!userInfoStr) {
+                    showAlert('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', 'danger');
+                    return;
+                }
+
+                const userInfo = JSON.parse(userInfoStr);
+                const userId = userInfo.userId || userInfo.id;
+                
+                if (!userId) {
+                    showAlert('Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.', 'danger');
+                    return;
+                }
+
+                // Lấy thông tin user hiện tại để giữ lại các field không thay đổi
+                let currentUserData = {};
+                try {
+                    const getResponse = await fetch(`${API_BASE_URL}/AutoOwner/${userId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (getResponse.ok) {
+                        currentUserData = await getResponse.json();
+                    }
+                } catch (error) {
+                    console.error('Error loading current user data:', error);
+                }
+
+                // Chuẩn bị dữ liệu update
+                const birthDateValue = document.getElementById('birthDate').value;
+                const updateData = {
+                    username: currentUserData.username || userInfo.username || userInfo.email || '',
+                    password: '123456', // Password mặc định, backend sẽ xử lý
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: currentUserData.email || userInfo.email || '',
+                    phone: phone,
+                    gender: document.getElementById('gender').value || null,
+                    dob: birthDateValue ? new Date(birthDateValue).toISOString().split('T')[0] : null,
+                    address: document.getElementById('address').value.trim() || null,
+                    image: currentUserData.image || null,
+                    taxCode: currentUserData.taxCode || null,
+                    citizenId: currentUserData.citizenId || null,
+                    branchId: currentUserData.branchId || null
+                };
+
+                // Gọi API để update profile
+                const response = await fetch(`${API_BASE_URL}/AutoOwner/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.message || 'Không thể cập nhật thông tin. Vui lòng thử lại sau.';
+                    showAlert(errorMessage, 'danger');
+                    return;
+                }
+
+                const result = await response.json();
+                
+                // Cập nhật localStorage nếu có
+                if (result && userInfoStr) {
+                    const updatedUserInfo = JSON.parse(userInfoStr);
+                    if (result.firstName) updatedUserInfo.firstName = result.firstName;
+                    if (result.lastName) updatedUserInfo.lastName = result.lastName;
+                    if (result.phone) updatedUserInfo.phone = result.phone;
+                    localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+                }
+                
+                showAlert('Cập nhật thông tin thành công!', 'success');
+                
+                // Lưu vào originalData để có thể cancel sau này
+                Object.keys(updateData).forEach(key => {
+                    const input = document.getElementById(key === 'dob' ? 'birthDate' : 
+                                                          key === 'firstName' ? 'firstName' : 
+                                                          key === 'lastName' ? 'lastName' : key);
+                    if (input) {
+                        originalData[input.id] = input.value;
+                    }
+                });
+                
+                toggleEditMode();
+                
+                // Reload profile data để đảm bảo hiển thị đúng
+                await loadProfileData();
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showAlert('Đã xảy ra lỗi khi lưu thông tin: ' + (error.message || 'Lỗi không xác định'), 'danger');
+            } finally {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        // Preview Avatar
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('userAvatar').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Change Password
+        function changePassword() {
+            const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+            modal.show();
+        }
+
+        // Save Password
+        async function savePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showAlert('Vui lòng nhập đầy đủ thông tin', 'danger');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showAlert('Mật khẩu mới phải có ít nhất 6 ký tự', 'danger');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showAlert('Mật khẩu xác nhận không khớp', 'danger');
+                return;
+            }
+
+            // TODO: Call API to change password
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            showAlert('Đổi mật khẩu thành công!', 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+            modal.hide();
+            document.getElementById('changePasswordForm').reset();
+        }
+
+        // Show Add Car Modal
+        function showAddCarModal() {
+            // Reset form
+            document.getElementById('addCarForm').reset();
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('addCarModal'));
+            modal.show();
+        }
+
+        // Submit Add Car Form
+        async function submitAddCar() {
+            const form = document.getElementById('addCarForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const token = localStorage.getItem('authToken');
+            const userInfoStr = localStorage.getItem('userInfo');
+            
+            if (!userInfoStr) {
+                showAlert('Vui lòng đăng nhập để thêm xe', 'warning');
+                return;
+            }
+
+            const userInfo = JSON.parse(userInfoStr);
+            const userId = userInfo.userId || userInfo.id;
+
+            if (!userId) {
+                showAlert('Không thể xác định người dùng. Vui lòng đăng nhập lại.', 'danger');
+                return;
+            }
+
+            const carData = {
+                userId: parseInt(userId),
+                carName: document.getElementById('newCarName').value.trim(),
+                licensePlate: document.getElementById('newLicensePlate').value.trim()
+            };
+
+            // Validate required fields
+            if (!carData.carName || !carData.licensePlate) {
+                showAlert('Vui lòng điền đầy đủ thông tin bắt buộc (Tên xe và Biển số)', 'warning');
+                return;
+            }
+
+            // Validate license plate format
+            const licensePlatePattern = /^[0-9]{2}[A-Z]{1,2}-[0-9]{4,5}$/;
+            if (!licensePlatePattern.test(carData.licensePlate)) {
+                showAlert('Biển số xe không hợp lệ. Vui lòng nhập đúng định dạng (VD: 30A-12345)', 'warning');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitAddCarBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/CarOfAutoOwner`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(carData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success !== false) {
+                    showAlert('Thêm xe thành công!', 'success');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCarModal'));
+                    modal.hide();
+                    
+                    // Reload cars list
+                    loadCarsData();
+                } else {
+                    const errorMessage = result.message || 'Không thể thêm xe. Vui lòng thử lại.';
+                    showAlert(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error adding car:', error);
+                showAlert('Có lỗi xảy ra khi thêm xe. Vui lòng thử lại sau.', 'danger');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Attach submit handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const submitBtn = document.getElementById('submitAddCarBtn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', submitAddCar);
+            }
+        });
+
+        // Show Alert
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show alert-custom`;
+            alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 3000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const sectionParam = params.get('section');
+            const hashSection = window.location.hash ? window.location.hash.replace('#', '') : null;
+            const validSections = ['profile', 'cars', 'maintenance-history', 'repair-history', 'schedule-history'];
+            
+            const targetSection = validSections.includes(sectionParam)
+                ? sectionParam
+                : (validSections.includes(hashSection) ? hashSection : 'profile');
+
+            showSection(targetSection);
+        });
+    </script>
+}
+

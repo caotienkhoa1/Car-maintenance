@@ -1,0 +1,216 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@{
+    var title = ViewData["Title"] as string ?? "APMMS";
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7173/api";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Hệ thống Quản lý Phụ tùng & Bảo dưỡng Ô tô</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    @await Html.PartialAsync("_Header")
+
+    <!-- Main Content -->
+    <main role="main" class="pb-3">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    @await Html.PartialAsync("_Footer")
+
+    <!-- Floating Action Tab -->
+    <div id="floatingTab" class="floating-tab">
+        <div class="floating-tab-toggle">
+            <i class="fas fa-chevron-left"></i>
+        </div>
+        <div class="floating-tab-content">
+            <div class="floating-tab-item" data-action="booking">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Đặt lịch ngay</span>
+            </div>
+            <div class="floating-tab-item" data-action="messenger">
+                <i class="fab fa-facebook-messenger"></i>
+                <span>Messenger</span>
+            </div>
+            <div class="floating-tab-item" data-action="zalo">
+                <i class="fab fa-whatsapp"></i>
+                <span>Chat Zalo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="bookingModalLabel">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        ĐẶT LỊCH BẢO DƯỠNG
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="bookingForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="serviceType" class="form-label">Nội dung công việc <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="serviceType" required>
+                                        <option value="">-- Chọn dịch vụ --</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 guest-field">
+                                    <label for="fullName" class="form-label">Họ Và Tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="fullName" autocomplete="off" required minlength="2" maxlength="100">
+                                    <div class="invalid-feedback">Vui lòng nhập họ và tên (tối thiểu 2 ký tự)</div>
+                                </div>
+                                <div class="mb-3 guest-field">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" autocomplete="off" maxlength="255">
+                                    <div class="invalid-feedback">Vui lòng nhập email hợp lệ</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Thời gian <span class="text-danger">*</span></label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="date" class="form-control" id="appointmentDate" required>
+                                        </div>
+                                        <div class="col-3">
+                                            <select class="form-select" id="appointmentHour" required>
+                                                <option value="">Giờ</option>
+                                                <option value="07">07</option>
+                                                <option value="08">08</option>
+                                                <option value="09">09</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17">17</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-3">
+                                            <select class="form-select" id="appointmentMinute" required>
+                                                <option value="">Phút</option>
+                                                <option value="00">00</option>
+                                                <option value="15">15</option>
+                                                <option value="30">30</option>
+                                                <option value="45">45</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Giờ làm việc: 7:00 - 17:45 (phút: 00, 15, 30, 45)</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Nội dung</label>
+                                    <textarea class="form-control" id="message" rows="3" placeholder="Mô tả chi tiết về vấn đề của xe..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 guest-field">
+                                    <label for="phone" class="form-label">Số Điện Thoại <span class="text-danger">*</span></label>
+                                    <input type="tel" class="form-control" id="phone" autocomplete="off" required 
+                                           pattern="^(0[3|5|7|8|9])+([0-9]{8})$" 
+                                           placeholder="VD: 0912345678" maxlength="10">
+                                    <div class="invalid-feedback">Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại 10 chữ số bắt đầu bằng 0</div>
+                                </div>
+                                <div class="mb-3 guest-field">
+                                    <label for="vehicleType" class="form-label">Loại Xe</label>
+                                    <input type="text" class="form-control" id="vehicleType" placeholder="VD: Toyota Camry, Honda Civic..." 
+                                           autocomplete="off" maxlength="100">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="branch" class="form-label">Chọn chi nhánh <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="branch" required>
+                                        <option value="">-- Đang tải danh sách chi nhánh --</option>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn chi nhánh</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="licensePlate" class="form-label">Chọn biển số xe <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="licensePlate" placeholder="VD: 30A-12345" 
+                                           autocomplete="off" pattern="^[0-9]{2}[A-Z]{1,2}-[0-9]{4,5}$" maxlength="15">
+                                    <div class="invalid-feedback">Biển số xe không hợp lệ. Vui lòng nhập đúng định dạng (VD: 30A-12345)</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="mileage" class="form-label">Số km hiện tại</label>
+                                    <input type="number" class="form-control" id="mileage" placeholder="Số km hiện tại" 
+                                           min="0" max="9999999" step="1">
+                                    <div class="invalid-feedback">Số km phải là số dương và không vượt quá 9,999,999 km</div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger btn-lg" id="submitBooking">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Đặt lịch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm xe mới (cho form đặt lịch) -->
+    <div class="modal fade" id="addCarModalBooking" tabindex="-1" aria-labelledby="addCarModalBookingLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addCarModalBookingLabel">
+                        <i class="fas fa-car me-2"></i>Thêm xe mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCarFormBooking">
+                        <div class="mb-3">
+                            <label for="newCarNameBooking" class="form-label">Tên xe <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newCarNameBooking" required placeholder="VD: Toyota Camry">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newLicensePlateBooking" class="form-label">Biển số xe <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="newLicensePlateBooking" required 
+                                   pattern="^[0-9]{2}[A-Z]{1,2}-[0-9]{4,5}$" 
+                                   placeholder="VD: 30A-12345" maxlength="15">
+                            <small class="form-text text-muted">Định dạng: XX[A-Z]-XXXX hoặc XX[A-Z]-XXXXX</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="submitAddCarBookingBtn">
+                        <i class="fas fa-save me-2"></i>Lưu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set global API base URL from config
+        window.API_BASE_URL = '@apiBaseUrl';
+        console.log('Public API_BASE_URL configured as:', window.API_BASE_URL);
+    </script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+    <script src="~/js/sidebar.js"></script>
+    <script src="~/js/bookingForm.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
+

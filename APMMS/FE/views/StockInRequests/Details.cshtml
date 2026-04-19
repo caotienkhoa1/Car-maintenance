@@ -1,0 +1,984 @@
+@{
+    ViewData["Title"] = "Chi tiết yêu cầu nhập kho";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Chi tiết yêu cầu nhập kho</h4>
+                    <div class="d-flex gap-2">
+                        <div id="actionButtons">
+                            <!-- Buttons sẽ được thêm bằng JavaScript dựa trên trạng thái -->
+                        </div>
+                        <a href="/StockInRequests" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="loadingSpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <div id="contentArea" style="display: none;">
+                        <div class="mb-4">
+                            <h5 class="mb-3">Thông tin cơ bản</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Mã:</dt>
+                                        <dd class="col-sm-8" id="code">-</dd>
+                                    </dl>
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Tình trạng:</dt>
+                                        <dd class="col-sm-8" id="status">-</dd>
+                                    </dl>
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Người tạo:</dt>
+                                        <dd class="col-sm-8" id="createdByName">-</dd>
+                                    </dl>
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Ngày tạo:</dt>
+                                        <dd class="col-sm-8" id="createdAt">-</dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Mô tả:</dt>
+                                        <dd class="col-sm-8" id="description">-</dd>
+                                    </dl>
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Ghi chú:</dt>
+                                        <dd class="col-sm-8" id="note">-</dd>
+                                    </dl>
+                                    <dl class="row mb-3">
+                                        <dt class="col-sm-4 fw-bold">Chi nhánh:</dt>
+                                        <dd class="col-sm-8" id="branchName">-</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5 class="mb-3">Danh sách các linh kiện</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 60px;">STT</th>
+                                            <th>Mã</th>
+                                            <th>Tên</th>
+                                            <th>Số Lượng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detailsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <p id="messageModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="messageModalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Xác nhận -->
+<div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Xác nhận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="confirmModalCancelBtn">Hủy</button>
+                <button type="button" class="btn btn-outline-primary" id="confirmModalOkBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nhập lý do hủy -->
+<div class="modal fade" id="cancelNoteModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Hủy yêu cầu nhập kho</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Nhập lý do hủy (nếu có):</p>
+                <textarea class="form-control" id="cancelNoteInput" rows="3" placeholder="Nhập lý do hủy..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-outline-danger" id="cancelNoteConfirmBtn">Xác nhận hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Chỉnh sửa yêu cầu nhập kho -->
+<div class="modal fade" id="editRequestModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Chỉnh sửa yêu cầu nhập kho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editRequestForm">
+                    <input type="hidden" id="editRequestId" />
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editCode" class="form-label">Mã yêu cầu</label>
+                            <input type="text" class="form-control" id="editCode" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editDescription" class="form-label">Mô tả</label>
+                            <input type="text" class="form-control" id="editDescription" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="editNote" class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="editNote" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h5 class="mb-3">Danh sách linh kiện</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <input type="text" class="form-control me-2" id="editComponentSearch" placeholder="Tìm kiếm linh kiện...">
+                                <button type="button" class="btn btn-outline-primary" id="editAddComponentBtn">
+                                    <i class="fas fa-plus"></i> Thêm linh kiện
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>STT</th>
+                                            <th>Mã linh kiện</th>
+                                            <th>Tên linh kiện</th>
+                                            <th>Số lượng</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="editComponentsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-outline-primary" id="editRequestSubmitBtn">
+                    <i class="fas fa-save"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Chọn linh kiện để thêm vào chỉnh sửa -->
+<div class="modal fade" id="editSelectComponentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chọn linh kiện</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="form-control mb-3" id="editModalComponentSearch" placeholder="Tìm kiếm...">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Chọn</th>
+                                <th>Mã</th>
+                                <th>Tên</th>
+                                <th>Loại</th>
+                                <th>Số lượng hiện có</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editAvailableComponentsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Lấy ID từ URL - có thể là /StockInRequests/{id} hoặc /StockInRequests/Details/{id}
+            const fullUrl = window.location.href;
+            const pathname = window.location.pathname;
+            const searchParams = new URLSearchParams(window.location.search);
+            
+            console.log('Full URL:', fullUrl);
+            console.log('Pathname:', pathname);
+            console.log('Search params:', searchParams.toString());
+            
+            let id = null;
+            
+            // Thử lấy từ query string trước
+            const idFromQuery = searchParams.get('id');
+            if (idFromQuery) {
+                const parsed = parseInt(idFromQuery, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    id = parsed;
+                    console.log('Got ID from query string:', id);
+                }
+            }
+            
+            // Nếu không có trong query string, parse từ pathname
+            if (!id) {
+                const urlParts = pathname.split('/').filter(part => part.length > 0);
+                console.log('URL parts:', urlParts);
+                
+                // Tìm phần cuối cùng là số
+                for (let i = urlParts.length - 1; i >= 0; i--) {
+                    const part = urlParts[i];
+                    console.log(`Checking part[${i}]: "${part}"`);
+                    const parsedId = parseInt(part, 10);
+                    if (!isNaN(parsedId) && parsedId > 0) {
+                        id = parsedId;
+                        console.log('Found ID in pathname:', id);
+                        break;
+                    }
+                }
+            }
+            
+            console.log('Final parsed ID:', id);
+            
+            if (!id || id <= 0) {
+                console.error('Invalid ID:', id);
+                $('#loadingSpinner').html(`<p class="text-danger">ID không hợp lệ (${id}). URL: ${pathname}. Vui lòng quay lại danh sách.</p>`);
+                return;
+            }
+            
+            loadStockInRequestDetails(id);
+        });
+
+        function loadStockInRequestDetails(id) {
+            if (!id || id <= 0) {
+                $('#loadingSpinner').html('<p class="text-danger">ID không hợp lệ</p>');
+                return;
+            }
+            
+            console.log('Loading details for ID:', id);
+            
+            $.ajax({
+                url: `/StockInRequests/${id}/Data`,
+                method: 'GET',
+                success: function(result) {
+                    console.log('GetData response:', result);
+                    console.log('Result type:', typeof result);
+                    console.log('Result.success:', result?.success);
+                    console.log('Result.data:', result?.data);
+                    
+                    // Kiểm tra cả success và data
+                    if (result && (result.success === true || result.Success === true)) {
+                        const data = result.data || result.Data;
+                        if (data) {
+                            console.log('Data object:', data);
+                            populateDetails(data);
+                            $('#loadingSpinner').hide();
+                            $('#contentArea').show();
+                        } else {
+                            console.error('Data is null or undefined');
+                            $('#loadingSpinner').html('<p class="text-danger">Không tìm thấy dữ liệu</p>');
+                        }
+                    } else {
+                        const errorMsg = result?.message || result?.Message || 'Không tìm thấy dữ liệu';
+                        console.error('Request failed:', errorMsg);
+                        $('#loadingSpinner').html(`<p class="text-danger">${errorMsg}</p>`);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', xhr, status, error);
+                    console.error('Response text:', xhr.responseText);
+                    let errorMsg = 'Lỗi tải dữ liệu';
+                    if (xhr.responseJSON) {
+                        errorMsg = xhr.responseJSON.message || xhr.responseJSON.Message || errorMsg;
+                    }
+                    $('#loadingSpinner').html(`<p class="text-danger">${errorMsg}</p>`);
+                }
+            });
+        }
+
+        function populateDetails(data) {
+            console.log('Populating details with data:', data);
+            
+            // Handle cả PascalCase và camelCase
+            const code = data.code || data.Code || '-';
+            const description = data.description || data.Description || '-';
+            const note = data.note || data.Note || '-';
+            const branchName = data.branchName || data.BranchName || '-';
+            const statusCode = data.statusCode || data.StatusCode || '';
+            const createdAt = data.createdAt || data.CreatedAt;
+            const createdByName = data.createdByName || data.CreatedByName || '-';
+            const lastModifiedDate = data.lastModifiedDate || data.LastModifiedDate;
+            const stockInRequestId = data.stockInRequestId || data.StockInRequestId || data.id || data.Id || 0;
+            const details = data.details || data.Details || [];
+            
+            $('#code').text(code);
+            $('#description').text(description);
+            $('#note').text(note);
+            $('#branchName').text(branchName);
+            
+            let statusClass = 'bg-secondary';
+            let statusText = 'Không xác định';
+            if (statusCode === 'PENDING') {
+                statusClass = 'bg-warning';
+                statusText = 'Chờ duyệt';
+            } else if (statusCode === 'APPROVED') {
+                statusClass = 'bg-success';
+                statusText = 'Đã duyệt';
+            } else if (statusCode === 'CANCELLED') {
+                statusClass = 'bg-danger';
+                statusText = 'Đã hủy';
+            } else if (statusCode === 'CREATED') {
+                statusClass = 'bg-info';
+                statusText = 'Đã tạo';
+            } else if (statusCode === 'CANCELLED') {
+                statusClass = 'bg-danger';
+                statusText = 'Đã hủy';
+            }
+            $('#status').html(`<span class="badge ${statusClass}">${statusText}</span>`);
+
+            $('#createdByName').text(createdByName);
+            $('#createdAt').text(createdAt ? new Date(createdAt).toLocaleString('vi-VN') : '-');
+            $('#lastModifiedDate').text(lastModifiedDate ? new Date(lastModifiedDate).toLocaleString('vi-VN') : '-');
+
+            // Render details
+            const tbody = $('#detailsTableBody');
+            tbody.empty();
+            if (details && details.length > 0) {
+                console.log('Rendering details:', details);
+                details.forEach(function(detail, index) {
+                    const componentCode = detail.componentCode || detail.ComponentCode || detail.componentId || detail.ComponentId || '-';
+                    const componentName = detail.componentName || detail.ComponentName || '-';
+                    const quantity = detail.quantity || detail.Quantity || 0;
+                    
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${componentCode}</td>
+                            <td>${componentName}</td>
+                            <td>${quantity}</td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                console.log('No details found');
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu</td></tr>');
+            }
+
+            // Render action buttons theo role và status
+            const actionButtons = $('#actionButtons');
+            actionButtons.empty();
+            
+            // Lấy role từ JWT token trong localStorage
+            let roleId = 0;
+            let roleName = '';
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                    roleName = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                               payload['role'] || 
+                               payload['RoleName'] || 
+                               '';
+                    console.log('User role from JWT - RoleId:', roleId, 'RoleName:', roleName);
+                }
+            } catch (e) {
+                console.error('Error parsing JWT token:', e);
+            }
+            
+            // Fallback: Lấy từ sessionStorage nếu không có trong token
+            if (!roleId || roleId === 0) {
+                roleId = parseInt(sessionStorage.getItem('RoleId') || '0');
+            }
+            if (!roleName) {
+                roleName = sessionStorage.getItem('RoleName') || '';
+            }
+            
+            // Check role theo database:
+            // id 2: Branch Manager (Giám đốc chi nhánh) - duyệt và hủy
+            // id 5: Warehouse Keeper (Quản lý kho) - gửi đơn
+            const roleNameLower = roleName.toLowerCase();
+            const isBranchManager = roleNameLower.includes('branch manager') || 
+                                   roleNameLower.includes('giám đốc') ||
+                                   roleId === 2; // Chỉ roleId = 2 (Branch Manager)
+            const isWarehouseKeeper = roleNameLower.includes('warehouse keeper') || 
+                                     roleNameLower.includes('quản lý kho') ||
+                                     roleNameLower.includes('warehouse') ||
+                                     roleId === 5; // Chỉ roleId = 5 (Warehouse Keeper)
+            
+            console.log('Final role check - isBranchManager:', isBranchManager, 'isWarehouseKeeper:', isWarehouseKeeper);
+            
+            let buttonsHtml = '';
+            
+            // BRANCH MANAGER (roleId = 2): Có thể duyệt và hủy khi status = PENDING
+            if (isBranchManager && statusCode === 'PENDING' && stockInRequestId > 0) {
+                buttonsHtml = `
+                    <button type="button" class="btn btn-outline-primary" onclick="approveRequest(${stockInRequestId})">
+                        <i class="fas fa-check"></i> Duyệt
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="cancelRequest(${stockInRequestId})">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                `;
+            }
+            // WAREHOUSE KEEPER (roleId = 5): Có thể chỉnh sửa và gửi đơn khi status = CREATED hoặc CANCELLED
+            else if (isWarehouseKeeper && (statusCode === 'CREATED' || statusCode === 'CANCELLED') && stockInRequestId > 0) {
+                buttonsHtml = `
+                    <button type="button" class="btn btn-outline-primary" onclick="editRequest(${stockInRequestId})">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="sendRequest(${stockInRequestId})">
+                        <i class="fas fa-paper-plane"></i> Gửi đơn
+                    </button>
+                `;
+            }
+            
+            if (buttonsHtml) {
+                actionButtons.html(buttonsHtml);
+            }
+        }
+
+        function sendRequest(id) {
+            showConfirm('Bạn có chắc chắn muốn gửi yêu cầu này?', function() {
+                $.ajax({
+                    url: `/StockInRequests/${id}/Send`,
+                    method: 'POST',
+                    success: function(result) {
+                        // Đóng tất cả modal
+                        cleanupModals();
+                        
+                        if (result && result.success) {
+                            showMessage('Thành công', 'Gửi yêu cầu nhập kho thành công', 'success', function() {
+                                location.reload();
+                            });
+                        } else {
+                            const errorMsg = result?.message || 'Không thể gửi yêu cầu';
+                            showMessage('Lỗi', errorMsg, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        cleanupModals();
+                        let errorMsg = error;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                });
+            });
+        }
+
+        function approveRequest(id) {
+            showConfirm('Bạn có chắc chắn muốn duyệt yêu cầu này?', function() {
+                $.ajax({
+                    url: `/StockInRequests/${id}/Approve`,
+                    method: 'POST',
+                    success: function(result) {
+                        // Đóng tất cả modal
+                        cleanupModals();
+                        
+                        if (result && result.success) {
+                            showMessage('Thành công', 'Duyệt yêu cầu thành công', 'success', function() {
+                                location.reload();
+                            });
+                        } else {
+                            const errorMsg = result?.message || 'Không thể duyệt yêu cầu';
+                            showMessage('Lỗi', errorMsg, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        cleanupModals();
+                        let errorMsg = error;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                });
+            });
+        }
+
+        function cancelRequest(id) {
+            // Đóng tất cả modal cũ
+            cleanupModals();
+            
+            // Reset input
+            $('#cancelNoteInput').val('');
+            
+            // Lưu ID vào button để dùng sau
+            $('#cancelNoteConfirmBtn').off('click').on('click', function() {
+                const note = $('#cancelNoteInput').val() || '';
+                
+                // Đóng modal nhập lý do
+                const modal = bootstrap.Modal.getInstance($('#cancelNoteModal')[0]);
+                if (modal) {
+                    modal.hide();
+                }
+                cleanupModals();
+                
+                $.ajax({
+                    url: `/StockInRequests/${id}/Cancel`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ note: note }),
+                    success: function(result) {
+                        cleanupModals();
+                        
+                        if (result && result.success) {
+                            showMessage('Thành công', 'Hủy yêu cầu thành công', 'success', function() {
+                                location.reload();
+                            });
+                        } else {
+                            const errorMsg = result?.message || 'Không thể hủy yêu cầu';
+                            showMessage('Lỗi', errorMsg, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        cleanupModals();
+                        let errorMsg = error;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                });
+            });
+            
+            // Hiển thị modal nhập lý do
+            $('#cancelNoteModal').modal('show');
+        }
+
+        function showMessage(title, message, type, callback) {
+            // Đóng tất cả modal đang mở trước
+            cleanupModals();
+
+            const modal = $('#messageModal');
+            const header = $('#messageModalHeader');
+            const titleEl = $('#messageModalTitle');
+            const textEl = $('#messageModalText');
+            const okBtn = $('#messageModalOkBtn');
+
+            titleEl.text(title);
+            textEl.text(message);
+
+            // Set màu sắc theo type
+            header.removeClass('bg-success bg-danger bg-warning bg-primary');
+            okBtn.removeClass('btn-success btn-danger btn-warning');
+            
+            if (type === 'success') {
+                header.addClass('bg-success text-white');
+                okBtn.addClass('btn-success');
+            } else if (type === 'error') {
+                header.addClass('bg-danger text-white');
+                okBtn.addClass('btn-danger');
+            } else if (type === 'warning') {
+                header.addClass('bg-warning text-dark');
+                okBtn.addClass('btn-warning');
+            } else {
+                header.addClass('bg-primary text-white');
+            }
+
+            // Xóa callback cũ và thêm callback mới
+            modal.off('hidden.bs.modal');
+            if (callback) {
+                modal.on('hidden.bs.modal', function() {
+                    callback();
+                });
+            }
+
+            // Hiển thị modal
+            modal.modal('show');
+        }
+
+        function showConfirm(message, onConfirm) {
+            // Đóng tất cả modal đang mở trước
+            cleanupModals();
+
+            const modal = $('#confirmModal');
+            const textEl = $('#confirmModalText');
+            const okBtn = $('#confirmModalOkBtn');
+            const cancelBtn = $('#confirmModalCancelBtn');
+
+            textEl.text(message);
+
+            // Xóa event handlers cũ
+            okBtn.off('click');
+            cancelBtn.off('click');
+
+            // Thêm event handlers mới
+            okBtn.on('click', function() {
+                const modalInstance = bootstrap.Modal.getInstance(modal[0]);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                cleanupModals();
+                if (onConfirm) {
+                    onConfirm();
+                }
+            });
+
+            cancelBtn.on('click', function() {
+                const modalInstance = bootstrap.Modal.getInstance(modal[0]);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                cleanupModals();
+            });
+
+            // Hiển thị modal
+            modal.modal('show');
+        }
+
+        function cleanupModals() {
+            // Đóng tất cả modal
+            $('.modal').modal('hide');
+            
+            // Xóa backdrop và reset body styles
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                $('body').css('overflow', '');
+                $('body').css('padding-right', '');
+            }, 300);
+        }
+
+        // Biến lưu trữ dữ liệu cho modal chỉnh sửa
+        let editRequestData = null;
+        let editAvailableComponents = [];
+        let editSelectedComponents = [];
+
+        function editRequest(id) {
+            console.log('editRequest called with id:', id);
+            // Lấy dữ liệu yêu cầu hiện tại - sử dụng cùng endpoint như loadStockInRequestDetails
+            $.ajax({
+                url: `/StockInRequests/${id}/Data`,
+                method: 'GET',
+                success: function(result) {
+                    console.log('editRequest response:', result);
+                    // Kiểm tra cả success và data (giống như loadStockInRequestDetails)
+                    if (result && (result.success === true || result.Success === true)) {
+                        const data = result.data || result.Data;
+                        if (data) {
+                            editRequestData = data;
+                            populateEditModal(editRequestData);
+                            $('#editRequestModal').modal('show');
+                        } else {
+                            console.error('Data is null or undefined');
+                            showMessage('Lỗi', 'Không thể tải dữ liệu yêu cầu', 'error');
+                        }
+                    } else {
+                        const errorMsg = result?.message || result?.Message || 'Không thể tải dữ liệu yêu cầu';
+                        console.error('Request failed:', errorMsg);
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('editRequest AJAX error:', xhr, status, error);
+                    console.error('Response text:', xhr.responseText);
+                    let errorMsg = 'Lỗi khi tải dữ liệu';
+                    if (xhr.responseJSON) {
+                        errorMsg = xhr.responseJSON.message || xhr.responseJSON.Message || errorMsg;
+                    } else if (xhr.responseText) {
+                        try {
+                            const parsed = JSON.parse(xhr.responseText);
+                            errorMsg = parsed.message || parsed.Message || errorMsg;
+                        } catch (e) {
+                            errorMsg = xhr.responseText || errorMsg;
+                        }
+                    }
+                    showMessage('Lỗi', errorMsg, 'error');
+                }
+            });
+        }
+
+        function populateEditModal(data) {
+            console.log('populateEditModal called with data:', data);
+            
+            // Handle cả PascalCase và camelCase
+            const code = data.code || data.Code || '-';
+            const description = data.description || data.Description || '';
+            const note = data.note || data.Note || '';
+            const details = data.details || data.Details || [];
+            const stockInRequestId = data.stockInRequestId || data.StockInRequestId || data.id || data.Id || 0;
+
+            console.log('Parsed data - code:', code, 'description:', description, 'note:', note);
+            console.log('Details:', details);
+            console.log('StockInRequestId:', stockInRequestId);
+
+            $('#editRequestId').val(stockInRequestId);
+            $('#editCode').val(code);
+            $('#editDescription').val(description);
+            $('#editNote').val(note);
+
+            // Lưu danh sách components đã chọn - xử lý cả PascalCase và camelCase
+            editSelectedComponents = details.map(detail => {
+                const componentId = detail.componentId || detail.ComponentId;
+                const componentCode = detail.componentCode || detail.ComponentCode || 
+                                     detail.component?.code || detail.Component?.Code || '-';
+                const componentName = detail.componentName || detail.ComponentName || 
+                                     detail.component?.name || detail.Component?.Name || '-';
+                const quantity = detail.quantity || detail.Quantity || 0;
+                
+                return {
+                    componentId: componentId,
+                    componentCode: componentCode,
+                    componentName: componentName,
+                    quantity: quantity
+                };
+            }).filter(comp => comp.componentId); // Lọc bỏ các item không có componentId
+
+            console.log('editSelectedComponents:', editSelectedComponents);
+            renderEditComponentsTable();
+        }
+
+        function renderEditComponentsTable() {
+            const tbody = $('#editComponentsTableBody');
+            tbody.empty();
+
+            if (editSelectedComponents.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">Chưa có linh kiện nào</td></tr>');
+                return;
+            }
+
+            editSelectedComponents.forEach((comp, index) => {
+                if (comp.quantity > 0) {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${comp.componentCode}</td>
+                            <td>${comp.componentName}</td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       value="${comp.quantity}" min="1" 
+                                       onchange="updateEditComponentQuantity(${comp.componentId}, this.value)">
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="removeEditComponent(${comp.componentId})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                }
+            });
+        }
+
+        window.updateEditComponentQuantity = function(componentId, quantity) {
+            const comp = editSelectedComponents.find(c => c.componentId === componentId);
+            if (comp) {
+                comp.quantity = parseInt(quantity) || 0;
+            }
+        }
+
+        window.removeEditComponent = function(componentId) {
+            editSelectedComponents = editSelectedComponents.filter(c => c.componentId !== componentId);
+            renderEditComponentsTable();
+        }
+
+        // Load danh sách linh kiện có sẵn khi click "Thêm linh kiện"
+        $('#editAddComponentBtn').on('click', function() {
+            loadEditAvailableComponents();
+            $('#editSelectComponentModal').modal('show');
+        });
+
+        function loadEditAvailableComponents() {
+            $.ajax({
+                url: '/Components/ListData',
+                method: 'GET',
+                data: { page: 1, pageSize: 1000 },
+                success: function(result) {
+                    if (result && result.success && result.data) {
+                        editAvailableComponents = Array.isArray(result.data) ? result.data : (result.data.items || []);
+                        renderEditAvailableComponentsTable();
+                    } else {
+                        $('#editAvailableComponentsTableBody').html('<tr><td colspan="5" class="text-center text-muted">Không có linh kiện nào</td></tr>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading available components:', error);
+                    $('#editAvailableComponentsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Lỗi khi tải danh sách linh kiện</td></tr>');
+                }
+            });
+        }
+
+        function renderEditAvailableComponentsTable() {
+            const tbody = $('#editAvailableComponentsTableBody');
+            tbody.empty();
+
+            // Lọc ra các linh kiện chưa được chọn
+            const selectedIds = editSelectedComponents.map(c => c.componentId);
+            const available = editAvailableComponents.filter(c => {
+                const compId = c.id || c.Id || c.componentId || c.ComponentId;
+                return compId && !selectedIds.includes(compId);
+            });
+
+            if (available.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">Không còn linh kiện nào để thêm</td></tr>');
+                return;
+            }
+
+            available.forEach(comp => {
+                const compId = comp.id || comp.Id || comp.componentId || comp.ComponentId;
+                const compCode = comp.code || comp.Code || '-';
+                const compName = comp.name || comp.Name || '-';
+                const typeName = comp.typeComponentName || comp.TypeComponentName || comp.typeComponent?.name || '-';
+                const quantity = comp.quantityStock || comp.QuantityStock || comp.quantity || comp.Quantity || 0;
+
+                const row = `
+                    <tr>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary" 
+                                    onclick="addEditComponent(${compId}, '${compCode.replace(/'/g, "\\'")}', '${compName.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-plus"></i> Chọn
+                            </button>
+                        </td>
+                        <td>${compCode}</td>
+                        <td>${compName}</td>
+                        <td>${typeName}</td>
+                        <td>${quantity}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        window.addEditComponent = function(componentId, componentCode, componentName) {
+            // Kiểm tra xem đã có chưa
+            if (!editSelectedComponents.find(c => c.componentId === componentId)) {
+                editSelectedComponents.push({
+                    componentId: componentId,
+                    componentCode: componentCode,
+                    componentName: componentName,
+                    quantity: 1
+                });
+                renderEditComponentsTable();
+                $('#editSelectComponentModal').modal('hide');
+            }
+        }
+
+            // Tìm kiếm trong modal chọn linh kiện
+            $('#editModalComponentSearch').on('input', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                $('#editAvailableComponentsTableBody tr').each(function() {
+                    const text = $(this).text().toLowerCase();
+                    $(this).toggle(text.includes(searchTerm));
+                });
+            });
+
+            // Submit form chỉnh sửa
+            $('#editRequestSubmitBtn').on('click', function() {
+                const requestId = $('#editRequestId').val();
+                const description = $('#editDescription').val();
+                const note = $('#editNote').val();
+
+                if (!description || description.trim() === '') {
+                    showMessage('Lỗi', 'Vui lòng nhập mô tả', 'error');
+                    return;
+                }
+
+                // Lọc các components có quantity > 0
+                const validComponents = editSelectedComponents.filter(c => c.quantity > 0);
+
+                if (validComponents.length === 0) {
+                    showMessage('Lỗi', 'Vui lòng thêm ít nhất một linh kiện', 'error');
+                    return;
+                }
+
+                const updateData = {
+                    stockInRequestId: parseInt(requestId),
+                    code: $('#editCode').val(),
+                    description: description,
+                    note: note,
+                    details: validComponents.map(c => ({
+                        componentId: c.componentId,
+                        quantity: c.quantity
+                    }))
+                };
+
+                $.ajax({
+                    url: `/StockInRequests/${requestId}`,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(updateData),
+                    success: function(result) {
+                        cleanupModals();
+                        if (result && result.success) {
+                            showMessage('Thành công', 'Cập nhật yêu cầu nhập kho thành công', 'success', function() {
+                                location.reload();
+                            });
+                        } else {
+                            showMessage('Lỗi', result.message || 'Không thể cập nhật yêu cầu', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        cleanupModals();
+                        let errorMsg = error;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                });
+            });
+    </script>
+}
+

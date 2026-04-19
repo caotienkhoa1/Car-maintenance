@@ -1,0 +1,742 @@
+@{
+    ViewData["Title"] = "Check-in xe mới";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Check-in xe mới</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Search Vehicle Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tìm kiếm xe</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="searchTerm" class="form-label">Nhập biển số hoặc số khung <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="searchTerm" placeholder="VD: 30A-12345 hoặc 1HGBH41JXMN109186">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-primary w-100" onclick="searchVehicle()">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Results -->
+                            <div id="searchResults" style="display: none;">
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-check-circle"></i> Tìm thấy xe trong hệ thống</h6>
+                                    <div id="vehicleInfo"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="noResults" style="display: none;">
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-exclamation-triangle"></i> Không tìm thấy xe</h6>
+                                    <p>Xe chưa có trong hệ thống. Vui lòng tạo hồ sơ xe trong phần Quản lý xe trước khi tiếp tục check-in.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="checkinForm" enctype="multipart/form-data">
+                        <!-- Hidden field for carId -->
+                        <input type="hidden" id="carId" name="carId">
+                        <input type="hidden" id="vehicleTypeId" name="vehicleTypeId">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="licensePlate" class="form-label">Biển số xe <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="licensePlate" name="licensePlate" readonly required style="background-color:#e9ecef;">
+                                    <small class="text-muted">Thông tin lấy từ hồ sơ xe và không thể thay đổi tại bước này</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vinNumber" class="form-label">Số khung (VIN)</label>
+                                    <input type="text" class="form-control" id="vinNumber" name="vinNumber" placeholder="Nhập hoặc chỉnh sửa số khung">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="engineNumber" class="form-label">Số máy</label>
+                                    <input type="text" class="form-control" id="engineNumber" name="engineNumber" placeholder="Nhập hoặc chỉnh sửa số máy">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="carName" class="form-label">Tên xe <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="carName" name="carName" required readonly style="background-color:#e9ecef;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="carModel" class="form-label">Model xe</label>
+                                    <input type="text" class="form-control" id="carModel" name="carModel" readonly style="background-color:#e9ecef;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="vehicleType" class="form-label">Loại phương tiện</label>
+                                    <input type="text" class="form-control" id="vehicleType" name="vehicleType" readonly style="background-color:#e9ecef;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="carColor" class="form-label">Màu xe</label>
+                                    <input type="text" class="form-control" id="carColor" name="carColor" placeholder="Ví dụ: Đen">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customerName" class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="customerName" name="customerName" placeholder="Tên khách hàng" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customerPhone" class="form-label">Số điện thoại khách hàng</label>
+                                    <input type="tel" class="form-control" id="customerPhone" name="customerPhone" placeholder="Số điện thoại">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mileage" class="form-label">Số km hiện tại <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="mileage" name="mileage" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="yearOfManufacture" class="form-label">Năm sản xuất</label>
+                                    <input type="number" class="form-control" id="yearOfManufacture" name="yearOfManufacture" min="1900" max="2030" readonly style="background-color:#e9ecef;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchId" class="form-label">Chi nhánh <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="branchName" name="branchName" readonly style="background-color: #e9ecef;">
+                                    <input type="hidden" id="branchId" name="branchId">
+                                    <div class="form-text mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Chi nhánh của tài khoản hiện tại
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="checkinDate" class="form-label">Ngày check-in <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control" id="checkinDate" name="checkinDate" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Ghi chú</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Mô tả tình trạng xe, vấn đề cần sửa chữa..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="images" class="form-label">Hình ảnh xe</label>
+                                    <input type="file" class="form-control" id="images" name="images" multiple accept="image/*" onchange="previewImages()">
+                                    <div class="form-text">Có thể chọn nhiều hình ảnh (JPG, PNG, GIF). Vui lòng nhập mô tả và phân loại cho từng ảnh.</div>
+                                    <div id="imagePreview" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/VehicleCheckins" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Lưu check-in
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBranches();
+            setCurrentDateTime();
+            // Pre-load vehicle types để sẵn sàng khi search
+            ensureVehicleTypesLoaded().catch(err => {
+                console.error('Failed to pre-load vehicle types:', err);
+            });
+
+            document.getElementById('checkinForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createCheckin();
+            });
+        });
+
+        function setCurrentDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const dateTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+            document.getElementById('checkinDate').value = dateTimeString;
+        }
+
+        function loadBranches() {
+            // Tự động lấy chi nhánh của user hiện tại
+            loadCurrentUserBranch();
+        }
+        
+        let vehicleTypeLookup = null;
+        let vehicleTypeLookupPromise = null;
+
+        function loadCurrentUserBranch() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                document.getElementById('branchName').value = 'Không lấy được thông tin';
+                return;
+            }
+            
+            // Gọi API để lấy thông tin employee hiện tại
+            const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+            fetch(`${apiBaseUrl}/Employee/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.data) {
+                    const employee = data.data;
+                    if (employee.branchName) {
+                        document.getElementById('branchName').value = employee.branchName;
+                    } else {
+                        document.getElementById('branchName').value = 'Không có chi nhánh';
+                    }
+                    if (employee.branchId) {
+                        document.getElementById('branchId').value = employee.branchId;
+                    }
+                    console.log('Loaded branch:', employee.branchName, 'ID:', employee.branchId);
+                } else {
+                    document.getElementById('branchName').value = 'Không lấy được thông tin';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading current user branch:', error);
+                document.getElementById('branchName').value = 'Lỗi tải chi nhánh';
+            });
+        }
+
+        async function ensureVehicleTypesLoaded() {
+            if (vehicleTypeLookup) {
+                return;
+            }
+            if (vehicleTypeLookupPromise) {
+                await vehicleTypeLookupPromise;
+                return;
+            }
+
+            const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+            vehicleTypeLookupPromise = fetch(`${apiBaseUrl}/VehicleType`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('VehicleType API response:', data);
+                    // API trả về trực tiếp mảng, không có wrapper
+                    const list = Array.isArray(data)
+                        ? data
+                        : (data && data.success && Array.isArray(data.data)) ? data.data : [];
+
+                    console.log('Parsed vehicle types list:', list);
+
+                    vehicleTypeLookup = new Map();
+                    list.forEach(item => {
+                        if (item && item.id !== undefined && item.id !== null) {
+                            const key = String(item.id);
+                            const value = item.name || item.typeName || '';
+                            vehicleTypeLookup.set(key, value);
+                            console.log(`Loaded vehicle type: id=${key}, name=${value}`);
+                        }
+                    });
+                    console.log(`Total vehicle types loaded: ${vehicleTypeLookup.size}`);
+                })
+                .catch(error => {
+                    console.error('Error loading vehicle types:', error);
+                    vehicleTypeLookup = new Map();
+                });
+
+            await vehicleTypeLookupPromise;
+        }
+
+        function getVehicleTypeNameById(id) {
+            if (!vehicleTypeLookup || !vehicleTypeLookup.size) {
+                console.warn('VehicleType lookup not loaded yet or empty');
+                return '';
+            }
+            if (id === undefined || id === null) {
+                console.warn('VehicleType id is null or undefined');
+                return '';
+            }
+            const key = String(id);
+            const name = vehicleTypeLookup.get(key);
+            if (!name) {
+                console.warn(`VehicleType not found for id: ${id} (key: ${key}). Available keys:`, Array.from(vehicleTypeLookup.keys()));
+            }
+            return name || '';
+        }
+
+        async function resolveVehicleType(car) {
+            if (!car) {
+                console.log('resolveVehicleType: car is null/undefined');
+                return { typeName: '', typeId: null };
+            }
+
+            console.log('resolveVehicleType: car data:', car);
+            const directName = car.vehicleTypeName || car.vehicleType || car.typeName || car.type || '';
+            const directId = car.vehicleTypeId ?? car.typeId ?? null;
+            console.log('resolveVehicleType: directName=', directName, 'directId=', directId);
+
+            if (directName) {
+                console.log('resolveVehicleType: Using direct name:', directName);
+                return { typeName: directName, typeId: directId };
+            }
+
+            if (directId !== null && directId !== undefined) {
+                console.log('resolveVehicleType: Looking up by id:', directId);
+                await ensureVehicleTypesLoaded();
+                const name = getVehicleTypeNameById(directId);
+                console.log('resolveVehicleType: Found name by id:', name);
+                return { typeName: name, typeId: directId };
+            }
+
+            console.log('resolveVehicleType: Fetching car details for id:', car.id);
+            const carDetails = await fetchCarDetails(car.id);
+            if (carDetails) {
+                console.log('resolveVehicleType: Car details:', carDetails);
+                const detailId = carDetails.vehicleTypeId ?? carDetails.typeId ?? null;
+                let detailName = carDetails.vehicleTypeName || carDetails.vehicleType || carDetails.typeName || carDetails.type || '';
+                if (!detailName && detailId !== null && detailId !== undefined) {
+                    await ensureVehicleTypesLoaded();
+                    detailName = getVehicleTypeNameById(detailId);
+                    console.log('resolveVehicleType: Found name from details by id:', detailName);
+                }
+                return { typeName: detailName, typeId: detailId };
+            }
+
+            console.log('resolveVehicleType: No vehicle type found');
+            return { typeName: '', typeId: null };
+        }
+
+        async function fetchCarDetails(carId) {
+            if (!carId) {
+                return null;
+            }
+            try {
+                const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+                const response = await fetch(`${apiBaseUrl}/CarOfAutoOwner/${carId}`);
+                if (!response.ok) {
+                    return null;
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching car details:', error);
+                return null;
+            }
+        }
+
+        async function searchVehicle() {
+            const searchTerm = document.getElementById('searchTerm').value.trim();
+            if (!searchTerm) {
+                showAlert('Vui lòng nhập biển số hoặc số khung', 'warning');
+                return;
+            }
+
+            try {
+                const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+                const response = await fetch(`${apiBaseUrl}/VehicleCheckin/search-vehicle?searchTerm=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+
+                if (data.success && data.data.found) {
+                    await ensureVehicleTypesLoaded();
+
+                    // Xe đã tồn tại - tự động điền thông tin
+                    const car = data.data.car;
+                    const engineNumberValue = car.engineNumber || car.vehicleEngineNumber || car.engineNo || car.engine_no || '';
+                    const { typeName: vehicleTypeValue, typeId: vehicleTypeIdValue } = await resolveVehicleType(car);
+                    const carNameValue = car.carName || '';
+                    const carModelValue = car.carModel || '';
+                    const carColorValue = car.color || car.carColor || '';
+                    document.getElementById('carId').value = car.id;
+                    document.getElementById('vehicleTypeId').value = vehicleTypeIdValue !== null && vehicleTypeIdValue !== undefined ? vehicleTypeIdValue : '';
+                    document.getElementById('licensePlate').value = car.licensePlate || '';
+                    
+                    // Số khung - chỉ dùng màu đỏ nếu không có giá trị
+                    const vinNumberInput = document.getElementById('vinNumber');
+                    vinNumberInput.value = car.vinNumber || '';
+                    if (car.vinNumber && car.vinNumber.trim() !== '') {
+                        vinNumberInput.style.color = '';
+                    } else {
+                        vinNumberInput.style.color = '#dc3545';
+                    }
+                    
+                    // Số máy - chỉ dùng màu đỏ nếu không có giá trị
+                    const engineNumberInput = document.getElementById('engineNumber');
+                    engineNumberInput.value = engineNumberValue;
+                    if (engineNumberValue && engineNumberValue.trim() !== '') {
+                        engineNumberInput.style.color = '';
+                    } else {
+                        engineNumberInput.style.color = '#dc3545';
+                    }
+                    
+                    document.getElementById('carName').value = carNameValue;
+                    document.getElementById('carModel').value = carModelValue;
+                    document.getElementById('vehicleType').value = vehicleTypeValue || '';
+                    document.getElementById('carColor').value = carColorValue;
+                    document.getElementById('customerName').value = car.customerName || '';
+                    document.getElementById('customerPhone').value = car.customerPhone || '';
+                    document.getElementById('yearOfManufacture').value = car.yearOfManufacture || '';
+                    
+                    // Hiển thị thông tin xe tìm thấy
+                    document.getElementById('vehicleInfo').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Biển số:</strong> ${car.licensePlate || '-'}<br>
+                                <strong>Số khung:</strong> ${car.vinNumber || '-'}<br>
+                                <strong>Số máy:</strong> ${engineNumberValue || '-'}<br>
+                                <strong>Loại xe:</strong> ${vehicleTypeValue || '-'}<br>
+                                <strong>Tên xe:</strong> ${carNameValue || '-'}<br>
+                                <strong>Model:</strong> ${carModelValue || '-'}<br>
+                                <strong>Màu xe:</strong> ${carColorValue || '-'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Chủ xe:</strong> ${car.customerName || '-'}<br>
+                                <strong>SĐT:</strong> ${car.customerPhone || '-'}<br>
+                                <strong>Năm SX:</strong> ${car.yearOfManufacture || '-'}
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('searchResults').style.display = 'block';
+                    document.getElementById('noResults').style.display = 'none';
+                    
+                    showAlert('Tìm thấy xe trong hệ thống! Thông tin đã được tự động điền.', 'success');
+                } else {
+                    // Xe chưa tồn tại - cho phép nhập thông tin mới
+                    clearVehicleFields();
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('noResults').style.display = 'block';
+                    showAlert('Xe chưa có trong hệ thống. Vui lòng tạo hồ sơ xe trong màn hình Quản lý xe trước khi check-in.', 'info');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi tìm kiếm xe', 'danger');
+            }
+        }
+
+        async function createCheckin() {
+            const carId = document.getElementById('carId').value;
+            if (!carId) {
+                showAlert('Vui lòng tìm kiếm xe trước khi tạo check-in', 'warning');
+                return;
+            }
+
+            const branchId = document.getElementById('branchId').value;
+            if (!branchId) {
+                showAlert('Vui lòng chọn chi nhánh', 'warning');
+                return;
+            }
+
+            const mileage = document.getElementById('mileage').value;
+            if (!mileage || mileage <= 0) {
+                showAlert('Vui lòng nhập số km hợp lệ', 'warning');
+                return;
+            }
+
+            // Upload ảnh trước
+            const imageUrls = await uploadImages();
+            if (imageUrls === null) {
+                showAlert('Có lỗi xảy ra khi upload ảnh', 'danger');
+                return;
+            }
+
+            if (imageUrls.length === 0) {
+                showAlert('Vui lòng chọn ít nhất một hình ảnh', 'warning');
+                return;
+            }
+
+            // Lấy descriptions và categories từ form
+            const imageDescriptions = [];
+            const imageCategories = [];
+            const descriptionInputs = document.querySelectorAll('.image-description');
+            const categorySelects = document.querySelectorAll('.image-category');
+            
+            // Sắp xếp theo index
+            const sortedDescriptions = Array.from(descriptionInputs).sort((a, b) => 
+                parseInt(a.dataset.index) - parseInt(b.dataset.index)
+            );
+            const sortedCategories = Array.from(categorySelects).sort((a, b) => 
+                parseInt(a.dataset.index) - parseInt(b.dataset.index)
+            );
+            
+            sortedDescriptions.forEach(input => {
+                const value = input.value.trim();
+                imageDescriptions.push(value || null);
+            });
+            
+            sortedCategories.forEach(select => {
+                const value = select.value;
+                imageCategories.push(value || null);
+            });
+
+            // Đảm bảo số lượng descriptions và categories khớp với số ảnh
+            while (imageDescriptions.length < imageUrls.length) {
+                imageDescriptions.push(null);
+            }
+            while (imageCategories.length < imageUrls.length) {
+                imageCategories.push(null);
+            }
+
+            const sanitize = (value) => {
+                if (value === undefined || value === null) return null;
+                const trimmed = value.trim();
+                return trimmed.length > 0 ? trimmed : null;
+            };
+
+            const formData = {
+                carId: parseInt(carId),
+                maintenanceRequestId: null,
+                mileage: parseInt(mileage),
+                notes: document.getElementById('notes').value || null,
+                imageUrls: imageUrls,
+                imageDescriptions: imageDescriptions.length > 0 && imageDescriptions.some(d => d !== null) ? imageDescriptions : null,
+                imageCategories: imageCategories.length > 0 && imageCategories.some(c => c !== null) ? imageCategories : null,
+                branchId: parseInt(branchId),
+                licensePlate: sanitize(document.getElementById('licensePlate').value),
+                vinNumber: sanitize(document.getElementById('vinNumber').value),
+                engineNumber: sanitize(document.getElementById('engineNumber').value),
+                carName: sanitize(document.getElementById('carName').value),
+                carModel: sanitize(document.getElementById('carModel').value),
+                vehicleTypeName: sanitize(document.getElementById('vehicleType').value),
+                vehicleTypeId: document.getElementById('vehicleTypeId').value ? parseInt(document.getElementById('vehicleTypeId').value) : null,
+                carColor: sanitize(document.getElementById('carColor').value),
+                yearOfManufacture: document.getElementById('yearOfManufacture').value ? parseInt(document.getElementById('yearOfManufacture').value) : null,
+                customerName: sanitize(document.getElementById('customerName').value),
+                customerPhone: sanitize(document.getElementById('customerPhone').value)
+            };
+
+            // Debug: Log formData trước khi gửi
+            console.log('FormData to send:', formData);
+            
+            const token = localStorage.getItem('authToken');
+            const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+            fetch(`${apiBaseUrl}/VehicleCheckin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    // Log chi tiết lỗi
+                    console.error('Error response:', data);
+                    console.error('Status:', response.status);
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    showAlert('Check-in xe thành công!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/VehicleCheckins';
+                    }, 1500);
+                } else {
+                    showAlert('Lỗi: ' + (data.message || 'Không xác định'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Có lỗi xảy ra khi check-in xe: ' + error.message, 'danger');
+            });
+        }
+
+        function previewImages() {
+            const fileInput = document.getElementById('images');
+            const preview = document.getElementById('imagePreview');
+            const files = fileInput.files;
+            
+            preview.innerHTML = '';
+            
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const imageContainer = document.createElement('div');
+                            imageContainer.className = 'card mb-3';
+                            imageContainer.innerHTML = `
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; max-height: 150px; object-fit: cover;" alt="Preview ${i + 1}">
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="mb-2">
+                                                <label class="form-label small">Mô tả ảnh ${i + 1} <span class="text-muted">(tùy chọn)</span></label>
+                                                <input type="text" class="form-control form-control-sm image-description" 
+                                                       placeholder="VD: Cửa trái - vết xước dài 20cm" 
+                                                       data-index="${i}">
+                                                <small class="text-muted">Mô tả ngắn về nội dung ảnh</small>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label small">Phân loại <span class="text-muted">(tùy chọn)</span></label>
+                                                <select class="form-select form-select-sm image-category" data-index="${i}">
+                                                    <option value="">-- Chọn phân loại --</option>
+                                                    <option value="Exterior">Ngoại thất</option>
+                                                    <option value="Interior">Nội thất</option>
+                                                    <option value="Damage">Hư hỏng</option>
+                                                    <option value="Engine">Động cơ</option>
+                                                    <option value="Tire">Lốp xe</option>
+                                                    <option value="Other">Khác</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            preview.appendChild(imageContainer);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+        }
+
+        async function uploadImages() {
+            const fileInput = document.getElementById('images');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                return []; // Không có ảnh nào
+            }
+
+            const imageUrls = [];
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('folder', 'vehicle-checkins');
+
+                try {
+                    const apiBaseUrl = window.API_BASE_URL || 'https://localhost:7173/api';
+                    const response = await fetch(`${apiBaseUrl}/Image/upload-temp`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            imageUrls.push(result.data.url);
+                        } else {
+                            console.error('Upload failed:', result.message);
+                            return null;
+                        }
+                    } else {
+                        console.error('Upload failed with status:', response.status);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    return null;
+                }
+            }
+            
+            return imageUrls;
+        }
+
+        function clearVehicleFields() {
+            const fieldsToClear = ['carId', 'licensePlate', 'vinNumber', 'engineNumber', 'carName', 'carModel', 'vehicleType', 'vehicleTypeId', 'carColor', 'customerName', 'customerPhone', 'yearOfManufacture'];
+            fieldsToClear.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = '';
+                }
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('form'));
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+}
+
+
+

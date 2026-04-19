@@ -1,0 +1,645 @@
+@{
+    ViewData["Title"] = "Danh sách phiếu nhập kho";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Danh sách phiếu nhập kho</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Action Bar -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createStockInModal" id="createButton" style="display: none;">
+                            <i class="fas fa-plus"></i> Thêm mới
+                        </button>
+                            <select class="form-select" id="statusFilter" style="width: auto;">
+                                <option value="">Chọn trạng thái</option>
+                                <option value="PENDING">Chờ duyệt</option>
+                                <option value="APPROVED">Đã duyệt</option>
+                                <option value="COMPLETED">Hoàn thành</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm phiếu nhập kho" style="width: 300px;">
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 60px;">STT</th>
+                                    <th>Mã</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Tình trạng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockInsTableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Info and Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted" id="paginationInfo">
+                            Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> kết quả
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0" id="pagination">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo phiếu nhập kho -->
+<div class="modal fade" id="createStockInModal" tabindex="-1" aria-labelledby="createStockInModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createStockInModalLabel">Tạo phiếu nhập kho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createStockInForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="stockInRequestCode" class="form-label">Mã yêu cầu nhập kho</label>
+                            <input type="text" class="form-control" id="stockInRequestCode" name="stockInRequestCode" readonly>
+                            <small class="text-muted">Mã yêu cầu sẽ được lấy từ file Excel</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Danh sách linh kiện</h5>
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control" id="componentSearch" placeholder="Tìm kiếm linh kiện..." style="width: 250px;">
+                                <a href="/StockIns/Template" class="btn btn-outline-success" download>
+                                    <i class="fas fa-download"></i> Tải mẫu Excel
+                                </a>
+                                <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display: none;">
+                                <label for="excelFileInput" class="btn btn-outline-primary" id="uploadExcelBtn" style="cursor: pointer; margin: 0;">
+                                    <i class="fas fa-upload"></i> Tải dữ liệu
+                                </label>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th style="width: 60px;">STT</th>
+                                        <th>Mã linh kiện</th>
+                                        <th>Tên linh kiện</th>
+                                        <th>Loại</th>
+                                        <th>Số lượng yêu cầu</th>
+                                        <th>Số lượng thực tế</th>
+                                        <th>Giá nhập</th>
+                                        <th>Giá xuất</th>
+                                        <th style="width: 80px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="componentsTableBody">
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">Vui lòng tải file Excel để tạo phiếu nhập kho</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-outline-primary" id="submitBtn" disabled>
+                    <i class="fas fa-save"></i> Tạo phiếu nhập kho
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <!-- Nội dung thông báo sẽ được điền vào đây -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalRecords = 0;
+        let totalPages = 1;
+
+        $(document).ready(function() {
+            // Chỉ Thủ kho (RoleId = 5) mới được phép tạo phiếu nhập kho
+            checkRoleAndToggleCreate();
+
+            loadStockIns();
+
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    loadStockIns();
+                }, 500);
+            });
+
+            $('#statusFilter').change(function() {
+                currentPage = 1;
+                loadStockIns();
+            });
+        });
+
+        // Chỉ hiển thị nút tạo nếu RoleId = 5 (Warehouse Keeper)
+        function checkRoleAndToggleCreate() {
+            const roleId = getRoleId();
+            if (roleId === 5) {
+                $('#createButton').show();
+            } else {
+                $('#createButton').hide();
+            }
+        }
+
+        function getRoleId() {
+            // Ưu tiên userInfo trong localStorage
+            const userInfoStr = localStorage.getItem('userInfo');
+            if (userInfoStr) {
+                try {
+                    const userInfo = JSON.parse(userInfoStr);
+                    const roleIdFromUser = userInfo.roleId || userInfo.RoleId || userInfo.roleid || 0;
+                    if (roleIdFromUser) return roleIdFromUser;
+                    const roleName = (userInfo.roleName || userInfo.RoleName || '').toLowerCase();
+                    if (roleName.includes('warehouse')) return 5;
+                } catch (e) {
+                    console.warn('Cannot parse userInfo', e);
+                }
+            }
+
+            // Fallback decode JWT (base64url)
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                try {
+                    const base64Url = token.split('.')[1];
+                    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                    const payload = JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join('')));
+                    const roleIdFromJwt = payload.RoleId || payload.roleId || payload.roleid || 0;
+                    if (roleIdFromJwt) return roleIdFromJwt;
+                    const roleNameJwt = (payload.role || payload.Role || payload.roleName || '').toLowerCase();
+                    if (roleNameJwt.includes('warehouse')) return 5;
+                } catch (e) {
+                    console.warn('Cannot parse JWT payload', e);
+                }
+            }
+            return 0;
+        }
+
+        function loadStockIns() {
+            const search = $('#searchInput').val();
+            const status = $('#statusFilter').val();
+
+            $('#stockInsTableBody').html(`
+                <tr>
+                    <td colspan="4" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            $.ajax({
+                url: '/StockIns/ListData',
+                method: 'GET',
+                data: {
+                    page: currentPage,
+                    pageSize: pageSize,
+                    search: search,
+                    statusCode: status
+                },
+                success: function(result) {
+                if (result.success && result.data) {
+                    renderTable(result.data);
+                    totalRecords = result.totalCount || 0;
+                    totalPages = result.totalPages || 1;
+                    updatePagination();
+                } else {
+                    $('#stockInsTableBody').html('<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                    totalRecords = 0;
+                    totalPages = 0;
+                    updatePagination();
+                }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading stock ins:', error);
+                $('#stockInsTableBody').html('<tr><td colspan="4" class="text-center text-danger">Lỗi tải dữ liệu: ' + error + '</td></tr>');
+                    totalRecords = 0;
+                    totalPages = 0;
+                    updatePagination();
+                }
+            });
+        }
+
+        function renderTable(items) {
+            const tbody = $('#stockInsTableBody');
+            tbody.empty();
+
+            if (!items || items.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                return;
+            }
+
+            items.forEach(function(item, index) {
+                let statusClass = 'bg-secondary';
+                let statusText = 'Không xác định';
+                if (item.statusCode === 'CREATED' || item.statusCode === 'PENDING') {
+                    statusClass = 'bg-warning';
+                    statusText = 'Chờ duyệt';
+                } else if (item.statusCode === 'APPROVED') {
+                    statusClass = 'bg-success';
+                    statusText = 'Đã duyệt';
+                } else if (item.statusCode === 'COMPLETED') {
+                    statusClass = 'bg-success';
+                    statusText = 'Đã hoàn thành';
+                } else if (item.statusCode === 'CANCELLED') {
+                    statusClass = 'bg-danger';
+                    statusText = 'Đã hủy';
+                }
+
+                const createdDate = item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A';
+                const code = item.code || `PNK${item.id}` || 'N/A';
+                const itemId = item.id || item.stockInId || 0;
+
+                const row = `
+                    <tr data-id="${itemId}">
+                        <td>${index + 1}</td>
+                        <td><a href="/StockIns/${itemId}" class="text-dark fw-semibold" style="text-decoration: underline;">${code}</a></td>
+                        <td>${createdDate}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updatePagination() {
+            const showingFrom = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const showingTo = Math.min(currentPage * pageSize, totalRecords);
+            
+            $('#showingFrom').text(showingFrom);
+            $('#showingTo').text(showingTo);
+            $('#totalRecords').text(totalRecords);
+
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (totalPages <= 1) {
+                return;
+            }
+
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Trước</a>
+                </li>
+            `);
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    const active = i === currentPage ? 'active' : '';
+                    pagination.append(`
+                        <li class="page-item ${active}">
+                            <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                        </li>
+                    `);
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+            }
+
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Sau</a>
+                </li>
+            `);
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadStockIns();
+            $('html, body').animate({ scrollTop: 0 }, 'fast');
+        }
+
+        // ========== Code cho modal tạo phiếu nhập kho ==========
+        let componentData = []; // Lưu dữ liệu linh kiện từ Excel
+
+        // Hàm hiển thị modal thông báo
+        function showMessage(title, message, type = 'info') {
+            const modal = $('#messageModal');
+            const header = $('#messageModalHeader');
+            const titleEl = $('#messageModalTitle');
+            const body = $('#messageModalBody');
+            
+            header.removeClass('bg-success bg-danger bg-warning bg-info bg-primary');
+            
+            if (type === 'success') {
+                header.addClass('bg-success text-white');
+                titleEl.html('<i class="fas fa-check-circle"></i> ' + title);
+            } else if (type === 'error') {
+                header.addClass('bg-danger text-white');
+                titleEl.html('<i class="fas fa-exclamation-circle"></i> ' + title);
+            } else if (type === 'warning') {
+                header.addClass('bg-warning text-dark');
+                titleEl.html('<i class="fas fa-exclamation-triangle"></i> ' + title);
+            } else {
+                header.addClass('bg-info text-white');
+                titleEl.html('<i class="fas fa-info-circle"></i> ' + title);
+            }
+            
+            body.html(message);
+            modal.modal('show');
+        }
+
+        // Reset modal khi đóng
+        $('#createStockInModal').on('hidden.bs.modal', function() {
+            componentData = [];
+            $('#componentsTableBody').html('<tr><td colspan="9" class="text-center text-muted">Vui lòng tải file Excel để tạo phiếu nhập kho</td></tr>');
+            $('#stockInRequestCode').val('');
+            $('#componentSearch').val('');
+            $('#submitBtn').prop('disabled', true);
+            $('#excelFileInput').val('');
+            
+            // Xóa backdrop nếu có
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+        });
+        
+        // Xóa backdrop khi đóng messageModal
+        $('#messageModal').on('hidden.bs.modal', function() {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+        });
+        
+        // Upload Excel
+        $('#excelFileInput').on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileName = file.name.toLowerCase();
+                if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+                    showMessage('Lỗi', 'Vui lòng chọn file Excel (.xlsx hoặc .xls)', 'error');
+                    $(this).val('');
+                    return;
+                }
+                uploadExcelFile(file);
+            }
+        });
+
+        // Tìm kiếm linh kiện
+        $('#componentSearch').on('input', function() {
+            const search = $(this).val().toLowerCase();
+            $('#componentsTableBody tr').each(function() {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.includes(search));
+            });
+        });
+
+        // Submit form
+        $('#submitBtn').on('click', function() {
+            createStockIn();
+        });
+
+        function uploadExcelFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            $('#uploadExcelBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
+
+            $.ajax({
+                url: '/StockIns/Upload',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(result) {
+                    if (result.success && result.data) {
+                        componentData = result.data.details || result.data;
+                        const requestCode = result.data.stockInRequestCode || result.data.code || '';
+                        $('#stockInRequestCode').val(requestCode);
+                        renderComponents(componentData);
+                        $('#submitBtn').prop('disabled', false);
+                        showMessage('Thành công', 'Tải file Excel thành công!', 'success');
+                    } else {
+                        const errorMsg = result.message || result.error || 'Không thể đọc file Excel';
+                        showMessage('Lỗi', errorMsg, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMsg = 'Lỗi không xác định';
+                    if (xhr.responseJSON) {
+                        errorMsg = xhr.responseJSON.message || xhr.responseJSON.error || JSON.stringify(xhr.responseJSON);
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorObj = JSON.parse(xhr.responseText);
+                            errorMsg = errorObj.message || errorObj.error || errorObj;
+                        } catch (e) {
+                            errorMsg = xhr.responseText || error;
+                        }
+                    } else {
+                        errorMsg = error || 'Không thể kết nối đến server';
+                    }
+                    showMessage('Lỗi', errorMsg, 'error');
+                },
+                complete: function() {
+                    $('#uploadExcelBtn').prop('disabled', false).html('<i class="fas fa-upload"></i> Tải dữ liệu');
+                    $('#excelFileInput').val('');
+                }
+            });
+        }
+
+        function renderComponents(details) {
+            componentData = details;
+            const tbody = $('#componentsTableBody');
+            tbody.empty();
+
+            if (!details || details.length === 0) {
+                tbody.html('<tr><td colspan="9" class="text-center text-muted">Không có linh kiện</td></tr>');
+                return;
+            }
+
+            details.forEach(function(detail, index) {
+                const importPrice = detail.importPricePerUnit ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(detail.importPricePerUnit) : '-';
+                const exportPrice = detail.exportPricePerUnit ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(detail.exportPricePerUnit) : '-';
+                const quantityAfterCheck = detail.quantityAfterCheck !== undefined ? detail.quantityAfterCheck : (detail.quantity || 0);
+                const row = `
+                    <tr data-index="${index}" class="editable-row">
+                        <td>${index + 1}</td>
+                        <td>${detail.componentCode || detail.componentId || '-'}</td>
+                        <td>${detail.componentName || '-'}</td>
+                        <td>${detail.typeComponentName || '-'}</td>
+                        <td class="text-center">${detail.quantity || 0}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm quantity-after-check" 
+                                   value="${quantityAfterCheck}" min="0" max="${detail.quantity || 0}"
+                                   data-component-id="${detail.componentId || 0}"
+                                   data-index="${index}"
+                                   style="width: 100px; text-align: center;">
+                        </td>
+                        <td class="text-end">${importPrice}</td>
+                        <td class="text-end">${exportPrice}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit-row" data-index="${index}" title="Lưu thay đổi">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+
+            // Event handler cho edit inline
+            $('.quantity-after-check').off('change').on('change', function() {
+                const index = $(this).data('index');
+                const newValue = parseInt($(this).val()) || 0;
+                const maxValue = parseInt($(this).attr('max')) || 0;
+                if (newValue < 0) {
+                    $(this).val(0);
+                    showMessage('Cảnh báo', 'Số lượng thực tế không được nhỏ hơn 0', 'warning');
+                } else if (newValue > maxValue) {
+                    $(this).val(maxValue);
+                    showMessage('Cảnh báo', 'Số lượng thực tế không được vượt quá số lượng yêu cầu', 'warning');
+                }
+            });
+
+            // Event handler cho nút lưu
+            $('.btn-edit-row').off('click').on('click', function() {
+                const index = $(this).data('index');
+                const input = $(`input[data-index="${index}"]`);
+                const newValue = parseInt(input.val()) || 0;
+                if (componentData[index]) {
+                    componentData[index].quantityAfterCheck = newValue;
+                    $(this).html('<i class="fas fa-check text-success"></i>');
+                    $(this).removeClass('btn-outline-primary').addClass('btn-outline-success');
+                    setTimeout(() => {
+                        $(this).html('<i class="fas fa-save"></i>');
+                        $(this).removeClass('btn-outline-success').addClass('btn-outline-primary');
+                    }, 1000);
+                }
+            });
+        }
+
+        function createStockIn() {
+            if (componentData.length === 0) {
+                showMessage('Cảnh báo', 'Vui lòng tải file Excel để tạo phiếu nhập kho', 'warning');
+                return;
+            }
+
+            const details = [];
+            componentData.forEach(function(detail) {
+                const input = $(`input[data-component-id="${detail.componentId}"]`);
+                const quantityAfterCheck = input.length > 0 ? parseInt(input.val()) || 0 : (detail.quantityAfterCheck || detail.quantity || 0);
+                
+                details.push({
+                    componentId: detail.componentId,
+                    quantity: detail.quantity || 0,
+                    quantityAfterCheck: quantityAfterCheck,
+                    importPricePerUnit: detail.importPricePerUnit,
+                    exportPricePerUnit: detail.exportPricePerUnit,
+                    componentCode: detail.componentCode,
+                    componentName: detail.componentName
+                });
+            });
+
+            const requestCode = $('#stockInRequestCode').val();
+            // Giống VWMS: Khi tạo phiếu nhập kho, status là CREATED (chưa gửi)
+            const formData = {
+                stockInRequestCode: requestCode || '',
+                statusCode: 'CREATED',
+                details: details
+            };
+
+            $.ajax({
+                url: '/StockIns/Create',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(result) {
+                    if (result.success) {
+                        // Đóng modal tạo phiếu trước và đợi animation hoàn thành
+                        $('#createStockInModal').modal('hide');
+                        
+                        // Đợi modal đóng hoàn toàn trước khi hiển thị message
+                        $('#createStockInModal').on('hidden.bs.modal', function() {
+                            // Xóa backdrop nếu có
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open');
+                            $('body').css('overflow', '');
+                            $('body').css('padding-right', '');
+                            
+                            // Hiển thị thông báo thành công
+                            showMessage('Thành công', 'Tạo phiếu nhập kho thành công!', 'success');
+                            
+                            // Reload danh sách sau khi đóng message modal
+                            $('#messageModal').one('hidden.bs.modal', function() {
+                                loadStockIns(); // Reload danh sách
+                            });
+                            
+                            // Xóa event handler để tránh lặp lại
+                            $(this).off('hidden.bs.modal');
+                        });
+                    } else {
+                        showMessage('Lỗi', result.message || 'Không thể tạo phiếu nhập kho', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMsg = 'Lỗi không xác định';
+                    if (xhr.responseJSON) {
+                        errorMsg = xhr.responseJSON.message || xhr.responseJSON.error || JSON.stringify(xhr.responseJSON);
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorObj = JSON.parse(xhr.responseText);
+                            errorMsg = errorObj.message || errorObj.error || errorObj;
+                        } catch (e) {
+                            errorMsg = xhr.responseText || error;
+                        }
+                    } else {
+                        errorMsg = error || 'Không thể kết nối đến server';
+                    }
+                    showMessage('Lỗi', errorMsg, 'error');
+                }
+            });
+        }
+    </script>
+}
+

@@ -1,0 +1,1075 @@
+@{
+    ViewData["Title"] = "Danh sách loại linh kiện";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Danh sách loại linh kiện</h4>
+                    <button id="btnCreateTypeComponent" type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createTypeComponentModal">
+                        <i class="fas fa-plus"></i> Thêm loại mới
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter -->
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-4 d-flex gap-2 align-items-center">
+                            <button id="btnEditStatus" class="btn btn-secondary btn-sm" onclick="editSelectedStatus()">
+                                <i class="fas fa-edit"></i> Sửa trạng thái
+                            </button>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm loại linh kiện...">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Không hoạt động</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="branchFilter" style="display: none;">
+                                <option value="">Chọn chi nhánh</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary" id="filterBtn">
+                                <i class="fas fa-filter"></i> Lọc
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 40px;" class="type-select-header">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th>STT</th>
+                                    <th>Tên loại</th>
+                                    <th>Mô tả</th>
+                                    <th>Chi nhánh</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="typeComponentsTableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Info and Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted" id="paginationInfo">
+                            Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> kết quả
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0" id="pagination">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo loại linh kiện mới -->
+<div class="modal fade" id="createTypeComponentModal" tabindex="-1" aria-labelledby="createTypeComponentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createTypeComponentModalLabel">
+                    <i class="fas fa-plus me-2"></i>
+                    Thêm loại linh kiện mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs nav-tabs-bordered mb-3" id="createTypeComponentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="create-info-tab" data-bs-toggle="tab" data-bs-target="#create-info" type="button" role="tab">
+                            Loại linh kiện
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="create-add-component-tab" data-bs-toggle="tab" data-bs-target="#create-add-component" type="button" role="tab">
+                            Thêm linh kiện
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="create-preview-tab" data-bs-toggle="tab" data-bs-target="#create-preview" type="button" role="tab">
+                            Chi tiết mô phỏng
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tabs Content -->
+                <div class="tab-content" id="createTypeComponentTabContent">
+                    <!-- Tab 1: Thông tin -->
+                    <div class="tab-pane fade show active" id="create-info" role="tabpanel">
+                        <form id="createTypeComponentForm">
+                            <div class="mb-3">
+                                <label for="createName" class="form-label">Tên loại linh kiện <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="createName" name="Name" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="createDescription" class="form-label">Mô tả</label>
+                                <textarea class="form-control" id="createDescription" name="Description" rows="3"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="createStatusCode" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="createStatusCode" name="StatusCode">
+                                    <option value="ACTIVE" selected>Hoạt động</option>
+                                    <option value="INACTIVE">Không hoạt động</option>
+                                </select>
+                            </div>
+
+                            <input type="hidden" id="createBranchId" name="BranchId" />
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: Thêm linh kiện -->
+                    <div class="tab-pane fade" id="create-add-component" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 fw-bold">Danh sách linh kiện có sẵn</h6>
+                            <input type="text" class="form-control" id="createSearchAvailableComponents" placeholder="Tìm kiếm linh kiện" style="width: 250px;">
+                        </div>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th style="width: 50px;">STT</th>
+                                        <th>Mã</th>
+                                        <th>Tên linh kiện</th>
+                                        <th>Hình ảnh</th>
+                                        <th style="width: 100px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="createAvailableComponentsTableBody">
+                                    <!-- Available components will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="createAvailableComponentsLoading" class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                        </div>
+                        <div id="createAvailableComponentsEmpty" class="text-center text-muted py-3" style="display: none;">
+                            <p class="mb-0">Không có linh kiện nào để thêm.</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Chi tiết mô phỏng -->
+                    <div class="tab-pane fade" id="create-preview" role="tabpanel">
+                        <h6 class="mb-3 fw-bold">Thông tin loại linh kiện</h6>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên loại linh kiện</label>
+                            <input type="text" class="form-control" id="createPreviewName" readonly />
+                        </div>
+
+                        <h6 class="mb-3 fw-bold mt-4">Danh sách linh kiện đã chọn</h6>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th style="width: 50px;">STT</th>
+                                        <th>Mã</th>
+                                        <th>Tên linh kiện</th>
+                                        <th>Hình ảnh</th>
+                                        <th style="width: 100px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="createSelectedComponentsTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Chưa có linh kiện nào được chọn</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="submitCreateTypeComponent()">
+                    <i class="fas fa-save me-1"></i>Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chọn trạng thái -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1" aria-labelledby="statusUpdateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="statusUpdateModalLabel">
+                    <i class="fas fa-edit me-2"></i>
+                    Cập nhật trạng thái loại linh kiện
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Bạn đang cập nhật trạng thái cho <strong id="selectedCount">0</strong> loại linh kiện
+                </div>
+                
+                <div class="mb-3">
+                    <label for="newStatusSelect" class="form-label fw-bold">Chọn trạng thái mới:</label>
+                    <select class="form-select form-select-lg" id="newStatusSelect">
+                        <option value="ACTIVE">✅ Hoạt động (ACTIVE)</option>
+                        <option value="INACTIVE">❌ Không hoạt động (INACTIVE)</option>
+                    </select>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Lưu ý:</strong> Hành động này không thể hoàn tác. Loại linh kiện INACTIVE sẽ không thể sử dụng.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="confirmUpdateStatus()">
+                    <i class="fas fa-check me-1"></i>Xác nhận cập nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        const pageSize = 10;
+        let totalRecords = 0;
+        let totalPages = 1;
+        let selectedTypeComponents = new Set();
+        let isWarehouseRole = false;
+
+        $(document).ready(function() {
+            // Kiểm tra role và hiển thị branch filter nếu là Admin
+            checkUserRoleAndShowBranchFilter()
+                .then(() => loadTypeComponents())
+                .catch(() => loadTypeComponents());
+            
+            // Đơn giản hóa: chỉ đăng ký event một lần, không cần off
+            const modalElement = document.getElementById('createTypeComponentModal');
+            if (modalElement) {
+                // Biến lưu trữ component khi tạo TypeComponent
+                window.createSelectedComponents = [];
+                window.createAvailableComponents = [];
+
+                // Khi modal sắp mở - chỉ reset form, KHÔNG gọi API (để modal hiển thị ngay)
+                modalElement.addEventListener('show.bs.modal', function() {
+                    // Reset form ngay lập tức
+                    const form = document.getElementById('createTypeComponentForm');
+                    if (form) form.reset();
+                    document.getElementById('createBranchId').value = '';
+                    document.getElementById('createStatusCode').value = 'ACTIVE';
+                    
+                    // Reset component lists
+                    window.createSelectedComponents = [];
+                    window.createAvailableComponents = [];
+                    renderCreateSelectedComponents();
+                    $('#createAvailableComponentsTableBody').html('<tr><td colspan="5" class="text-center text-muted">Chưa tải dữ liệu</td></tr>');
+                    $('#createPreviewName').val('');
+                    
+                    // Reset button
+                    const submitBtn = document.querySelector('#createTypeComponentModal .btn-primary[onclick="submitCreateTypeComponent()"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Lưu';
+                    }
+                    
+                    // Reset to first tab
+                    const firstTab = document.querySelector('#createTypeComponentTabs button[data-bs-target="#create-info"]');
+                    if (firstTab) {
+                        firstTab.click();
+                    }
+                }, { once: false });
+                
+                // Load components when "Thêm linh kiện" tab is shown
+                const addComponentTab = document.getElementById('create-add-component-tab');
+                if (addComponentTab) {
+                    addComponentTab.addEventListener('shown.bs.tab', function() {
+                        loadCreateAvailableComponents();
+                    });
+                }
+                
+                // Update preview when "Chi tiết mô phỏng" tab is shown
+                const previewTab = document.getElementById('create-preview-tab');
+                if (previewTab) {
+                    previewTab.addEventListener('shown.bs.tab', function() {
+                        updateCreatePreview();
+                    });
+                }
+                
+                // Search in available components
+                $('#createSearchAvailableComponents').on('input', function() {
+                    filterCreateAvailableComponents();
+                });
+                
+                // Khi modal đã hiển thị HOÀN TOÀN - mới gọi API (không block modal)
+                modalElement.addEventListener('shown.bs.modal', function() {
+                    // Load branchId sau khi modal đã hiển thị (không block UI)
+                    loadBranchIdForCreate();
+                }, { once: false });
+                
+                // Khi modal đã đóng hoàn toàn
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    // Cleanup backdrop ngay lập tức
+                    cleanupModalBackdrop();
+                }, { once: false });
+            }
+            
+            // Cleanup khi đóng modal status update
+            const statusModalElement = document.getElementById('statusUpdateModal');
+            if (statusModalElement) {
+                statusModalElement.addEventListener('hidden.bs.modal', function() {
+                    cleanupModalBackdrop();
+                }, { once: false });
+            }
+            
+            // Helper function để cleanup backdrop
+            window.cleanupModalBackdrop = function() {
+                // Remove all backdrops
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                
+                // Remove modal-open class
+                document.body.classList.remove('modal-open');
+                
+                // Reset body styles
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+                
+                // Force remove any remaining backdrop
+                $('.modal-backdrop').remove();
+            };
+
+            // Search với debounce
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    loadTypeComponents();
+                }, 500);
+            });
+
+            // Filter button
+            $('#filterBtn').click(function() {
+                currentPage = 1;
+                loadTypeComponents();
+            });
+
+            // Branch filter change
+            $('#branchFilter').on('change', function() {
+                currentPage = 1;
+                loadTypeComponents();
+            });
+
+            // Enter key trong search
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    currentPage = 1;
+                    loadTypeComponents();
+                }
+            });
+        });
+
+        async function checkUserRoleAndShowBranchFilter() {
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (!userInfoStr) return;
+
+                const userInfo = JSON.parse(userInfoStr);
+            const roleId = parseInt(userInfo.roleId || userInfo.role || userInfo.RoleId || '0');
+            const roleName = (userInfo.roleName || userInfo.role || userInfo.RoleName || '').toString();
+                const upperRoleName = roleName.toUpperCase();
+                const isAdmin = roleId === 1 || upperRoleName === 'ADMIN';
+            const isWarehouse = roleId === 5 || upperRoleName === 'WAREHOUSE';
+            isWarehouseRole = isWarehouse;
+
+                if (isAdmin) {
+                    // Hiển thị branch filter
+                    document.getElementById('branchFilter').style.display = 'block';
+                    // Load danh sách chi nhánh
+                    await loadBranches();
+                }
+
+            // Ẩn nút/checkbox nếu không phải thủ kho (role 5)
+            applyWarehousePermissions(isWarehouse);
+            } catch (error) {
+                console.error('Error checking user role:', error);
+            }
+        }
+
+    function applyWarehousePermissions(isWarehouse) {
+            if (!isWarehouse) {
+                $('#btnCreateTypeComponent').hide();
+                $('#btnEditStatus').hide();
+                $('.type-select-header').hide();
+                $('#selectAll').prop('checked', false);
+            } else {
+                $('.type-select-header').show();
+            }
+        }
+
+        async function loadBranches() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const apiBaseUrl = '@(ViewBag.ApiBaseUrl ?? "https://localhost:7173/api")';
+                const response = await fetch(`${apiBaseUrl}/Branch`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const branches = result.success && Array.isArray(result.data) ? result.data : (Array.isArray(result) ? result : []);
+                    
+                    const branchFilter = document.getElementById('branchFilter');
+                    branchFilter.innerHTML = '<option value="">Chọn chi nhánh</option>';
+                    
+                    branches.forEach(branch => {
+                        const branchId = branch.id || branch.Id;
+                        const branchName = branch.name || branch.Name || 'N/A';
+                        const option = document.createElement('option');
+                        option.value = branchId;
+                        option.textContent = branchName;
+                        branchFilter.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading branches:', error);
+            }
+        }
+
+        function loadTypeComponents() {
+            const search = $('#searchInput').val();
+            const status = $('#statusFilter').val();
+            const branch = $('#branchFilter').val();
+
+            // Show loading
+            $('#typeComponentsTableBody').html(`
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            const requestData = {
+                page: currentPage,
+                pageSize: pageSize,
+                search: search,
+                statusCode: status
+            };
+
+            // Thêm branchId nếu có (và không phải chuỗi rỗng)
+            if (branch && branch.trim() !== '') {
+                const branchIdNum = parseInt(branch);
+                if (!isNaN(branchIdNum)) {
+                    requestData.branchId = branchIdNum;
+                }
+            }
+
+            $.ajax({
+                url: '/TypeComponents/ListData',
+                method: 'GET',
+                data: requestData,
+                success: function(result) {
+                    console.log('TypeComponents ListData response:', result);
+                    if (result && result.success && result.data) {
+                        renderTable(result.data);
+                        totalRecords = result.totalCount || 0;
+                        totalPages = result.totalPages || 1;
+                        updatePagination();
+                    } else {
+                        $('#typeComponentsTableBody').html('<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                        totalRecords = 0;
+                        totalPages = 0;
+                        updatePagination();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading type components:', {
+                        status: status,
+                        error: error,
+                        xhr: xhr,
+                        responseText: xhr.responseText,
+                        requestData: requestData
+                    });
+                    let errorMessage = error;
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        try {
+                            const errorObj = JSON.parse(xhr.responseText);
+                            errorMessage = errorObj.message || errorObj.error || error;
+                        } catch (e) {
+                            errorMessage = xhr.responseText.substring(0, 100) || error;
+                        }
+                    }
+                    $('#typeComponentsTableBody').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu: ' + errorMessage + '</td></tr>');
+                    totalRecords = 0;
+                    totalPages = 0;
+                    updatePagination();
+                }
+            });
+        }
+
+        function renderTable(items) {
+            const tbody = $('#typeComponentsTableBody');
+            tbody.empty();
+
+            if (!items || items.length === 0) {
+                tbody.html('<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                return;
+            }
+
+            const selectColHidden = !isWarehouseRole;
+
+            items.forEach(function(item, index) {
+                const statusClass = item.statusCode === 'ACTIVE' ? 'bg-success' : 'bg-secondary';
+                const statusText = item.statusCode === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động';
+                const branchName = item.branchName || item.branchId || 'N/A';
+                const typeName = item.name || '';
+                const isChecked = selectedTypeComponents.has(item.id);
+                
+                // Tính số thứ tự (STT) dựa trên trang hiện tại
+                const stt = (currentPage - 1) * pageSize + index + 1;
+                
+                // Tên loại linh kiện có link đến trang Details
+                const nameLink = `<a href="/TypeComponents/Details/${item.id}" class="text-dark fw-bold" style="text-decoration: underline; cursor: pointer;">${typeName}</a>`;
+
+                const row = `
+                    <tr data-id="${item.id}">
+                        <td class="type-select-col" ${selectColHidden ? 'style="display:none;"' : ''}>
+                            ${selectColHidden ? '' : `<input type="checkbox" class="typecomponent-checkbox" value="${item.id}" onchange="toggleTypeComponentSelection(${item.id})" ${isChecked ? 'checked' : ''}>`}
+                        </td>
+                        <td>${stt}</td>
+                        <td>${nameLink}</td>
+                        <td>${item.description || ''}</td>
+                        <td>${branchName}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updatePagination() {
+            const showingFrom = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const showingTo = Math.min(currentPage * pageSize, totalRecords);
+            
+            $('#showingFrom').text(showingFrom);
+            $('#showingTo').text(showingTo);
+            $('#totalRecords').text(totalRecords);
+
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (totalPages <= 1) {
+                return;
+            }
+
+            // Previous button
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Trước</a>
+                </li>
+            `);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    const active = i === currentPage ? 'active' : '';
+                    pagination.append(`
+                        <li class="page-item ${active}">
+                            <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                        </li>
+                    `);
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                }
+            }
+
+            // Next button
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Sau</a>
+                </li>
+            `);
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadTypeComponents();
+            $('html, body').animate({ scrollTop: 0 }, 'fast');
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.typecomponent-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                const typeComponentId = parseInt(checkbox.value);
+                if (selectAll.checked) {
+                    selectedTypeComponents.add(typeComponentId);
+                } else {
+                    selectedTypeComponents.delete(typeComponentId);
+                }
+            });
+        }
+
+        function toggleTypeComponentSelection(typeComponentId) {
+            const checkbox = document.querySelector(`.typecomponent-checkbox[value="${typeComponentId}"]`);
+            if (checkbox.checked) {
+                selectedTypeComponents.add(typeComponentId);
+            } else {
+                selectedTypeComponents.delete(typeComponentId);
+            }
+            updateSelectAllCheckbox();
+        }
+
+        function updateSelectAllCheckbox() {
+            const checkboxes = document.querySelectorAll('.typecomponent-checkbox');
+            const selectAll = document.getElementById('selectAll');
+            if (checkboxes.length === 0) {
+                selectAll.checked = false;
+                return;
+            }
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+        }
+
+        function editSelectedStatus() {
+            if (selectedTypeComponents.size === 0) {
+                showAlert('Vui lòng chọn ít nhất một loại linh kiện', 'warning');
+                return;
+            }
+            
+            // Update selected count in modal
+            document.getElementById('selectedCount').textContent = selectedTypeComponents.size;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
+            modal.show();
+        }
+        
+        function confirmUpdateStatus() {
+            // Get selected status
+            const newStatus = document.getElementById('newStatusSelect').value;
+            
+            // Close modal
+            const modalElement = document.getElementById('statusUpdateModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Force remove backdrop nếu còn sót lại
+            setTimeout(() => {
+                if (typeof cleanupModalBackdrop === 'function') {
+                    cleanupModalBackdrop();
+                }
+            }, 100);
+            
+            // Update all selected type components
+            updateMultipleTypeComponentStatuses(Array.from(selectedTypeComponents), newStatus);
+        }
+        
+        async function updateMultipleTypeComponentStatuses(typeComponentIds, newStatus) {
+            let successCount = 0;
+            let failCount = 0;
+            
+            showAlert(`Đang cập nhật ${typeComponentIds.length} loại linh kiện...`, 'info');
+            
+            // Update all type components sequentially
+            for (const typeComponentId of typeComponentIds) {
+                try {
+                    const response = await fetch(`/TypeComponents/ToggleStatus`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${typeComponentId}&statusCode=${newStatus}`
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        console.error(`Failed to update type component ${typeComponentId}:`, data.message);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`Error updating type component ${typeComponentId}:`, error);
+                }
+            }
+            
+            // Clear selection
+            selectedTypeComponents.clear();
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('.typecomponent-checkbox').forEach(cb => cb.checked = false);
+            
+            // Reload data
+            loadTypeComponents();
+            
+            // Show result
+            if (failCount === 0) {
+                showAlert(`Đã cập nhật thành công ${successCount} loại linh kiện sang trạng thái "${newStatus}"`, 'success');
+            } else {
+                showAlert(`Đã cập nhật ${successCount} loại linh kiện thành công, ${failCount} loại linh kiện thất bại`, 'warning');
+            }
+        }
+
+        async function loadBranchIdForCreate() {
+            // Lấy branchId từ Employee/me API (tương tự VehicleCheckin)
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.warn('No auth token found');
+                return;
+            }
+            
+            try {
+                // Gọi API Employee/me để lấy thông tin employee hiện tại
+                const response = await fetch('@apiBaseUrl/Employee/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.success && data.data) {
+                    const employee = data.data;
+                    if (employee.branchName) {
+                        // Không cần set branchName vì không có field hiển thị trong modal
+                    }
+                    if (employee.branchId) {
+                        document.getElementById('createBranchId').value = employee.branchId;
+                    }
+                    console.log('Loaded branch:', employee.branchName, 'ID:', employee.branchId);
+                } else {
+                    console.warn('Employee/me API response not successful:', data);
+                }
+            } catch (error) {
+                console.error('Error loading branchId from Employee/me:', error);
+            }
+        }
+
+        function isComponentUnassigned(component) {
+            const typeId =
+                component.typeComponentId ??
+                component.typeComponentID ??
+                (component.typeComponent && (component.typeComponent.id ?? component.typeComponent.typeComponentId)) ??
+                component.componentTypeId ??
+                component.typeId;
+            return !typeId; // chỉ chọn linh kiện chưa gán loại
+        }
+
+        // Load danh sách component có sẵn để thêm vào TypeComponent
+        function loadCreateAvailableComponents() {
+            $('#createAvailableComponentsLoading').show();
+            $('#createAvailableComponentsEmpty').hide();
+            $('#createAvailableComponentsTableBody').html('');
+            
+            $.ajax({
+                url: '/Components/ListData',
+                method: 'GET',
+                data: {
+                    page: 1,
+                    pageSize: 1000,
+                    statusCode: 'ACTIVE'
+                },
+                success: function(result) {
+                    $('#createAvailableComponentsLoading').hide();
+                    if (result.success && result.data) {
+                    // Lọc ra các component chưa được chọn và chưa thuộc loại nào
+                        const selectedIds = window.createSelectedComponents.map(c => c.id);
+                    window.createAvailableComponents = result.data
+                        .filter(isComponentUnassigned)
+                        .filter(c => !selectedIds.includes(c.id));
+                        renderCreateAvailableComponents();
+                    } else {
+                        $('#createAvailableComponentsTableBody').html('<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu</td></tr>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#createAvailableComponentsLoading').hide();
+                    $('#createAvailableComponentsTableBody').html('<tr><td colspan="5" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
+                }
+            });
+        }
+
+        function filterCreateAvailableComponents() {
+            const searchTerm = $('#createSearchAvailableComponents').val().toLowerCase();
+            const filtered = window.createAvailableComponents.filter(c => {
+                const code = (c.code || '').toLowerCase();
+                const name = (c.name || '').toLowerCase();
+                return code.includes(searchTerm) || name.includes(searchTerm);
+            });
+            renderCreateAvailableComponents(filtered);
+        }
+
+        function renderCreateAvailableComponents(components = null) {
+            const tbody = $('#createAvailableComponentsTableBody');
+            tbody.empty();
+            
+            const componentsToShow = components || window.createAvailableComponents;
+            
+            if (!componentsToShow || componentsToShow.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">Không có linh kiện nào để thêm</td></tr>');
+                return;
+            }
+            
+            componentsToShow.forEach(function(component, index) {
+                const imageUrl = component.imageUrl || '';
+                const imageHtml = imageUrl 
+                    ? `<img src="${imageUrl}" alt="${component.name}" style="max-width: 50px; max-height: 50px; border-radius: 4px;">`
+                    : '<i class="fas fa-image text-muted"></i>';
+                
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${component.code || '-'}</td>
+                        <td>${component.name || '-'}</td>
+                        <td class="text-center">${imageHtml}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addComponentToCreate(${component.id}, '${(component.code || '').replace(/'/g, "\\'")}', '${(component.name || '').replace(/'/g, "\\'")}', '${(imageUrl || '').replace(/'/g, "\\'")}')">
+                                <i class="fas fa-plus"></i> Thêm
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function addComponentToCreate(componentId, componentCode, componentName, imageUrl) {
+            // Kiểm tra xem đã có chưa
+            if (window.createSelectedComponents.some(c => c.id === componentId)) {
+                return;
+            }
+            
+            // Thêm vào danh sách đã chọn
+            window.createSelectedComponents.push({
+                id: componentId,
+                code: componentCode,
+                name: componentName,
+                imageUrl: imageUrl
+            });
+            
+            // Xóa khỏi danh sách có sẵn
+            window.createAvailableComponents = window.createAvailableComponents.filter(c => c.id !== componentId);
+            
+            // Render lại cả 2 bảng
+            renderCreateAvailableComponents();
+            renderCreateSelectedComponents();
+        }
+
+        function removeComponentFromCreate(componentId) {
+            // Tìm component để thêm lại vào danh sách có sẵn
+            const component = window.createSelectedComponents.find(c => c.id === componentId);
+            if (component) {
+                // Thêm lại vào danh sách có sẵn
+                window.createAvailableComponents.push({
+                    id: component.id,
+                    code: component.code,
+                    name: component.name,
+                    imageUrl: component.imageUrl
+                });
+            }
+            
+            // Xóa khỏi danh sách đã chọn
+            window.createSelectedComponents = window.createSelectedComponents.filter(c => c.id !== componentId);
+            
+            // Render lại cả 2 bảng
+            renderCreateAvailableComponents();
+            renderCreateSelectedComponents();
+        }
+
+        function renderCreateSelectedComponents() {
+            const tbody = $('#createSelectedComponentsTableBody');
+            tbody.empty();
+            
+            if (!window.createSelectedComponents || window.createSelectedComponents.length === 0) {
+                tbody.html('<tr><td colspan="5" class="text-center text-muted">Chưa có linh kiện nào được chọn</td></tr>');
+                return;
+            }
+            
+            window.createSelectedComponents.forEach(function(component, index) {
+                const imageHtml = component.imageUrl 
+                    ? `<img src="${component.imageUrl}" alt="${component.name}" style="max-width: 50px; max-height: 50px; border-radius: 4px;">`
+                    : '<i class="fas fa-image text-muted"></i>';
+                
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${component.code || '-'}</td>
+                        <td>${component.name || '-'}</td>
+                        <td class="text-center">${imageHtml}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeComponentFromCreate(${component.id})">
+                                <i class="fas fa-times"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updateCreatePreview() {
+            const name = $('#createName').val();
+            $('#createPreviewName').val(name || '');
+            renderCreateSelectedComponents();
+        }
+
+        async function submitCreateTypeComponent() {
+            const form = document.getElementById('createTypeComponentForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Lấy branchId từ form
+            let branchIdValue = document.getElementById('createBranchId').value;
+            
+            // Nếu không có branchId, thử lấy lại từ Employee/me API (tương tự VehicleCheckin)
+            if (!branchIdValue) {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    try {
+                        const response = await fetch('@apiBaseUrl/Employee/me', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success && data.data) {
+                                const employee = data.data;
+                                if (employee.branchId) {
+                                    branchIdValue = employee.branchId;
+                                    document.getElementById('createBranchId').value = branchIdValue;
+                                    console.log('Loaded branch:', employee.branchName, 'ID:', employee.branchId);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error getting branchId from Employee/me:', error);
+                    }
+                }
+            }
+
+            // Lấy danh sách ComponentIds từ các component đã chọn
+            const componentIds = window.createSelectedComponents.map(c => c.id);
+            
+            const payload = {
+                Name: document.getElementById('createName').value,
+                Description: document.getElementById('createDescription').value,
+                StatusCode: document.getElementById('createStatusCode').value,
+                BranchId: branchIdValue ? parseInt(branchIdValue) : null,
+                ComponentIds: componentIds.length > 0 ? componentIds : null
+            };
+            
+            console.log('Submitting payload:', payload);
+
+            const submitBtn = document.querySelector('#createTypeComponentModal .btn-primary[onclick="submitCreateTypeComponent()"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang lưu...';
+
+            try {
+                const response = await fetch('/TypeComponents/Create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    
+                    // Close modal đơn giản
+                    const modalElement = document.getElementById('createTypeComponentModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Cleanup backdrop ngay sau khi đóng
+                    setTimeout(() => {
+                        cleanupModalBackdrop();
+                    }, 100);
+                    
+                    showAlert('Tạo loại linh kiện thành công!', 'success');
+                    loadTypeComponents();
+                } else {
+                    showAlert(data.message || 'Không thể tạo loại linh kiện!', 'danger');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Lỗi khi gọi API: ' + error.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}

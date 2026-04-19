@@ -1,0 +1,495 @@
+@{
+    ViewData["Title"] = "Chi tiết chi nhánh";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var branchId = ViewBag.BranchId;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building me-2"></i>Chi tiết chi nhánh
+                    </h5>
+                    <div>
+                        <a href="/Branches/Edit/@branchId" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-edit me-1"></i>Sửa
+                        </a>
+                        <a href="/Branches" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="loadingState" class="text-center py-5">
+                        <i class="fas fa-spinner fa-spin fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Đang tải thông tin...</p>
+                    </div>
+
+                    <div id="branchDetails" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <strong><i class="fas fa-building me-2"></i>Tên chi nhánh:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <p id="branchName" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <strong><i class="fas fa-phone me-2"></i>Số điện thoại:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <p id="branchPhone" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <strong><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <p id="branchAddress" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <strong><i class="fas fa-money-bill-wave me-2"></i>Giá công lao động:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <p id="branchLaborRate" class="mb-0"></p>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Director Section -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <strong><i class="fas fa-user-tie me-2"></i>Giám đốc chi nhánh:</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <div id="directorInfo">
+                                    <p id="directorName" class="mb-1"></p>
+                                    <small id="directorDetails" class="text-muted"></small>
+                                </div>
+                                <div id="noDirector" style="display: none;">
+                                    <p class="text-muted mb-2">Chưa có giám đốc</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#changeDirectorModal">
+                                    <i class="fas fa-exchange-alt me-1"></i>Thay đổi giám đốc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="errorState" style="display: none;" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
+                        <p class="text-danger">Không thể tải thông tin chi nhánh</p>
+                        <a href="/Branches" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Quay lại danh sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Director Modal -->
+<div class="modal fade" id="changeDirectorModal" tabindex="-1" aria-labelledby="changeDirectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; border-radius: 15px 15px 0 0; border: none; padding: 20px 25px;">
+                <h5 class="modal-title" id="changeDirectorModalLabel" style="font-weight: 600; font-size: 1.2rem;">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    Thay đổi giám đốc chi nhánh
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 30px 25px;">
+                <div id="currentDirectorInfo" class="alert alert-info mb-3" style="display: none;">
+                    <strong>Giám đốc hiện tại:</strong> <span id="currentDirectorName"></span>
+                </div>
+                
+                <!-- Create Director Section -->
+                <div id="createDirectorSection">
+                    <form id="createDirectorForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="createUsername" name="username" 
+                                       placeholder="Nhập tên đăng nhập" minlength="6" maxlength="12" 
+                                       pattern="^[a-zA-Z0-9_]+$" required>
+                                <small class="form-text text-muted">6-12 ký tự, chỉ chứa chữ cái, số và dấu gạch dưới</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="createPassword" name="password" 
+                                       placeholder="Nhập mật khẩu" minlength="6" maxlength="12" required>
+                                <small class="form-text text-muted">6-12 ký tự</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Họ</label>
+                                <input type="text" class="form-control" id="createFirstName" name="firstName" 
+                                       placeholder="Nhập họ" maxlength="100">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tên</label>
+                                <input type="text" class="form-control" id="createLastName" name="lastName" 
+                                       placeholder="Nhập tên" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="createEmail" name="email" 
+                                       placeholder="Nhập email" maxlength="100">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="text" class="form-control" id="createPhone" name="phone" 
+                                       placeholder="Nhập số điện thoại (VD: 0912345678)" maxlength="20"
+                                       pattern="^(0[35789])+([0-9]{8})$">
+                                <small class="form-text text-muted">Phải bắt đầu bằng 0 và có 10 chữ số</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giới tính</label>
+                                <select class="form-control" id="createGender" name="gender">
+                                    <option value="">Chọn giới tính</option>
+                                    <option value="Male">Nam</option>
+                                    <option value="Female">Nữ</option>
+                                    <option value="Other">Khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ngày sinh</label>
+                                <input type="text" class="form-control" id="createDob" name="dob" 
+                                       placeholder="dd-MM-yyyy (VD: 01-01-1990)" maxlength="10"
+                                       pattern="^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$">
+                                <small class="form-text text-muted">Định dạng: dd-MM-yyyy</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">CMT/CCCD</label>
+                                <input type="text" class="form-control" id="createCitizenId" name="citizenId" 
+                                       placeholder="Nhập số CMT/CCCD (12 chữ số)" maxlength="12"
+                                       pattern="^[0-9]{12}$">
+                                <small class="form-text text-muted">12 chữ số</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Mã số thuế</label>
+                                <input type="text" class="form-control" id="createTaxCode" name="taxCode" 
+                                       placeholder="Nhập mã số thuế (10 chữ số)" maxlength="10"
+                                       pattern="^[0-9]{10}$">
+                                <small class="form-text text-muted">10 chữ số</small>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="createAddress" name="address" rows="2" 
+                                      placeholder="Nhập địa chỉ" maxlength="255"></textarea>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 15px 25px; border-radius: 0 0 15px 15px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmChangeDirectorBtn" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                    <i class="fas fa-check me-2"></i>Xác nhận thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        const BRANCH_ID = @branchId;
+        
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadBranchDetails();
+        });
+
+        async function loadBranchDetails() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showAlert('Vui lòng đăng nhập lại', 'warning');
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/Branch/${BRANCH_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    const branch = result.data;
+                    
+                    document.getElementById('branchName').textContent = branch.name || 'N/A';
+                    document.getElementById('branchPhone').textContent = branch.phone || 'N/A';
+                    document.getElementById('branchAddress').textContent = branch.address || 'N/A';
+                    
+                    const laborRate = branch.laborRate ? 
+                        new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(branch.laborRate) : 
+                        'N/A';
+                    document.getElementById('branchLaborRate').textContent = laborRate;
+
+                    // Display director information
+                    if (branch.director) {
+                        const director = branch.director;
+                        const fullName = `${director.firstName || ''} ${director.lastName || ''}`.trim() || director.username || 'N/A';
+                        document.getElementById('directorName').textContent = fullName;
+                        const details = [];
+                        if (director.email) details.push(`Email: ${director.email}`);
+                        if (director.phone) details.push(`SĐT: ${director.phone}`);
+                        document.getElementById('directorDetails').textContent = details.join(' | ') || '';
+                        document.getElementById('directorInfo').style.display = 'block';
+                        document.getElementById('noDirector').style.display = 'none';
+                    } else {
+                        document.getElementById('directorInfo').style.display = 'none';
+                        document.getElementById('noDirector').style.display = 'block';
+                    }
+
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('branchDetails').style.display = 'block';
+                } else {
+                    document.getElementById('loadingState').style.display = 'none';
+                    document.getElementById('errorState').style.display = 'block';
+                    showAlert('Không thể tải thông tin chi nhánh', 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading branch details:', error);
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                showAlert('Lỗi khi tải thông tin chi nhánh: ' + error.message, 'danger');
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+
+        // Load current director info for modal
+        async function loadCurrentDirectorForModal() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+
+                const response = await fetch(`${API_BASE_URL}/Branch/${BRANCH_ID}/Director`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                const currentDirectorDiv = document.getElementById('currentDirectorInfo');
+                const currentDirectorName = document.getElementById('currentDirectorName');
+
+                if (result.success && result.data) {
+                    const director = result.data;
+                    const fullName = `${director.firstName || ''} ${director.lastName || ''}`.trim() || director.username || 'N/A';
+                    currentDirectorName.textContent = fullName;
+                    currentDirectorDiv.style.display = 'block';
+                } else {
+                    currentDirectorDiv.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading current director:', error);
+            }
+        }
+
+        // Handle modal open
+        document.getElementById('changeDirectorModal')?.addEventListener('show.bs.modal', async function() {
+            // Reset form
+            document.getElementById('createDirectorForm').reset();
+            
+            // Load current director info
+            await loadCurrentDirectorForModal();
+        });
+        
+
+        // Handle confirm change director - chỉ tạo giám đốc mới
+        document.getElementById('confirmChangeDirectorBtn')?.addEventListener('click', async function() {
+            const form = document.getElementById('createDirectorForm');
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+                    return;
+                }
+
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tạo giám đốc...';
+
+                try {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        showAlert('Vui lòng đăng nhập lại', 'warning');
+                        window.location.href = '/Auth/Login';
+                        return;
+                    }
+
+                // ✅ Chuẩn bị dữ liệu theo CreateDirectorDto
+                const directorData = {
+                        username: document.getElementById('createUsername').value.trim(),
+                        password: document.getElementById('createPassword').value,
+                        firstName: document.getElementById('createFirstName').value.trim() || null,
+                        lastName: document.getElementById('createLastName').value.trim() || null,
+                        email: document.getElementById('createEmail').value.trim() || null,
+                        phone: document.getElementById('createPhone').value.trim() || null,
+                    gender: document.getElementById('createGender').value || null,
+                    dob: document.getElementById('createDob').value.trim() || null,
+                    citizenId: document.getElementById('createCitizenId').value.trim() || null,
+                    taxCode: document.getElementById('createTaxCode').value.trim() || null,
+                    address: document.getElementById('createAddress').value.trim() || null
+                };
+
+                // ✅ Gọi API tạo giám đốc mới
+                const createResponse = await fetch(`${API_BASE_URL}/Branch/${BRANCH_ID}/Director`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                    body: JSON.stringify(directorData)
+                    });
+
+                const responseText = await createResponse.text();
+                    let createResult;
+                
+                        try {
+                    createResult = JSON.parse(responseText);
+                        } catch (parseError) {
+                    throw new Error(responseText || 'Không thể tạo giám đốc');
+                }
+
+                if (!createResponse.ok) {
+                    let errorMessage = 'Không thể tạo giám đốc';
+                        if (createResult.errors && Array.isArray(createResult.errors)) {
+                            errorMessage = createResult.errors.join('. ');
+                        } else if (createResult.message) {
+                            errorMessage = createResult.message;
+                        }
+                    throw new Error(errorMessage);
+                }
+
+                if (createResult.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('changeDirectorModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    showAlert('Tạo giám đốc thành công!', 'success');
+                    
+                    // Reload branch details
+                    setTimeout(() => {
+                        loadBranchDetails();
+                    }, 500);
+                } else {
+                    let errorMessage = 'Không thể tạo giám đốc';
+                    if (createResult.message) {
+                        errorMessage = createResult.message;
+                    }
+                    showAlert(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error creating director:', error);
+                showAlert('Lỗi khi tạo giám đốc: ' + error.message, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Reset modal when closed
+        document.getElementById('changeDirectorModal')?.addEventListener('hidden.bs.modal', function() {
+            // Remove modal backdrop
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            
+            // Remove modal-open class and reset body styles
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Reset create director form
+            const createUsername = document.getElementById('createUsername');
+            const createPassword = document.getElementById('createPassword');
+            const createFirstName = document.getElementById('createFirstName');
+            const createLastName = document.getElementById('createLastName');
+            const createEmail = document.getElementById('createEmail');
+            const createPhone = document.getElementById('createPhone');
+            const createGender = document.getElementById('createGender');
+            const createDob = document.getElementById('createDob');
+            const createCitizenId = document.getElementById('createCitizenId');
+            const createTaxCode = document.getElementById('createTaxCode');
+            const createAddress = document.getElementById('createAddress');
+            
+            if (createUsername) createUsername.value = '';
+            if (createPassword) createPassword.value = '';
+            if (createFirstName) createFirstName.value = '';
+            if (createLastName) createLastName.value = '';
+            if (createEmail) createEmail.value = '';
+            if (createPhone) createPhone.value = '';
+            if (createGender) createGender.value = '';
+            if (createDob) createDob.value = '';
+            if (createCitizenId) createCitizenId.value = '';
+            if (createTaxCode) createTaxCode.value = '';
+            if (createAddress) createAddress.value = '';
+            
+            // Remove validation classes
+            [createUsername, createPassword, createFirstName, createLastName, createEmail, createPhone, createGender, createDob, createCitizenId, createTaxCode, createAddress].forEach(field => {
+                if (field) {
+                    field.classList.remove('is-invalid', 'is-valid');
+                }
+            });
+        });
+    </script>
+}
+

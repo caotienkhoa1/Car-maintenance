@@ -1,0 +1,786 @@
+@{
+    ViewData["Title"] = "Danh sách đặt lịch";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+    var apiBaseUrl = ViewBag.ApiBaseUrl ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Danh sách đặt lịch hẹn
+                    </h4>
+                    <a href="/ServiceSchedules/Create" class="btn btn-outline-primary" id="createScheduleBtn" style="display: none;">
+                        <i class="fas fa-plus"></i> Đặt lịch mới
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="searchInput" class="form-label">Tìm kiếm</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Tìm theo tên, biển số...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="dateFilter" class="form-label">Ngày hẹn</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="statusFilter" class="form-label">Trạng thái</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PENDING">Chờ xử lý</option>
+                                <option value="IN_PROGRESS">Đang xử lý</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                                <option value="COMPLETED">Hoàn thành</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="myAcceptedFilter">
+                                <label class="form-check-label" for="myAcceptedFilter">
+                                    Đơn đã nhận
+                                </label>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Khách hàng</th>
+                                    <th>Xe</th>
+                                    <th>Biển số</th>
+                                    <th>Chi nhánh</th>
+                                    <th>Ngày hẹn</th>
+                                    <th>Giờ hẹn</th>
+                                    <th>Trạng thái</th>
+                                    <th>Người xử lý</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="serviceSchedulesTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Info and Controls -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted" id="paginationInfo">
+                            Hiển thị <span id="showingFrom">0</span> - <span id="showingTo">0</span> của <span id="totalRecords">0</span> kết quả
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0" id="pagination">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = '@apiBaseUrl';
+        let currentPage = 1;
+        const pageSize = 10;
+        let allSchedules = []; // Lưu tất cả schedules để phân trang client-side
+        let filteredSchedules = []; // Lưu schedules sau khi filter
+        let totalRecords = 0;
+        let isConsulterRole = false; // Lưu lại flag role để dùng cho việc render nút
+
+        $(document).ready(function() {
+            initRoleForSchedules();
+            loadServiceSchedules();
+
+            // Search với debounce
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    applyFilters();
+                }, 500);
+            });
+
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    clearTimeout(searchTimeout);
+                    currentPage = 1;
+                    applyFilters();
+                }
+            });
+
+            // Filter khi thay đổi status, date hoặc myAcceptedFilter
+            $('#statusFilter, #dateFilter, #myAcceptedFilter').on('change', function() {
+                currentPage = 1;
+                applyFilters();
+            });
+        });
+
+        function initRoleForSchedules() {
+            const createBtn = document.getElementById('createScheduleBtn');
+            isConsulterRole = false;
+
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    if (createBtn) createBtn.style.display = 'none';
+                    return;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const roleId = parseInt(payload['RoleId'] || payload['role_id'] || '0');
+                const roleName = (payload['RoleName'] || payload['role_name'] || '').toString().toUpperCase();
+
+                // Chỉ Consulter (roleId = 6) được phép thao tác
+                isConsulterRole = roleId === 6 || roleName === 'CONSULTER';
+
+                if (createBtn) {
+                    createBtn.style.display = isConsulterRole ? 'inline-block' : 'none';
+                }
+            } catch (e) {
+                console.error('Error determining role for schedules:', e);
+                if (createBtn) createBtn.style.display = 'none';
+                isConsulterRole = false;
+            }
+        }
+
+        function loadServiceSchedules() {
+            const token = localStorage.getItem('authToken');
+            
+            // Lấy branchId từ userInfo hoặc JWT token
+            let userBranchId = null;
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    userBranchId = userInfo.branchId || userInfo.BranchId;
+                }
+                
+                // Nếu không có trong userInfo, thử decode từ JWT token
+                if (!userBranchId && token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        userBranchId = payload['BranchId'] || payload['branchId'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/branchid'];
+                        if (userBranchId) {
+                            userBranchId = parseInt(userBranchId, 10);
+                        }
+                    } catch (e) {
+                        console.warn('Could not get branchId from token:', e);
+                    }
+                }
+            } catch (error) {
+                console.warn('Error getting branchId:', error);
+            }
+
+            // Load schedules từ server
+            // LƯU Ý: Vì backend không hỗ trợ search, nên phải load tất cả về client để filter/search
+            // Nếu có branchId, backend sẽ trả về TẤT CẢ records của branch (không phân trang)
+            // Nếu không có branchId, load với pageSize lớn để có đủ dữ liệu filter
+            let url;
+            if (userBranchId) {
+                // Có branchId: backend trả về TẤT CẢ records của branch
+                url = `${API_BASE_URL}/ServiceSchedule?branchId=${userBranchId}`;
+            } else {
+                // Không có branchId: load với pageSize lớn (có thể tăng nếu cần)
+                url = `${API_BASE_URL}/ServiceSchedule?page=1&pageSize=500`;
+            }
+
+            // Show loading
+            $('#serviceSchedulesTableBody').html(`
+                <tr>
+                    <td colspan="10" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            fetch(url, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(async response => {
+                if (response.status === 401) {
+                    showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/Auth/Login';
+                    }, 2000);
+                    throw new Error('Unauthorized');
+                }
+                if (response.status === 403) {
+                    showToast('Bạn không có quyền truy cập tài nguyên này.', 'error');
+                    throw new Error('Forbidden');
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (result.success && result.data) {
+                    allSchedules = result.data;
+                    applyFilters();
+                } else {
+                    allSchedules = [];
+                    filteredSchedules = [];
+                    totalRecords = 0;
+                    displayServiceSchedules([]);
+                    updatePagination();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading schedules:', error);
+                $('#serviceSchedulesTableBody').html('<tr><td colspan="10" class="text-center text-danger">Lỗi tải dữ liệu: ' + error.message + '</td></tr>');
+                allSchedules = [];
+                filteredSchedules = [];
+                totalRecords = 0;
+                updatePagination();
+            });
+        }
+
+        function applyFilters() {
+            const status = $('#statusFilter').val();
+            const date = $('#dateFilter').val();
+            const search = $('#searchInput').val().trim().toLowerCase();
+            const myAcceptedOnly = $('#myAcceptedFilter').is(':checked');
+
+            // Bắt đầu với tất cả schedules
+            filteredSchedules = [...allSchedules];
+
+            // Filter by status
+            if (status) {
+                filteredSchedules = filteredSchedules.filter(s => s.statusCode === status);
+            }
+
+            // Filter by date
+            if (date) {
+                const filterDate = new Date(date);
+                filterDate.setHours(0, 0, 0, 0);
+                const nextDay = new Date(filterDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                
+                filteredSchedules = filteredSchedules.filter(s => {
+                    const scheduleDate = new Date(s.scheduledDate);
+                    scheduleDate.setHours(0, 0, 0, 0);
+                    return scheduleDate >= filterDate && scheduleDate < nextDay;
+                });
+            }
+
+            // Filter by search
+            if (search) {
+                filteredSchedules = filteredSchedules.filter(s => 
+                    (s.userName && s.userName.toLowerCase().includes(search)) ||
+                    (s.licensePlate && s.licensePlate.toLowerCase().includes(search)) ||
+                    (s.carName && s.carName.toLowerCase().includes(search)) ||
+                    (s.branchName && s.branchName.toLowerCase().includes(search)) ||
+                    (s.userPhone && s.userPhone.includes(search))
+                );
+            }
+
+            // Filter by "Đơn đã nhận" - chỉ hiển thị đơn mà user hiện tại đã nhận
+            if (myAcceptedOnly) {
+                let currentUserId = null;
+                try {
+                    const userInfoStr = localStorage.getItem('userInfo');
+                    if (userInfoStr) {
+                        const userInfo = JSON.parse(userInfoStr);
+                        currentUserId = Number(userInfo.userId || userInfo.id || userInfo.UserId);
+                    }
+                } catch (err) {
+                    console.warn('Không thể đọc thông tin người dùng hiện tại:', err);
+                }
+                
+                if (currentUserId) {
+                    filteredSchedules = filteredSchedules.filter(s => 
+                        s.acceptedById && Number(s.acceptedById) === currentUserId
+                    );
+                } else {
+                    // Nếu không lấy được userId, không filter gì cả
+                    filteredSchedules = [];
+                }
+            }
+
+            // Sort by ID (newest first - ID lớn nhất = mới nhất)
+            // Nếu ID bằng nhau thì sort theo scheduledDate
+            filteredSchedules.sort((a, b) => {
+                const idDiff = (b.id || 0) - (a.id || 0);
+                if (idDiff !== 0) return idDiff;
+                return new Date(b.scheduledDate) - new Date(a.scheduledDate);
+            });
+
+            totalRecords = filteredSchedules.length;
+            currentPage = Math.min(currentPage, Math.ceil(totalRecords / pageSize) || 1);
+
+            // Paginate
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedSchedules = filteredSchedules.slice(startIndex, endIndex);
+
+            displayServiceSchedules(paginatedSchedules);
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (totalPages <= 1) {
+                pagination.html('<li class="page-item disabled"><span class="page-link">Trang 1 / 1</span></li>');
+                updatePaginationInfo();
+                return;
+            }
+
+            // Previous button
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i> Trước
+                    </a>
+                </li>
+            `);
+
+            // Page numbers
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+
+            // First page
+            if (startPage > 1) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+                    </li>
+                `);
+                if (startPage > 2) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+            }
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === currentPage ? 'active' : '';
+                pagination.append(`
+                    <li class="page-item ${active}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>
+                `);
+            }
+
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+                }
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+                    </li>
+                `);
+            }
+
+            // Next button
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            pagination.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `);
+
+            updatePaginationInfo();
+        }
+
+        function updatePaginationInfo() {
+            const startIndex = totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            const endIndex = Math.min(currentPage * pageSize, totalRecords);
+            
+            $('#showingFrom').text(startIndex);
+            $('#showingTo').text(endIndex);
+            $('#totalRecords').text(totalRecords);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                applyFilters();
+                // Scroll to top of table
+                $('html, body').animate({
+                    scrollTop: $('.card').offset().top - 20
+                }, 300);
+            }
+        }
+
+        function displayServiceSchedules(schedules) {
+            const tbody = $('#serviceSchedulesTableBody');
+            tbody.empty();
+
+            if (schedules.length === 0) {
+                tbody.html('<tr><td colspan="10" class="text-center text-muted">Không có lịch hẹn nào</td></tr>');
+                return;
+            }
+
+            let currentUserId = null;
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    currentUserId = Number(userInfo.userId || userInfo.id || userInfo.UserId);
+                }
+            } catch (err) {
+                console.warn('Không thể đọc thông tin người dùng hiện tại:', err);
+            }
+
+            schedules.forEach((schedule, index) => {
+                // Xử lý timezone cho scheduledDate
+                let scheduleDateStr = schedule.scheduledDate;
+                if (typeof scheduleDateStr === 'string' && !scheduleDateStr.endsWith('Z') && !scheduleDateStr.includes('+') && !scheduleDateStr.includes('-', 10)) {
+                    scheduleDateStr = scheduleDateStr + 'Z';
+                }
+                const date = new Date(scheduleDateStr);
+                const formattedDate = date.toLocaleDateString('vi-VN');
+                // Hiển thị cả giờ và phút
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const formattedTime = `${hours}:${minutes}`;
+                const acceptedAt = schedule.acceptedAt ? new Date(schedule.acceptedAt).toLocaleString('vi-VN') : null;
+
+                let statusBadge = '';
+                switch(schedule.statusCode) {
+                    case 'PENDING':
+                        statusBadge = '<span class="badge bg-warning">Chờ xử lý</span>';
+                        break;
+                    case 'IN_PROGRESS':
+                        statusBadge = '<span class="badge bg-primary">Đang xử lý</span>';
+                        break;
+                    case 'CANCELLED':
+                        statusBadge = '<span class="badge bg-danger">Đã hủy</span>';
+                        break;
+                    case 'COMPLETED':
+                        statusBadge = '<span class="badge bg-success">Hoàn thành</span>';
+                        break;
+                    default:
+                        statusBadge = '<span class="badge bg-secondary">' + (schedule.statusName || schedule.statusCode) + '</span>';
+                }
+
+                const acceptedInfo = schedule.acceptedByName
+                    ? `<div><strong>${schedule.acceptedByName}</strong>${acceptedAt ? `<br><small class="text-muted">${acceptedAt}</small>` : ''}${schedule.acceptNote ? `<br><small class="text-muted">${schedule.acceptNote}</small>` : ''}</div>`
+                    : '<span class="text-muted">Chưa nhận</span>';
+
+                const actionsDisabled = schedule.statusCode === 'CANCELLED' || schedule.statusCode === 'COMPLETED';
+
+                // Nếu không phải Consulter thì ẩn toàn bộ nút thao tác
+                const canShowActions = isConsulterRole;
+
+                const acceptButtonHtml = (canShowActions && !schedule.acceptedById && !actionsDisabled)
+                    ? `<button class="btn btn-sm btn-outline-success me-1" onclick="acceptSchedule(${schedule.id})" title="Nhận đơn">
+                            <i class="fas fa-handshake"></i>
+                       </button>`
+                    : '';
+
+                const acceptedLabelHtml = (canShowActions && schedule.acceptedById && Number(schedule.acceptedById) === currentUserId)
+                    ? '<span class="badge bg-success text-white me-1">Bạn đã nhận</span>'
+                    : '';
+
+                // Nút xem chi tiết vẫn cho tất cả role
+                const viewButtonHtml = `<a href="/ServiceSchedules/Details/${schedule.id}" class="btn btn-sm btn-outline-info me-1" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </a>`;
+
+                // Chỉ hiển thị nút Edit nếu đã nhận đơn và không bị disabled
+                const canEdit = canShowActions && schedule.acceptedById && !actionsDisabled;
+                const editButton = canEdit ? `
+                                <a href="/ServiceSchedules/Edit/${schedule.id}" class="btn btn-sm btn-outline-primary me-1" title="Chỉnh sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            ` : '';
+
+                // Badge phân biệt khách đặt lịch công khai và khách có tài khoản
+                // Hỗ trợ cả PascalCase (IsPublicBooking) và camelCase (isPublicBooking)
+                const isPublicBooking = schedule.isPublicBooking ?? schedule.IsPublicBooking ?? false;
+                const bookingTypeBadge = isPublicBooking 
+                    ? '<span class="badge bg-info text-white me-1" title="Khách đặt lịch công khai (không có tài khoản)">Khách mới</span>'
+                    : '<span class="badge bg-secondary text-white me-1" title="Khách đã có tài khoản">Khách cũ</span>';
+
+                const rowIndex = (currentPage - 1) * pageSize + index + 1;
+                const row = `
+                    <tr>
+                        <td>${rowIndex}</td>
+                        <td>${schedule.userName || 'N/A'} ${bookingTypeBadge}</td>
+                        <td>${schedule.carName || 'N/A'}</td>
+                        <td>${schedule.licensePlate || 'N/A'}</td>
+                        <td>${schedule.branchName || 'N/A'}</td>
+                        <td>${formattedDate}</td>
+                        <td>${formattedTime}</td>
+                        <td>${statusBadge}</td>
+                        <td>${acceptedInfo}</td>
+                        <td>
+                            ${acceptButtonHtml}
+                            ${acceptedLabelHtml}
+                            ${viewButtonHtml}
+                            ${canShowActions && schedule.acceptedById && Number(schedule.acceptedById) !== currentUserId ? '<span class="badge bg-success-subtle text-success me-1">Đã nhận</span>' : ''}
+                            ${editButton}
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function cancelSchedule(id) {
+            if (confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
+                const token = localStorage.getItem('authToken');
+                fetch(`${API_BASE_URL}/ServiceSchedule/${id}/cancel`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(async response => {
+                    if (response.status === 401) {
+                        showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                        setTimeout(() => {
+                            window.location.href = '/Auth/Login';
+                        }, 2000);
+                        return;
+                    }
+                    if (response.status === 403) {
+                        showToast('Bạn không có quyền hủy lịch hẹn.', 'error');
+                        return;
+                    }
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('Hủy lịch hẹn thành công!', 'success');
+                        loadServiceSchedules();
+                    } else {
+                        showToast('Lỗi: ' + (result.message || 'Không thể hủy lịch hẹn'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling schedule:', error);
+                    showToast('Lỗi khi hủy lịch hẹn', 'error');
+                });
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const bgColor = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#ffc107';
+            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            
+            const toast = $(`
+                <div class="toast-notification" style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background-color: ${bgColor};
+                    color: white;
+                    padding: 15px 25px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 9999;
+                    min-width: 300px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-size: 16px;
+                    animation: slideInRight 0.3s ease-out;
+                ">
+                    <i class="fas ${icon}" style="font-size: 20px;"></i>
+                    <span>${message}</span>
+                </div>
+            `);
+            
+            // Thêm animation CSS nếu chưa có
+            if (!$('#toast-animation-style').length) {
+                $('head').append(`
+                    <style id="toast-animation-style">
+                        @@keyframes slideInRight {
+                            from {
+                                transform: translateX(100%);
+                                opacity: 0;
+                            }
+                            to {
+                                transform: translateX(0);
+                                opacity: 1;
+                            }
+                        }
+                    </style>
+                `);
+            }
+            
+            $('body').append(toast);
+            
+            setTimeout(() => {
+                toast.fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+
+        async function acceptSchedule(id) {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                showToast('Vui lòng đăng nhập bằng tài khoản tư vấn viên để nhận đơn.', 'error');
+                return;
+            }
+
+            // Lấy userInfo từ localStorage hoặc từ API
+            let userInfo = null;
+            const userInfoStr = localStorage.getItem('userInfo');
+            
+            if (userInfoStr) {
+                try {
+                    userInfo = JSON.parse(userInfoStr);
+                } catch (error) {
+                    console.error('Không thể phân tích thông tin người dùng:', error);
+                }
+            }
+
+            // Nếu không có roleId trong localStorage, lấy từ API
+            if (!userInfo || !userInfo.roleId) {
+                try {
+                    const response = await fetch('/Auth/GetUserInfo', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.isLoggedIn) {
+                        userInfo = {
+                            ...userInfo,
+                            roleId: result.roleId || 0,
+                            userId: result.userId || userInfo?.userId || userInfo?.id || null,
+                            id: result.userId || userInfo?.userId || userInfo?.id || null
+                        };
+                        // Cập nhật lại localStorage
+                        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi lấy thông tin người dùng:', error);
+                }
+            }
+
+            if (!userInfo) {
+                showToast('Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại.', 'error');
+                return;
+            }
+
+            // Debug: log userInfo để kiểm tra
+            console.log('UserInfo:', userInfo);
+            console.log('RoleId:', userInfo.roleId, 'Type:', typeof userInfo.roleId);
+
+            // Kiểm tra roleId - có thể là number hoặc string
+            const roleId = Number(userInfo.roleId);
+            if (isNaN(roleId) || roleId !== 6) {
+                console.error('RoleId không hợp lệ hoặc không phải consulter. RoleId:', roleId);
+                showToast('Chỉ tài khoản tư vấn viên mới có thể nhận đơn. Vui lòng đăng nhập lại.', 'error');
+                return;
+            }
+
+            // Lấy userId từ userInfo hoặc decode từ token
+            let consultantId = Number(userInfo.userId || userInfo.id || userInfo.UserId);
+            
+            // Nếu không có userId, decode từ JWT token
+            if (!consultantId && token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    consultantId = Number(
+                        payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+                        payload['UserId'] ||
+                        payload['nameid'] ||
+                        payload['sub']
+                    );
+                    
+                    if (consultantId) {
+                        // Cập nhật lại userInfo với userId
+                        userInfo.userId = consultantId;
+                        userInfo.id = consultantId;
+                        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                        console.log('Đã lấy userId từ token:', consultantId);
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi decode token:', error);
+                }
+            }
+
+            if (!consultantId || isNaN(consultantId)) {
+                console.error('Không thể lấy userId. UserInfo:', userInfo);
+                showToast('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.', 'error');
+                return;
+            }
+
+            const payload = {
+                consultantId,
+                note: `${userInfo.fullName || userInfo.username || 'Tư vấn viên'} đã nhận đơn`
+            };
+
+            fetch(`${API_BASE_URL}/ServiceSchedule/${id}/accept`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async response => {
+                if (response.status === 401) {
+                    showToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/Auth/Login';
+                    }, 2000);
+                    return;
+                }
+                if (response.status === 403) {
+                    showToast('Bạn không có quyền nhận đơn. Chỉ tài khoản tư vấn viên mới có thể nhận đơn.', 'error');
+                    return;
+                }
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showToast('Nhận đơn thành công!', 'success');
+                    // Reload all schedules
+                    loadServiceSchedules();
+                } else {
+                    const errorMessage = result.message || `Không thể nhận đơn (HTTP ${response.status})`;
+                    showToast(errorMessage, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error accepting schedule:', error);
+                showToast('Lỗi khi nhận đơn. Vui lòng thử lại.', 'error');
+            });
+        }
+
+        // Expose changePage to global scope for onclick handlers
+        window.changePage = changePage;
+    </script>
+}

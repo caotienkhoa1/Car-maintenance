@@ -1,0 +1,1235 @@
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    .employee-profile-container {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0;
+    }
+    
+    .employee-avatar-section {
+        background: #f8f9fa;
+        padding: 40px 30px;
+        text-align: center;
+        border-right: 1px solid #dee2e6;
+    }
+    
+    .employee-avatar {
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #dee2e6;
+        background: #e9ecef;
+    }
+    
+    .employee-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-top: 20px;
+        color: #212529;
+    }
+    
+    .employee-details-section {
+        background: white;
+        padding: 30px;
+    }
+    
+    .info-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+    
+    .info-tabs .nav-link {
+        color: #6c757d;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .info-tabs .nav-link:hover {
+        color: #495057;
+    }
+    
+    .info-tabs .nav-link.active {
+        color: #212529;
+        border-bottom-color: #212529;
+        font-weight: 500;
+    }
+    
+    .info-field {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .info-field:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 500;
+        flex: 0 0 200px;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        color: #212529;
+        font-weight: 400;
+        flex: 1;
+        text-align: left;
+    }
+    
+    .form-field {
+        margin-bottom: 0;
+        padding-bottom: 8px;
+        padding-top: 8px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        min-height: 40px;
+    }
+    
+    .form-field:first-child {
+        padding-top: 0;
+    }
+    
+    .form-field:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #6c757d;
+        flex: 0 0 140px;
+        margin-bottom: 0;
+        font-size: 0.875rem;
+        margin-right: 15px;
+    }
+    
+    .form-label i {
+        margin-right: 6px;
+        color: #6c757d;
+    }
+    
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px 12px;
+        flex: 1;
+        max-width: 350px;
+        background-color: #f8f9fa;
+        font-size: 0.9rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        background-color: #fff;
+    }
+    
+    .password-guideline {
+        font-size: 0.9rem;
+        color: #6c757d;
+        border-left: 3px solid #e0e0e0;
+        padding-left: 12px;
+        margin-bottom: 1.25rem;
+    }
+
+    .password-toggle-btn {
+        border: 1px solid #ced4da;
+        border-left: none;
+        background: #f8f9fa;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 46px;
+    }
+
+    .password-toggle-btn i {
+        font-size: 0.95rem;
+    }
+
+    .password-toggle-btn:focus,
+    .password-toggle-btn:hover {
+        background: #f1f3f5;
+        color: #495057;
+        box-shadow: none;
+    }
+
+    .password-toggle-btn + .form-control,
+    .input-group .form-control:focus {
+        box-shadow: none;
+    }
+    
+    .btn-save {
+        background: #007bff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 4px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-save:hover {
+        background: #0056b3;
+        color: white;
+    }
+    
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="employee-profile-container">
+                <div id="loadingSpinner" class="text-center p-5" style="background: white; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                    <div>
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải thông tin cá nhân...</p>
+                    </div>
+                </div>
+                
+                <div id="employeeDetails" style="display: none;">
+                    <div class="row g-0">
+                        <!-- Left Section: Avatar and Name -->
+                        <div class="col-md-3 employee-avatar-section">
+                            <div class="mb-4">
+                                <img id="employeeAvatar" src="" alt="Avatar" 
+                                     class="employee-avatar"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';">
+                            </div>
+                            <h4 id="employeeFullName" class="employee-name">-</h4>
+                        </div>
+
+                        <!-- Right Section: Tabs and Details -->
+                        <div class="col-md-9 employee-details-section">
+                            <!-- Tabs -->
+                            <ul class="nav nav-tabs info-tabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#personal" type="button" role="tab" 
+                                            aria-controls="personal" aria-selected="true">
+                                        <i class="fas fa-user me-2"></i>Thông tin cá nhân
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="edit-tab" data-bs-toggle="tab" 
+                                            data-bs-target="#edit" type="button" role="tab" 
+                                            aria-controls="edit" aria-selected="false">
+                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="password-tab" data-bs-toggle="tab"
+                                            data-bs-target="#password" type="button" role="tab"
+                                            aria-controls="password" aria-selected="false">
+                                        <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab Content -->
+                            <div class="tab-content">
+                                <!-- Personal Information Tab -->
+                                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                                    <h5 class="mb-4" style="color: #212529; font-weight: 600;">Thông tin chi tiết</h5>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="info-field">
+                                                <div class="info-label">Mã nhân viên</div>
+                                                <div class="info-value" id="employeeCode">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Họ và tên</div>
+                                                <div class="info-value" id="employeeName">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Giới tính</div>
+                                                <div class="info-value" id="employeeGender">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Ngày sinh</div>
+                                                <div class="info-value" id="employeeDob">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Số điện thoại</div>
+                                                <div class="info-value" id="employeePhone">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Email</div>
+                                                <div class="info-value" id="employeeEmail">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Địa chỉ</div>
+                                                <div class="info-value" id="employeeAddress">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">CMT/CCCD</div>
+                                                <div class="info-value" id="employeeCitizenId">-</div>
+                                            </div>
+                                            
+                                            <div class="info-field">
+                                                <div class="info-label">Mã số thuế</div>
+                                                <div class="info-value" id="employeeTaxCode">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Edit Tab -->
+                                <div class="tab-pane fade" id="edit" role="tabpanel" aria-labelledby="edit-tab">
+                                    <form id="editEmployeeForm">
+                                        <div class="form-field">
+                                            <label for="editFullName" class="form-label">
+                                                <i class="fas fa-user"></i> Họ và tên
+                                            </label>
+                                            <input type="text" class="form-control" id="editFullName">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editPhone" class="form-label">
+                                                <i class="fas fa-phone"></i> Số điện thoại
+                                            </label>
+                                            <input type="tel" class="form-control" id="editPhone">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editGender" class="form-label">
+                                                <i class="fas fa-venus-mars"></i> Giới tính
+                                            </label>
+                                            <select class="form-select" id="editGender">
+                                                <option value="">-- Chọn giới tính --</option>
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                                <option value="Khác">Khác</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editDob" class="form-label">
+                                                <i class="fas fa-calendar-alt"></i> Ngày sinh
+                                            </label>
+                                            <input type="date" class="form-control" id="editDob">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editEmail" class="form-label">
+                                                <i class="fas fa-envelope"></i> Email
+                                            </label>
+                                            <input type="email" class="form-control" id="editEmail">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editAddress" class="form-label">
+                                                <i class="fas fa-map-marker-alt"></i> Địa chỉ
+                                            </label>
+                                            <input type="text" class="form-control" id="editAddress">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editCitizenId" class="form-label">
+                                                <i class="fas fa-id-badge"></i> CMT/CCCD
+                                            </label>
+                                            <input type="text" class="form-control" id="editCitizenId">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="editTaxCode" class="form-label">
+                                                <i class="fas fa-receipt"></i> Mã số thuế
+                                            </label>
+                                            <input type="text" class="form-control" id="editTaxCode">
+                                        </div>
+                                        
+                                        <div class="form-field">
+                                            <label for="employeeImageInput" class="form-label">
+                                                <i class="fas fa-image"></i> Ảnh đại diện
+                                            </label>
+                                            <input type="file" class="form-control" id="employeeImageInput" accept="image/*" style="max-width: 350px;">
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end mt-4">
+                                            <button type="submit" class="btn btn-save text-white">
+                                                <i class="fas fa-save me-1"></i> Lưu thông tin
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Change Password Tab -->
+                                <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                                    <p class="password-guideline">
+                                        Mật khẩu mới phải có tối thiểu 9 ký tự, chứa ít nhất 1 chữ hoa và 1 chữ số.
+                                    </p>
+                                    <form id="changePasswordForm" class="mt-3">
+                                        <div class="mb-3">
+                                            <label for="currentPassword" class="form-label">
+                                                <i class="fas fa-lock me-2"></i>Mật khẩu hiện tại
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="currentPassword"
+                                                       placeholder="Nhập mật khẩu hiện tại" required>
+                                                <button class="btn password-toggle-btn" type="button"
+                                                        onclick="togglePasswordVisibility('currentPassword', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="newPassword" class="form-label">
+                                                <i class="fas fa-shield-alt me-2"></i>Mật khẩu mới
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="newPassword"
+                                                       placeholder="Nhập mật khẩu mới" required minlength="9">
+                                                <button class="btn password-toggle-btn" type="button"
+                                                        onclick="togglePasswordVisibility('newPassword', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="confirmPassword" class="form-label">
+                                                <i class="fas fa-check-double me-2"></i>Xác nhận mật khẩu mới
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="confirmPassword"
+                                                       placeholder="Nhập lại mật khẩu mới" required minlength="9">
+                                                <button class="btn password-toggle-btn" type="button"
+                                                        onclick="togglePasswordVisibility('confirmPassword', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary" id="changePasswordSubmit">
+                                                <i class="fas fa-key me-1"></i>Cập nhật mật khẩu
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Error Modal -->
+                <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border-radius: 15px 15px 0 0; border: none; padding: 20px 25px;">
+                                <h5 class="modal-title" id="errorModalLabel" style="font-weight: 600; font-size: 1.2rem;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Lỗi
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                            <div class="modal-body" style="padding: 30px 25px;">
+                                <div class="d-flex align-items-start">
+                                    <div class="flex-shrink-0">
+                                        <div style="width: 50px; height: 50px; background: #fee; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-exclamation-circle" style="font-size: 24px; color: #dc3545;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <p id="errorModalText" style="margin: 0; font-size: 1rem; line-height: 1.6; color: #495057;"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 15px 25px; border-radius: 0 0 15px 15px;">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" style="border-radius: 8px; padding: 10px 30px; font-weight: 500;">
+                                    <i class="fas fa-check me-2"></i>Đã hiểu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = window.API_BASE_URL || 'https://localhost:7173/api';
+        const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{9,}$/;
+        let currentEmployee = null;
+        let originalFormData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize image preview handler
+            initializeImagePreview();
+            
+            // Load employee details using my-profile endpoint (userId từ token)
+            loadEmployeeDetails();
+
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', handleChangePasswordSubmit);
+            }
+
+            setupPasswordValidationMessages();
+        });
+        
+        function initializeImagePreview() {
+            // Handle employee image input (info section)
+            const employeeImageInput = document.getElementById('employeeImageInput');
+            if (employeeImageInput) {
+                employeeImageInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                            showAlert('Vui lòng chọn file hình ảnh hợp lệ', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            showAlert('Kích thước file không được vượt quá 5MB', 'warning');
+                            e.target.value = '';
+                            return;
+                        }
+                        
+                        // Create preview and update avatar
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const imageDataUrl = event.target.result;
+                            
+                            // Update avatar (left sidebar) - preview only
+                            const employeeAvatar = document.getElementById('employeeAvatar');
+                            if (employeeAvatar) {
+                                employeeAvatar.src = imageDataUrl;
+                            }
+                        };
+                        reader.onerror = function() {
+                            showAlert('Có lỗi xảy ra khi đọc file', 'danger');
+                            e.target.value = '';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        // No file selected - restore original avatar
+                        const employeeAvatar = document.getElementById('employeeAvatar');
+                        if (employeeAvatar && currentEmployee) {
+                            if (currentEmployee.image) {
+                                employeeAvatar.src = currentEmployee.image;
+                            } else {
+                                // Reset to default placeholder
+                                employeeAvatar.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'250\' height=\'250\'%3E%3Crect width=\'250\' height=\'250\' fill=\'%23f093fb\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'white\' font-size=\'120\'%3E👤%3C/text%3E%3C/svg%3E';
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function setupPasswordValidationMessages() {
+            const passwordFieldIds = ['newPassword', 'confirmPassword'];
+
+            passwordFieldIds.forEach(id => {
+                const input = document.getElementById(id);
+                if (!input) return;
+
+                input.addEventListener('invalid', function () {
+                    if (input.validity.valueMissing) {
+                        input.setCustomValidity('Vui lòng nhập mật khẩu');
+                    } else if (input.validity.tooShort) {
+                        input.setCustomValidity('Mật khẩu phải có ít nhất 9 ký tự');
+                    } else {
+                        input.setCustomValidity('');
+                    }
+                });
+
+                input.addEventListener('input', function () {
+                    input.setCustomValidity('');
+                });
+            });
+        }
+
+        function loadEmployeeDetails() {
+            const token = localStorage.getItem('authToken');
+            
+            // Sử dụng endpoint my-profile, tự động lấy userId từ token
+            fetch(`${API_BASE_URL}/EmployeeProfile/my-profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // API trả về trực tiếp EmployeeResponseDto
+                if (data && data.id) {
+                    displayEmployeeDetails(data);
+                } else if (data && data.success && data.data) {
+                    displayEmployeeDetails(data.data);
+                } else {
+                    showError('Không tìm thấy thông tin nhân viên');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                showError('Có lỗi xảy ra khi tải thông tin cá nhân: ' + error.message);
+            });
+        }
+
+        function displayEmployeeDetails(employee) {
+            currentEmployee = employee;
+            
+            const fullName = `${(employee.firstName || '')} ${(employee.lastName || '')}`.trim() || '-';
+            
+            // Avatar (left sidebar)
+            const avatar = document.getElementById('employeeAvatar');
+            if (employee.image) {
+                avatar.src = employee.image;
+            }
+            
+            // Left section - only name
+            document.getElementById('employeeFullName').textContent = fullName;
+            
+            // Details
+            document.getElementById('employeeCode').textContent = employee.code || '-';
+            document.getElementById('employeeName').textContent = fullName;
+            document.getElementById('employeeGender').textContent = 
+                employee.gender === 'Male' || employee.gender === 'Nam' ? 'Nam' :
+                employee.gender === 'Female' || employee.gender === 'Nữ' ? 'Nữ' : 
+                employee.gender || '-';
+            
+            // Display date of birth
+            const dobElement = document.getElementById('employeeDob');
+            if (dobElement) {
+                const dobValue = employee.dob || employee.Dob || employee.dateOfBirth || employee.DateOfBirth;
+                
+                if (dobValue) {
+                    try {
+                        const dob = new Date(dobValue);
+                        if (!isNaN(dob.getTime())) {
+                            const formattedDate = dob.toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            });
+                            dobElement.textContent = formattedDate;
+                        } else {
+                            dobElement.textContent = '-';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date:', e, dobValue);
+                        dobElement.textContent = '-';
+                    }
+                } else {
+                    dobElement.textContent = '-';
+                }
+            }
+            
+            document.getElementById('employeePhone').textContent = employee.phone || '-';
+            document.getElementById('employeeEmail').textContent = employee.email || '-';
+            document.getElementById('employeeAddress').textContent = employee.fullAddress || employee.address || '-';
+            document.getElementById('employeeCitizenId').textContent = employee.citizenId || '-';
+            document.getElementById('employeeTaxCode').textContent = employee.taxCode || '-';
+            
+            // Load data into edit form
+            loadEditForm(employee);
+            
+            document.getElementById('employeeDetails').style.display = 'block';
+        }
+
+        function loadEditForm(employee) {
+            const fullName = `${(employee.firstName || '')} ${(employee.lastName || '')}`.trim();
+
+            document.getElementById('editFullName').value = fullName;
+            document.getElementById('editPhone').value = employee.phone || '';
+            document.getElementById('editGender').value = 
+                employee.gender === 'Male' || employee.gender === 'Nam' ? 'Nam' :
+                employee.gender === 'Female' || employee.gender === 'Nữ' ? 'Nữ' : 
+                employee.gender || '';
+            
+            // Load date of birth
+            const dobInput = document.getElementById('editDob');
+            if (dobInput) {
+                const dobValue = employee.dob || employee.Dob;
+                if (dobValue) {
+                    try {
+                        const dob = new Date(dobValue);
+                        if (!isNaN(dob.getTime())) {
+                            const year = dob.getFullYear();
+                            const month = String(dob.getMonth() + 1).padStart(2, '0');
+                            const day = String(dob.getDate()).padStart(2, '0');
+                            dobInput.value = `${year}-${month}-${day}`;
+                        } else {
+                            dobInput.value = '';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing date for input:', e);
+                        dobInput.value = '';
+                    }
+                } else {
+                    dobInput.value = '';
+                }
+            }
+            
+            document.getElementById('editEmail').value = employee.email || '';
+            document.getElementById('editAddress').value = employee.fullAddress || employee.address || '';
+            document.getElementById('editTaxCode').value = employee.taxCode || '';
+            document.getElementById('editCitizenId').value = employee.citizenId || '';
+
+            // Store original data
+            originalFormData = {
+                fullName: fullName,
+                phone: employee.phone || '',
+                gender: document.getElementById('editGender').value,
+                dob: dobInput ? dobInput.value : '',
+                email: employee.email || '',
+                address: employee.fullAddress || employee.address || '',
+                taxCode: employee.taxCode || '',
+                citizenId: employee.citizenId || ''
+            };
+        }
+
+        function showError(message) {
+            // Hiển thị error trong modal pop-up
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            document.getElementById('errorModalText').textContent = message;
+            errorModal.show();
+        }
+
+        // Handle edit form submission
+        document.getElementById('editEmployeeForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveEmployeeChanges();
+        });
+
+        function saveEmployeeChanges() {
+            if (!currentEmployee) {
+                showError('Không tìm thấy thông tin nhân viên');
+                return;
+            }
+
+            // Split full name into first and last name
+            const fullNameInput = document.getElementById('editFullName').value.trim();
+            const nameParts = fullNameInput.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Format date of birth from input (format: dd-MM-yyyy for backend)
+            let dobFormatted = null;
+            const dobInput = document.getElementById('editDob');
+            if (dobInput && dobInput.value) {
+                try {
+                    const dobDate = new Date(dobInput.value);
+                    if (!isNaN(dobDate.getTime())) {
+                        const day = String(dobDate.getDate()).padStart(2, '0');
+                        const month = String(dobDate.getMonth() + 1).padStart(2, '0');
+                        const year = dobDate.getFullYear();
+                        dobFormatted = `${day}-${month}-${year}`;
+                    }
+                } catch (e) {
+                    console.error('Error formatting date of birth:', e);
+                }
+            }
+
+            // Validate required fields
+            if (!currentEmployee.username && !currentEmployee.userName) {
+                showError('Không tìm thấy thông tin username của nhân viên');
+                return;
+            }
+            
+            if (!currentEmployee.id) {
+                showError('Không tìm thấy ID nhân viên. Vui lòng làm mới trang và thử lại.');
+                return;
+            }
+
+            const formData = {
+                username: currentEmployee.username || currentEmployee.userName,
+                password: '', // Empty password - backend should preserve existing password
+                firstName: firstName || null,
+                lastName: lastName || null,
+                email: document.getElementById('editEmail').value || null,
+                phone: document.getElementById('editPhone').value || null,
+                gender: document.getElementById('editGender').value || null,
+                image: currentEmployee.image || null,
+                dob: dobFormatted,
+                roleId: currentEmployee.roleId || currentEmployee.RoleId || null,
+                branchId: currentEmployee.branchId || currentEmployee.BranchId || null,
+                taxCode: document.getElementById('editTaxCode').value || null,
+                address: document.getElementById('editAddress').value || null,
+                citizenId: document.getElementById('editCitizenId').value || null,
+                statusCode: currentEmployee.statusCode || 'ACTIVE'
+            };
+            
+            // Remove null/empty values except username and password
+            Object.keys(formData).forEach(key => {
+                if (key !== 'username' && key !== 'password' && key !== 'roleId' && key !== 'branchId' && (formData[key] === null || formData[key] === '')) {
+                    delete formData[key];
+                }
+            });
+            
+            console.log('Sending update request with data:', formData);
+
+            const token = localStorage.getItem('authToken');
+            
+            // Handle image upload if file is selected
+            const imageFile = document.getElementById('employeeImageInput').files[0];
+            
+            // Function to update profile
+            const updateProfile = (imageUrl = null) => {
+                // Nếu có imageUrl từ upload, cập nhật vào formData
+                if (imageUrl) {
+                    formData.image = imageUrl;
+                }
+                
+                // Sử dụng endpoint my-profile để cập nhật profile của chính mình
+                return fetch(`${API_BASE_URL}/EmployeeProfile/my-profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+            };
+
+            // Upload ảnh trước nếu có file được chọn
+            if (imageFile) {
+                // Hiển thị loading state
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang upload ảnh...';
+
+                // Upload ảnh lên Cloudinary
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', imageFile);
+
+                fetch(`${API_BASE_URL}/EmployeeProfile/upload-avatar`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: uploadFormData
+                })
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorMessage = `Upload ảnh thất bại. Status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch (e) {
+                            if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 400) {
+                                errorMessage = 'File ảnh không hợp lệ. Vui lòng chọn file khác.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(uploadData => {
+                    // Upload thành công, lấy URL ảnh
+                    const imageUrl = uploadData.data?.imageUrl || uploadData.data?.url;
+                    if (!imageUrl) {
+                        throw new Error('Không nhận được URL ảnh từ server');
+                    }
+
+                    // Cập nhật avatar preview ngay lập tức
+                    const employeeAvatar = document.getElementById('employeeAvatar');
+                    if (employeeAvatar) {
+                        employeeAvatar.src = imageUrl;
+                    }
+
+                    // Cập nhật currentEmployee.image để giữ đồng bộ
+                    if (currentEmployee) {
+                        currentEmployee.image = imageUrl;
+                    }
+
+                    // Update button text
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang lưu thông tin...';
+
+                    // Tiếp tục cập nhật profile (ảnh đã được lưu vào DB khi upload, không cần gửi lại)
+                    // Bỏ image khỏi formData vì đã được lưu
+                    delete formData.image;
+                    return updateProfile();
+                })
+                .then(async response => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            // Đọc response text và parse JSON
+                            const responseText = await response.text();
+                            console.log('Error response text:', responseText);
+                            
+                            let errorData;
+                            try {
+                                errorData = JSON.parse(responseText);
+                                console.log('Error response data:', errorData);
+                            } catch (parseError) {
+                                // Nếu không parse được JSON, dùng text làm error message
+                                console.error('Failed to parse error response:', parseError);
+                                errorMessage = responseText || errorMessage;
+                                throw new Error(errorMessage);
+                            }
+                            
+                            // Nếu có errors (validation errors), hiển thị từng lỗi cụ thể
+                            if (errorData.errors) {
+                                let allErrors = [];
+                                
+                                // Xử lý errors là array
+                                if (Array.isArray(errorData.errors)) {
+                                    allErrors = errorData.errors;
+                                } 
+                                // Xử lý errors là object (ASP.NET Core validation format: { "FieldName": ["error1", "error2"] })
+                                else if (typeof errorData.errors === 'object') {
+                                    // Flatten object thành array của tất cả error messages
+                                    Object.keys(errorData.errors).forEach(fieldName => {
+                                        const fieldErrors = errorData.errors[fieldName];
+                                        if (Array.isArray(fieldErrors)) {
+                                            allErrors = allErrors.concat(fieldErrors);
+                                        } else {
+                                            allErrors.push(fieldErrors);
+                                        }
+                                    });
+                                }
+                                
+                                if (allErrors.length > 0) {
+                                    console.log('Found validation errors:', allErrors);
+                                    errorMessage = allErrors.join('. ');
+                                } else if (errorData.message) {
+                                    console.log('Using error message:', errorData.message);
+                                    errorMessage = errorData.message;
+                                } else if (errorData.title) {
+                                    console.log('Using error title:', errorData.title);
+                                    errorMessage = errorData.title;
+                                }
+                            } else if (errorData.message) {
+                                console.log('Using error message:', errorData.message);
+                                errorMessage = errorData.message;
+                            } else if (errorData.title) {
+                                console.log('Using error title:', errorData.title);
+                                errorMessage = errorData.title;
+                            } else if (errorData.error) {
+                                console.log('Using error field:', errorData.error);
+                                errorMessage = errorData.error;
+                            }
+                        } catch (e) {
+                            // Nếu đã throw Error ở trên, re-throw nó
+                            if (e instanceof Error) {
+                                console.log('Re-throwing error:', e.message);
+                                throw e;
+                            }
+                            // Nếu không, xử lý các status code đặc biệt
+                            if (response.status === 404) {
+                                errorMessage = 'Không tìm thấy nhân viên với ID này. Vui lòng làm mới trang và thử lại.';
+                            } else if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reload employee details using my-profile endpoint
+                    loadEmployeeDetails();
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.style.borderRadius = '10px';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin và ảnh đại diện thành công!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    const detailsSection = document.querySelector('.employee-details-section');
+                    if (detailsSection) {
+                        detailsSection.insertBefore(alertDiv, detailsSection.querySelector('.info-tabs'));
+                    }
+                    
+                    // Switch to personal info tab
+                    const personalTab = document.getElementById('personal-tab');
+                    if (personalTab) {
+                        personalTab.click();
+                    }
+
+                    // Reset image input
+                    document.getElementById('employeeImageInput').value = '';
+
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                })
+                .catch(error => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                    console.error('Error:', error);
+                    showError('Có lỗi xảy ra: ' + error.message);
+                });
+            } else {
+                // Không có ảnh mới, chỉ cập nhật profile thôi
+                updateProfile()
+                .then(async response => {
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            // Đọc response text và parse JSON
+                            const responseText = await response.text();
+                            console.log('Error response text:', responseText);
+                            
+                            let errorData;
+                            try {
+                                errorData = JSON.parse(responseText);
+                                console.log('Error response data:', errorData);
+                            } catch (parseError) {
+                                // Nếu không parse được JSON, dùng text làm error message
+                                console.error('Failed to parse error response:', parseError);
+                                errorMessage = responseText || errorMessage;
+                                throw new Error(errorMessage);
+                            }
+                            
+                            // Nếu có errors (validation errors), hiển thị từng lỗi cụ thể
+                            if (errorData.errors) {
+                                let allErrors = [];
+                                
+                                // Xử lý errors là array
+                                if (Array.isArray(errorData.errors)) {
+                                    allErrors = errorData.errors;
+                                } 
+                                // Xử lý errors là object (ASP.NET Core validation format: { "FieldName": ["error1", "error2"] })
+                                else if (typeof errorData.errors === 'object') {
+                                    // Flatten object thành array của tất cả error messages
+                                    Object.keys(errorData.errors).forEach(fieldName => {
+                                        const fieldErrors = errorData.errors[fieldName];
+                                        if (Array.isArray(fieldErrors)) {
+                                            allErrors = allErrors.concat(fieldErrors);
+                                        } else {
+                                            allErrors.push(fieldErrors);
+                                        }
+                                    });
+                                }
+                                
+                                if (allErrors.length > 0) {
+                                    console.log('Found validation errors:', allErrors);
+                                    errorMessage = allErrors.join('. ');
+                                } else if (errorData.message) {
+                                    console.log('Using error message:', errorData.message);
+                                    errorMessage = errorData.message;
+                                } else if (errorData.title) {
+                                    console.log('Using error title:', errorData.title);
+                                    errorMessage = errorData.title;
+                                }
+                            } else if (errorData.message) {
+                                console.log('Using error message:', errorData.message);
+                                errorMessage = errorData.message;
+                            } else if (errorData.title) {
+                                console.log('Using error title:', errorData.title);
+                                errorMessage = errorData.title;
+                            } else if (errorData.error) {
+                                console.log('Using error field:', errorData.error);
+                                errorMessage = errorData.error;
+                            }
+                        } catch (e) {
+                            // Nếu đã throw Error ở trên, re-throw nó
+                            if (e instanceof Error) {
+                                console.log('Re-throwing error:', e.message);
+                                throw e;
+                            }
+                            // Nếu không, xử lý các status code đặc biệt
+                            if (response.status === 404) {
+                                errorMessage = 'Không tìm thấy nhân viên với ID này. Vui lòng làm mới trang và thử lại.';
+                            } else if (response.status === 401) {
+                                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                            } else if (response.status === 403) {
+                                errorMessage = 'Bạn không có quyền thực hiện thao tác này.';
+                            }
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reload employee details using my-profile endpoint
+                    loadEmployeeDetails();
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.style.borderRadius = '10px';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin thành công!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    const detailsSection = document.querySelector('.employee-details-section');
+                    if (detailsSection) {
+                        detailsSection.insertBefore(alertDiv, detailsSection.querySelector('.info-tabs'));
+                    }
+                    
+                    // Switch to personal info tab
+                    const personalTab = document.getElementById('personal-tab');
+                    if (personalTab) {
+                        personalTab.click();
+                    }
+
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError('Có lỗi xảy ra khi cập nhật thông tin: ' + error.message);
+                });
+            }
+        }
+
+        async function handleChangePasswordSubmit(event) {
+            event.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword')?.value.trim();
+            const newPassword = document.getElementById('newPassword')?.value.trim();
+            const confirmPassword = document.getElementById('confirmPassword')?.value.trim();
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showAlert('Vui lòng nhập đầy đủ thông tin mật khẩu', 'warning');
+                return;
+            }
+
+            if (newPassword.length < 9) {
+                showAlert('Mật khẩu mới phải có ít nhất 9 ký tự', 'warning');
+                return;
+            }
+
+            if (!PASSWORD_REGEX.test(newPassword)) {
+                showAlert('Mật khẩu mới phải có chữ hoa và chữ số', 'warning');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showAlert('Mật khẩu xác nhận không khớp', 'warning');
+                return;
+            }
+
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                showAlert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'danger');
+                return;
+            }
+
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userId = userInfo.userId || userInfo.id || (currentEmployee ? (currentEmployee.userId || currentEmployee.id) : null);
+
+            if (!userId) {
+                showAlert('Không tìm thấy thông tin tài khoản. Vui lòng đăng nhập lại.', 'danger');
+                return;
+            }
+
+            const submitBtn = document.getElementById('changePasswordSubmit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang cập nhật...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/Auth/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        oldPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || !data || data.success === false) {
+                    const message = (data && (data.message || data.error)) || 'Không thể đổi mật khẩu. Vui lòng thử lại.';
+                    throw new Error(message);
+                }
+
+                showAlert(data.message || 'Đổi mật khẩu thành công!', 'success');
+                document.getElementById('changePasswordForm').reset();
+            } catch (error) {
+                console.error('Change password error:', error);
+                showAlert(error.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.', 'danger');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        function togglePasswordVisibility(inputId, buttonEl) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const icon = buttonEl.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}
+

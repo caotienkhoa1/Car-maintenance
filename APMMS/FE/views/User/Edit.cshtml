@@ -1,0 +1,226 @@
+@{
+    ViewData["Title"] = "Sửa thông tin Auto Owner";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Sửa thông tin Auto Owner</h4>
+                </div>
+                <div class="card-body">
+                    <form id="autoOwnerForm">
+                        <input type="hidden" id="autoOwnerId" name="id">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">Họ <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="citizenId" class="form-label">Căn cước công dân (CCCD)</label>
+                                    <input type="text" class="form-control" id="citizenId" name="citizenId" maxlength="12" pattern="\d{9,12}" title="Chỉ nhập số, tối đa 12 ký tự">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Giới tính</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="">Chọn</option>
+                                        <option value="Nam">Nam</option>
+                                        <option value="Nữ">Nữ</option>
+                                        <option value="Khác">Khác</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="branchName" class="form-label">Chi nhánh</label>
+                                    <input type="text" class="form-control" id="branchName" name="branchName" disabled>
+                                    <input type="hidden" id="branchId" name="branchId">
+                                </div>
+                            </div>
+
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dob" class="form-label">Ngày sinh</label>
+                                    <input type="date" class="form-control" id="dob" name="dob">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="isActive" name="isActive">
+                            <label class="form-check-label" for="isActive">
+                                Kích hoạt tài khoản
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/Users" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save"></i> Cập nhật
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ownerId = getAutoOwnerIdFromUrl();
+            if (ownerId) {
+                loadAutoOwner(ownerId);
+            }
+
+            document.getElementById('autoOwnerForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                updateAutoOwner();
+            });
+        });
+
+        // ✅ Lấy ID Auto Owner từ URL
+        function getAutoOwnerIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        // ✅ Tải dữ liệu Auto Owner
+        let loadedOwner = null;
+
+        function loadAutoOwner(id) {
+            const API_BASE_URL = '@(ViewBag.ApiBaseUrl ?? "https://localhost:7173/api")';
+            fetch(`${API_BASE_URL}/autoowner/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Không thể tải dữ liệu Auto Owner');
+                    return response.json();
+                })
+                .then(owner => {
+                    loadedOwner = owner;
+
+                    document.getElementById('autoOwnerId').value = owner.id || '';
+                    document.getElementById('firstName').value = owner.firstName || '';
+                    document.getElementById('lastName').value = owner.lastName || '';
+                    document.getElementById('email').value = owner.email || '';
+                    document.getElementById('phone').value = owner.phone || '';
+                    document.getElementById('citizenId').value = owner.citizenId || '';
+                    document.getElementById('address').value = owner.address || '';
+                    document.getElementById('isActive').checked = owner.statusCode === 'ACTIVE';
+                    document.getElementById('gender').value = owner.gender || '';
+                    document.getElementById('branchId').value = owner.branchId || '';
+                    document.getElementById('dob').value = owner.dob ? owner.dob : '';
+                    document.getElementById('branchName').value = owner.branchName || '-';
+
+                    // document.getElementById('taxCode').value = owner.taxCode || '';
+                })
+                .catch(error => {
+                    console.error('❌ Lỗi load dữ liệu:', error);
+                    showAlert('Không tìm thấy người dùng hoặc có lỗi khi tải dữ liệu.', 'danger');
+                });
+        }
+
+        function updateAutoOwner() {
+            const formData = new FormData(document.getElementById('autoOwnerForm'));
+            const id = formData.get('id');
+
+            const updatedOwner = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                citizenId: formData.get('citizenId'),
+                address: formData.get('address'),
+                statusCode: document.getElementById('isActive').checked ? 'ACTIVE' : 'INACTIVE',
+                gender: formData.get('gender'),
+                branchId: formData.get('branchId'),
+                // taxCode: formData.get('taxCode'),
+                dob: formData.get('dob') ? formData.get('dob') : null
+
+            };
+
+            const payload = { ...loadedOwner, ...updatedOwner };
+            const API_BASE_URL = '@(ViewBag.ApiBaseUrl ?? "https://localhost:7173/api")';
+
+            fetch(`${API_BASE_URL}/autoowner/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`Cập nhật thất bại (${response.status})`);
+                    return response.json();
+                })
+                .then(() => {
+                    showAlert('✅ Cập nhật Auto Owner thành công!', 'success');
+                    setTimeout(() => window.location.href = '/Users', 1500);
+                })
+                .catch(error => {
+                    console.error('❌ Error:', error);
+                    showAlert('Lỗi khi cập nhật Auto Owner', 'danger');
+                });
+        }
+
+
+
+
+        // ✅ Hiển thị thông báo
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+            alertDiv.innerHTML = `
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('form'));
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+}

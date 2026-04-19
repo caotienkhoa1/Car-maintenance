@@ -1,0 +1,874 @@
+@{
+    ViewData["Title"] = "Chi tiết gói dịch vụ";
+    Layout = "~/views/Shared/_DashboardLayout.cshtml";
+}
+
+@inject IConfiguration Configuration
+@{
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7173/api";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/ServicePackages">Danh sách các gói dịch vụ</a></li>
+            <li class="breadcrumb-item active" id="breadcrumbName" aria-current="page">-</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0 fw-bold" style="font-size: 1.75rem; color: #212529;">Thông tin chi tiết gói dịch vụ</h2>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Panel: Service Package Name -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h1 class="text-center fw-bold text-white" id="servicePackageNameLarge" style="font-size: 2.5rem; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">
+                        <div class="spinner-border text-white" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </h1>
+                </div>
+            </div>
+        </div>
+                    
+        <!-- Right Panel: Tabs -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <!-- Tabs Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="servicePackageTabs" role="tablist" style="border-bottom: 2px solid #dee2e6;">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-semibold" id="intro-tab" data-bs-toggle="tab" data-bs-target="#intro" type="button" role="tab" aria-controls="intro" aria-selected="true" style="font-size: 1rem; padding: 12px 20px;">
+                                Giới thiệu
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-controls="components" aria-selected="false" style="font-size: 1rem; padding: 12px 20px;">
+                                Danh sách linh kiện
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false" style="font-size: 1rem; padding: 12px 20px;">
+                                Cài đặt
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Tabs Content -->
+                    <div class="tab-content" id="servicePackageTabContent">
+                        <!-- Tab: Giới thiệu -->
+                        <div class="tab-pane fade show active" id="intro" role="tabpanel" aria-labelledby="intro-tab">
+                            <div id="introLoading" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                            <div id="introContent" style="display: none;">
+                                <h5 class="mb-4 fw-bold" style="font-size: 1.2rem; color: #212529;">Thông tin chi tiết</h5>
+                                <dl class="row mb-0" style="font-size: 1.05rem;">
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Tên gói</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="servicePackageName" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Mã gói</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="servicePackageCode" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Mô tả</dt>
+                                    <dd class="col-sm-8 mb-3" id="servicePackageDescription" style="font-size: 1.05rem; color: #495057; line-height: 1.6;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Giá</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="servicePackagePrice" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Chi nhánh</dt>
+                                    <dd class="col-sm-8 mb-3 fw-semibold" id="servicePackageBranch" style="font-size: 1.1rem; color: #212529;">-</dd>
+
+                                    <dt class="col-sm-4 fw-bold text-muted mb-3" style="font-size: 1rem; color: #6c757d !important;">Tình trạng</dt>
+                                    <dd class="col-sm-8 mb-3" id="servicePackageStatus" style="font-size: 1.1rem;">-</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Danh sách linh kiện -->
+                        <div class="tab-pane fade" id="components" role="tabpanel" aria-labelledby="components-tab">
+                            <div id="componentsLoading" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                            <div id="componentsContent" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0 fw-bold" style="font-size: 1.2rem; color: #212529;">Danh sách các linh kiện</h5>
+                                    <div class="d-flex align-items-center">
+                                        <input type="text" class="form-control" id="componentSearchInput" placeholder="Tìm kiếm linh kiện" style="width: 250px;">
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover align-middle">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px; width: 60px;">STT</th>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px;">Tên</th>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px;">Mã</th>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px; width: 120px;">Hình ảnh</th>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px;">Giá xuất</th>
+                                                <th style="font-size: 1rem; font-weight: 600; padding: 14px; width: 100px;">Số Lượng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="componentsTableBody" style="font-size: 1rem;">
+                                            <!-- Components will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="componentsEmpty" class="text-center text-muted py-5" style="display: none;">
+                                    <p class="mb-0" style="font-size: 1.1rem;">Gói dịch vụ này chưa có linh kiện nào.</p>
+                                </div>
+                                
+                                <!-- Pagination -->
+                                <nav aria-label="Page navigation" class="mt-3" id="componentsPaginationContainer" style="display: none;">
+                                    <ul class="pagination justify-content-center mb-0" id="componentsPagination">
+                                        <!-- Pagination will be generated here -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    
+                        <!-- Tab: Cài đặt -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                            <div id="settingsLoading" class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                            <div id="settingsContent" style="display: none;">
+                                <h5 class="mb-4 fw-bold" style="font-size: 1.2rem; color: #212529;">Chỉnh sửa thông tin</h5>
+                                <form id="editServicePackageForm">
+                                    <input type="hidden" id="editServicePackageId" name="id">
+                                    <input type="hidden" id="editServicePackageBranchId" name="branchId">
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <label for="editServicePackageName" class="form-label fw-semibold mb-0 me-3" style="min-width: 120px;">Tên gói <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="editServicePackageName" name="name" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <label for="editServicePackageCode" class="form-label fw-semibold mb-0 me-3" style="min-width: 120px;">Mã gói</label>
+                                                <input type="text" class="form-control" id="editServicePackageCode" name="code">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <label for="editServicePackagePrice" class="form-label fw-semibold mb-0 me-3" style="min-width: 120px;">Giá</label>
+                                                <input type="number" class="form-control" id="editServicePackagePrice" name="price" step="0.01" min="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <label for="editServicePackageStatusCode" class="form-label fw-semibold mb-0 me-3" style="min-width: 120px;">Trạng thái</label>
+                                                <select class="form-select" id="editServicePackageStatusCode" name="statusCode">
+                                                    <option value="ACTIVE">Hoạt động</option>
+                                                    <option value="INACTIVE">Không hoạt động</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="d-flex align-items-start">
+                                                <label for="editServicePackageDescription" class="form-label fw-semibold mb-0 me-3" style="min-width: 120px; padding-top: 8px;">Mô tả</label>
+                                                <textarea class="form-control" id="editServicePackageDescription" name="description" rows="4"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr class="my-4" />
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Linh kiện trong gói</label>
+                                        <div class="row mb-2">
+                                            <div class="col-md-6">
+                                                <input type="text" class="form-control" id="editComponentSearch" placeholder="Tìm kiếm linh kiện...">
+                                            </div>
+                                        </div>
+                                        <div id="editComponentsLoading" class="text-center mb-2" style="display: none;">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="visually-hidden">Đang tải...</span>
+                                            </div>
+                                        </div>
+                                        <div id="editComponentsList" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                            <p class="text-muted text-center">Đang tải danh sách linh kiện...</p>
+                                        </div>
+                                        <small class="text-muted">Chọn các linh kiện sẽ được bao gồm trong gói dịch vụ này. Nhập số lượng cho mỗi linh kiện đã chọn.</small>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end gap-2 mt-4">
+                                        <button type="button" class="btn btn-secondary" id="cancelEditBtn">
+                                            <i class="fas fa-times me-1"></i>Hủy
+                                        </button>
+                                        <button type="submit" class="btn btn-outline-primary" id="saveEditBtn">
+                                            <i class="fas fa-save me-1"></i>Lưu thay đổi
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+</div>
+
+@section Scripts {
+    <style>
+        /* Cải thiện tab navigation */
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #495057;
+            border-bottom-color: #dee2e6;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            font-weight: 600;
+            border-bottom-color: #0d6efd;
+            background-color: transparent;
+        }
+        
+        /* Cải thiện breadcrumb */
+        .breadcrumb {
+            font-size: 1rem;
+        }
+        .breadcrumb-item a {
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        .breadcrumb-item.active {
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        /* Cải thiện table */
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+    <script>
+        const apiBaseUrl = '@apiBaseUrl';
+        let currentServicePackageId = null;
+        let currentServicePackageData = null;
+        let isWarehouseRole = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initServicePackagePermissions();
+
+            currentServicePackageId = getServicePackageIdFromUrl();
+            if (currentServicePackageId) {
+                loadServicePackageDetails(currentServicePackageId);
+            } else {
+                showError('Không tìm thấy ID gói dịch vụ');
+            }
+            
+            // Setup edit form
+            setupEditForm();
+            
+            // Setup component search
+            let searchTimeout;
+            document.getElementById('componentSearchInput').addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    filterComponents();
+                }, 300);
+            });
+            
+            // Load components when components tab is shown
+            document.getElementById('components-tab').addEventListener('shown.bs.tab', function() {
+                if (currentServicePackageData && currentServicePackageData.components) {
+                    displayComponentsTable(currentServicePackageData.components);
+                }
+            });
+            
+            // Load components for edit form khi tab Cài đặt được bật (chỉ cho Thủ kho)
+            const settingsTab = document.getElementById('settings-tab');
+            if (settingsTab) {
+                settingsTab.addEventListener('shown.bs.tab', function() {
+                    if (isWarehouseRole && currentServicePackageData) {
+                    loadEditComponents();
+                }
+            });
+            }
+            
+            // Setup edit component search
+            const editComponentSearch = document.getElementById('editComponentSearch');
+            if (editComponentSearch) {
+                editComponentSearch.addEventListener('input', function() {
+                    renderEditComponents();
+                });
+            }
+            
+            // Refresh button removed
+        });
+        
+        let allComponents = [];
+        let filteredComponents = [];
+        let currentComponentPage = 1;
+        const componentPageSize = 10;
+        
+        // For edit form in settings tab
+        let editAllComponents = [];
+        let editSelectedComponentIds = [];
+        let editComponentQuantities = {};
+
+        function initServicePackagePermissions() {
+            isWarehouseRole = false;
+            try {
+                const userInfoStr = localStorage.getItem('userInfo');
+                if (userInfoStr) {
+                    const userInfo = JSON.parse(userInfoStr);
+                    const roleId = parseInt(userInfo.roleId || userInfo.RoleId || '0');
+                    const roleName = (userInfo.roleName || userInfo.RoleName || '').toString().toUpperCase();
+                    isWarehouseRole = roleId === 5 || roleName === 'WAREHOUSE' || roleName === 'WAREHOUSE_KEEPER';
+                }
+            } catch (e) {
+                console.warn('Cannot determine role for service package details:', e);
+                isWarehouseRole = false;
+            }
+
+            if (!isWarehouseRole) {
+                // Ẩn tab Cài đặt cho role khác Thủ kho
+                const settingsTab = document.getElementById('settings-tab');
+                const settingsTabLi = settingsTab?.closest('li');
+                if (settingsTabLi) {
+                    settingsTabLi.style.display = 'none';
+                }
+
+                // Disable form chỉnh sửa nếu vì lý do nào đó vẫn hiển thị
+                const settingsContent = document.getElementById('settingsContent');
+                if (settingsContent) {
+                    const inputs = settingsContent.querySelectorAll('input, select, textarea, button');
+                    inputs.forEach(el => el.disabled = true);
+                }
+            }
+        }
+
+        function getServicePackageIdFromUrl() {
+            const path = window.location.pathname;
+            const segments = path.split('/');
+            return segments[segments.length - 1];
+        }
+
+        async function loadServicePackageDetails(id) {
+            try {
+                const response = await fetch(`/ServicePackages/GetDetails/${id}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    currentServicePackageData = data.data;
+                    displayServicePackageDetails(data.data);
+                    populateEditForm(data.data);
+                } else {
+                    showError('Lỗi khi tải thông tin: ' + (data.message || 'Không có dữ liệu'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Có lỗi xảy ra khi tải thông tin gói dịch vụ: ' + error.message);
+            }
+        }
+
+        function displayServicePackageDetails(servicePackage) {
+            // Update breadcrumb
+            document.getElementById('breadcrumbName').textContent = servicePackage.name || '-';
+            
+            // Update name on left
+            const servicePackageNameLarge = document.getElementById('servicePackageNameLarge');
+            servicePackageNameLarge.textContent = servicePackage.name || '-';
+            
+            // Update intro tab content
+            document.getElementById('servicePackageName').textContent = servicePackage.name || '-';
+            document.getElementById('servicePackageCode').textContent = servicePackage.code || '-';
+            document.getElementById('servicePackageDescription').textContent = servicePackage.description || '-';
+            
+            const price = servicePackage.price 
+                ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(servicePackage.price)
+                : '-';
+            document.getElementById('servicePackagePrice').textContent = price;
+            
+            document.getElementById('servicePackageBranch').textContent = servicePackage.branchName || servicePackage.branchId || '-';
+            
+            let statusBadge = '<span class="badge bg-secondary">Không xác định</span>';
+            if (servicePackage.statusCode === 'ACTIVE') {
+                statusBadge = '<span class="badge bg-success">Hoạt động</span>';
+            } else if (servicePackage.statusCode === 'INACTIVE') {
+                statusBadge = '<span class="badge bg-danger">Không hoạt động</span>';
+            }
+            document.getElementById('servicePackageStatus').innerHTML = statusBadge;
+            
+            // Show intro content
+            document.getElementById('introLoading').style.display = 'none';
+            document.getElementById('introContent').style.display = 'block';
+        }
+
+        function displayComponentsTable(components) {
+            const loadingEl = document.getElementById('componentsLoading');
+            const contentEl = document.getElementById('componentsContent');
+            const emptyEl = document.getElementById('componentsEmpty');
+            
+            loadingEl.style.display = 'none';
+            
+            if (!components || components.length === 0) {
+                emptyEl.style.display = 'block';
+                contentEl.style.display = 'block';
+                document.getElementById('componentsPaginationContainer').style.display = 'none';
+                return;
+            }
+            
+            // Store all components
+            allComponents = components;
+            filteredComponents = components;
+            currentComponentPage = 1;
+            
+            // Filter and render
+            filterComponents();
+            contentEl.style.display = 'block';
+        }
+        
+        function filterComponents() {
+            const searchTerm = document.getElementById('componentSearchInput').value.toLowerCase().trim();
+            const tableBody = document.getElementById('componentsTableBody');
+            const emptyEl = document.getElementById('componentsEmpty');
+            const paginationContainer = document.getElementById('componentsPaginationContainer');
+            
+            // Filter components
+            if (searchTerm) {
+                filteredComponents = allComponents.filter(function(component) {
+                    const name = (component.name || '').toLowerCase();
+                    const code = (component.code || '').toLowerCase();
+                    return name.includes(searchTerm) || code.includes(searchTerm);
+                });
+            } else {
+                filteredComponents = allComponents;
+            }
+            
+            // Clear table
+            tableBody.innerHTML = '';
+            
+            if (filteredComponents.length === 0) {
+                emptyEl.style.display = 'block';
+                paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            emptyEl.style.display = 'none';
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredComponents.length / componentPageSize);
+            const startIndex = (currentComponentPage - 1) * componentPageSize;
+            const endIndex = Math.min(startIndex + componentPageSize, filteredComponents.length);
+            const pageComponents = filteredComponents.slice(startIndex, endIndex);
+            
+            // Render table rows
+            pageComponents.forEach(function(component, index) {
+                const stt = startIndex + index + 1;
+                const unitPrice = component.unitPrice 
+                    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.unitPrice) 
+                    : '-';
+                
+                const imageHtml = component.imageUrl 
+                    ? `<img src="${component.imageUrl}" alt="${component.name || ''}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #dee2e6;">`
+                    : '<div style="width: 60px; height: 60px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-image text-muted"></i></div>';
+                
+                // Ưu tiên quantity từ gói dịch vụ, nếu không có thì dùng quantityStock
+                const quantity = component.quantity !== undefined && component.quantity !== null 
+                    ? component.quantity 
+                    : (component.quantityStock !== undefined && component.quantityStock !== null ? component.quantityStock : 0);
+                
+                const row = document.createElement('tr');
+                row.style.fontSize = '1rem';
+                row.innerHTML = `
+                    <td style="padding: 14px; font-weight: 600; color: #212529; text-align: center;">${stt}</td>
+                    <td style="padding: 14px; color: #495057;">${component.name || '-'}</td>
+                    <td style="padding: 14px; font-weight: 600; color: #212529;">${component.code || component.id || '-'}</td>
+                    <td style="padding: 14px; text-align: center;">${imageHtml}</td>
+                    <td style="padding: 14px; color: #28a745; font-weight: 600;">${unitPrice}</td>
+                    <td style="padding: 14px; text-align: center; font-weight: 600; color: #212529;">${quantity}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Render pagination
+            renderComponentPagination(totalPages);
+        }
+        
+        function renderComponentPagination(totalPages) {
+            const paginationContainer = document.getElementById('componentsPaginationContainer');
+            const pagination = document.getElementById('componentsPagination');
+            
+            if (totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            paginationContainer.style.display = 'block';
+            pagination.innerHTML = '';
+            
+            // First page button
+            const firstDisabled = currentComponentPage === 1 ? 'disabled' : '';
+            pagination.innerHTML += `
+                <li class="page-item ${firstDisabled}">
+                    <a class="page-link" href="#" onclick="changeComponentPage(1); return false;" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+            `;
+            
+            // Previous button
+            const prevDisabled = currentComponentPage === 1 ? 'disabled' : '';
+            pagination.innerHTML += `
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="changeComponentPage(${currentComponentPage - 1}); return false;" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            `;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentComponentPage - 2 && i <= currentComponentPage + 2)) {
+                    const active = i === currentComponentPage ? 'active' : '';
+                    pagination.innerHTML += `
+                        <li class="page-item ${active}">
+                            <a class="page-link" href="#" onclick="changeComponentPage(${i}); return false;">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentComponentPage - 3 || i === currentComponentPage + 3) {
+                    pagination.innerHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            // Next button
+            const nextDisabled = currentComponentPage === totalPages ? 'disabled' : '';
+            pagination.innerHTML += `
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="changeComponentPage(${currentComponentPage + 1}); return false;" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            `;
+            
+            // Last page button
+            const lastDisabled = currentComponentPage === totalPages ? 'disabled' : '';
+            pagination.innerHTML += `
+                <li class="page-item ${lastDisabled}">
+                    <a class="page-link" href="#" onclick="changeComponentPage(${totalPages}); return false;" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            `;
+        }
+        
+        function changeComponentPage(page) {
+            const totalPages = Math.ceil(filteredComponents.length / componentPageSize);
+            if (page < 1 || page > totalPages) return;
+            currentComponentPage = page;
+            filterComponents();
+            // Scroll to top of table
+            document.getElementById('componentsContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function populateEditForm(servicePackage) {
+            document.getElementById('editServicePackageId').value = servicePackage.id || '';
+            document.getElementById('editServicePackageBranchId').value = servicePackage.branchId || '';
+            document.getElementById('editServicePackageName').value = servicePackage.name || '';
+            document.getElementById('editServicePackageCode').value = servicePackage.code || '';
+            document.getElementById('editServicePackageStatusCode').value = servicePackage.statusCode || 'ACTIVE';
+            document.getElementById('editServicePackagePrice').value = servicePackage.price || '';
+            document.getElementById('editServicePackageDescription').value = servicePackage.description || '';
+            
+            // Store selected component IDs and quantities
+            if (servicePackage.components && servicePackage.components.length > 0) {
+                editSelectedComponentIds = servicePackage.components.map(c => c.id);
+                servicePackage.components.forEach(c => {
+                    editComponentQuantities[c.id] = c.quantity || 1;
+                });
+            } else {
+                editSelectedComponentIds = [];
+                editComponentQuantities = {};
+            }
+            
+            // Show settings content
+            document.getElementById('settingsLoading').style.display = 'none';
+            document.getElementById('settingsContent').style.display = 'block';
+            
+            // Load components for edit
+            loadEditComponents();
+        }
+        
+        function loadEditComponents() {
+            const componentsList = document.getElementById('editComponentsList');
+            const componentsLoading = document.getElementById('editComponentsLoading');
+            
+            if (!componentsList || !componentsLoading) return;
+            
+            componentsLoading.style.display = 'block';
+            componentsList.innerHTML = '<p class="text-muted text-center">Đang tải...</p>';
+            
+            const branchId = document.getElementById('editServicePackageBranchId').value;
+            const url = branchId 
+                ? `/Components/ListData?page=1&pageSize=1000&statusCode=ACTIVE&branchId=${branchId}`
+                : `/Components/ListData?page=1&pageSize=1000&statusCode=ACTIVE`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    componentsLoading.style.display = 'none';
+                    
+                    if (data.success && data.data) {
+                        editAllComponents = data.data;
+                        renderEditComponents();
+                    } else {
+                        componentsList.innerHTML = '<p class="text-danger">Không thể tải danh sách linh kiện.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading components:', error);
+                    componentsLoading.style.display = 'none';
+                    componentsList.innerHTML = '<p class="text-danger">Lỗi khi tải danh sách linh kiện: ' + error.message + '</p>';
+                });
+        }
+        
+        function renderEditComponents() {
+            const componentsList = document.getElementById('editComponentsList');
+            if (!componentsList) return;
+            
+            const searchTerm = document.getElementById('editComponentSearch')?.value.toLowerCase() || '';
+            
+            let html = '';
+            
+            if (editAllComponents.length === 0) {
+                html = '<p class="text-muted text-center">Không có linh kiện nào.</p>';
+            } else {
+                const filtered = editAllComponents.filter(c => {
+                    const name = (c.name || '').toLowerCase();
+                    const code = (c.code || '').toLowerCase();
+                    return name.includes(searchTerm) || code.includes(searchTerm);
+                });
+                
+                if (filtered.length === 0) {
+                    html = '<p class="text-muted text-center">Không tìm thấy linh kiện nào.</p>';
+                } else {
+                    filtered.forEach(function(component) {
+                        const isChecked = editSelectedComponentIds.includes(component.id);
+                        const unitPrice = component.unitPrice ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(component.unitPrice) : '-';
+                        const quantity = editComponentQuantities[component.id] || 1;
+                        
+                        html += `<div class="form-check mb-2 d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" value="${component.id}" id="edit_component_${component.id}" ${isChecked ? 'checked' : ''} onchange="toggleEditComponent(${component.id})">
+                            <label class="form-check-label flex-grow-1" for="edit_component_${component.id}">
+                                <strong>${component.code || component.id}</strong> - ${component.name || '-'} 
+                                <small class="text-muted">(${unitPrice})</small>
+                            </label>
+                            <input type="number" class="form-control form-control-sm ms-2" id="edit_quantity_${component.id}" 
+                                   value="${quantity}" min="1" style="width: 80px;" 
+                                   ${!isChecked ? 'disabled' : ''} 
+                                   onchange="updateEditComponentQuantity(${component.id}, this.value)"
+                                   placeholder="Số lượng">
+                        </div>`;
+                    });
+                }
+            }
+            
+            componentsList.innerHTML = html;
+        }
+        
+        function toggleEditComponent(componentId) {
+            const index = editSelectedComponentIds.indexOf(componentId);
+            const quantityInput = document.getElementById(`edit_quantity_${componentId}`);
+            
+            if (index > -1) {
+                editSelectedComponentIds.splice(index, 1);
+                if (quantityInput) {
+                    quantityInput.disabled = true;
+                }
+            } else {
+                editSelectedComponentIds.push(componentId);
+                if (!editComponentQuantities[componentId]) {
+                    editComponentQuantities[componentId] = 1;
+                }
+                if (quantityInput) {
+                    quantityInput.disabled = false;
+                    quantityInput.value = editComponentQuantities[componentId];
+                }
+            }
+        }
+        
+        function updateEditComponentQuantity(componentId, quantity) {
+            const qty = parseInt(quantity) || 1;
+            if (qty < 1) {
+                alert('Số lượng phải lớn hơn 0');
+                document.getElementById(`edit_quantity_${componentId}`).value = editComponentQuantities[componentId] || 1;
+                return;
+            }
+            editComponentQuantities[componentId] = qty;
+        }
+
+        function setupEditForm() {
+            const form = document.getElementById('editServicePackageForm');
+            
+            // Handle form submit
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await submitEditForm();
+            });
+            
+            // Handle cancel button
+            document.getElementById('cancelEditBtn').addEventListener('click', function() {
+                if (currentServicePackageData) {
+                    populateEditForm(currentServicePackageData);
+                }
+            });
+        }
+
+        async function submitEditForm() {
+            const form = document.getElementById('editServicePackageForm');
+            const saveBtn = document.getElementById('saveEditBtn');
+            const originalText = saveBtn.innerHTML;
+            
+            // Validate
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Disable button
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+            
+            try {
+                const servicePackageId = document.getElementById('editServicePackageId').value;
+                if (!servicePackageId) {
+                    throw new Error('Không tìm thấy ID gói dịch vụ');
+                }
+                
+                // Build Components array from selected components with quantities
+                const components = editSelectedComponentIds.map(componentId => ({
+                    componentId: componentId,
+                    quantity: editComponentQuantities[componentId] || 1
+                }));
+                
+                // Validation: Package phải có ít nhất 1 component
+                if (components.length === 0) {
+                    alert('Gói dịch vụ phải có ít nhất 1 linh kiện');
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                    return;
+                }
+                
+                const payload = {
+                    name: document.getElementById('editServicePackageName').value.trim(),
+                    code: document.getElementById('editServicePackageCode').value.trim() || null,
+                    description: document.getElementById('editServicePackageDescription').value.trim() || null,
+                    price: document.getElementById('editServicePackagePrice').value ? parseFloat(document.getElementById('editServicePackagePrice').value) : null,
+                    statusCode: document.getElementById('editServicePackageStatusCode').value || 'ACTIVE',
+                    branchId: parseInt(document.getElementById('editServicePackageBranchId').value) || null,
+                    components: components // Preserve existing components with quantities
+                };
+                
+                console.log('Updating service package with payload:', payload);
+                
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    throw new Error('No auth token found');
+                }
+                
+                // Call FE controller Update action
+                const response = await fetch(`/ServicePackages/Update/${servicePackageId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Backend error response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data: data
+                    });
+                    
+                    const errorMessage = data.message || data.error || `Lỗi ${response.status}: ${response.statusText}`;
+                    throw new Error(errorMessage);
+                }
+                
+                if (data.success) {
+                    // Reset button state
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                    
+                    // Show success message
+                    showAlert('Cập nhật gói dịch vụ thành công!', 'success');
+                    
+                    // Reload service package details
+                    await loadServicePackageDetails(servicePackageId);
+                } else {
+                    throw new Error(data.message || 'Không thể cập nhật gói dịch vụ');
+                }
+            } catch (error) {
+                console.error('Error updating service package:', error);
+                const errorMessage = error.message || 'Có lỗi xảy ra khi cập nhật gói dịch vụ';
+                showAlert('Lỗi: ' + errorMessage, 'danger');
+                
+                // Reset button
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}
