@@ -11,15 +11,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-      
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.WriteIndented = true; 
+        options.JsonSerializerOptions.WriteIndented = true;
     });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -45,29 +45,59 @@ builder.Services.AddSwaggerGen(options =>
     options.CustomSchemaIds(type => type.FullName);
 });
 
-// CORS
+// ✅ FIX: CORS - Chỉ cho phép domain cụ thể
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+    ?? new[] { "https://localhost:3000" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Default", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
-// DbContext - Database First approach
+// ✅ FIX: Rate Limiting - Chống brute force và DDoS
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(options =>
+{
+    options.GeneralRules = new List<RateLimitRule>
+    {
+        new RateLimitRule
+        {
+            Endpoint = "*",
+            Limit = 100,
+            Period = "1m"
+        },
+        new RateLimitRule
+        {
+            Endpoint = "POST:/api/auth/login",
+            Limit = 5,
+            Period = "1m"
+        },
+        new RateLimitRule
+        {
+            Endpoint = "POST:/api/auth/forgot-password",
+            Limit = 3,
+            Period = "1m"
+        }
+    };
+});
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+builder.Services.AddInMemoryRateLimiting();
+
+// DbContext
 builder.Services.AddDbContext<CarMaintenanceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
 
 // Project services
 builder.Services.AddAutoMapper(typeof(BE.convert.MappingProfile).Assembly);
 builder.Services.AddValidators();
 builder.Services.AddBusinessServices();
 
-
 // Cloudinary Service
 builder.Services.AddSingleton<CloudinaryService>();
-
-
 
 // JWT Configuration
 builder.Services.AddAuthentication("Bearer")
@@ -89,28 +119,48 @@ builder.Services.AddAuthentication("Bearer")
 
 builder.Services.AddAuthorization();
 
-
-
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
+
+// ✅ FIX: Exception Handler cho Production (không lộ thông tin chi tiết)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                success = false,
+                message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."
+            });
+        });
+    });
+
+    // ✅ FIX: HSTS - Bắt buộc HTTPS
+    app.UseHsts();
+}
+else
 {
     app.UseDeveloperExceptionPage();
 }
 
-// Middleware removed for simplicity
-
 // Configure the HTTP request pipeline.
-
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseHttpsRedirection();
 
+// ✅ FIX: Rate Limiting middleware
+app.UseIpRateLimiting();
+
+app.UseHttpsRedirection();
 app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ Check user status after authentication
+// Check user status after authentication
 app.UseUserStatusCheck();
 
 app.MapControllers();

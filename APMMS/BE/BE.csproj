@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dfbdc861-3e31-48db-a67a-687d7c5d7a99</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,7 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="CloudinaryDotNet" Version="1.18.0" />
     <PackageReference Include="EPPlus" Version="7.5.2" />
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>

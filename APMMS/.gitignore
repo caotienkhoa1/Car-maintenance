@@ -15,6 +15,10 @@ x86/
 *.user
 *.userosscache
 *.sln.docstates
+APMMS.slnLaunch.user
+
+# Image folders
+Image APMMS/
 
 # Logs
 *.log
@@ -31,4 +35,30 @@ packages/
 *.pdb
 *.cache
 *.tmp
+
+# Additional build outputs
+**/bin/Release/
+**/obj/Release/
+TestResults/
+*.trx
+*.coverage
+
+# Config files with secrets
+appsettings.Development.json
+appsettings.Secure.json
+
+# Database backup
+*.sql
+
+# Deploy outputs
+publish/
+**/PubTmp/
+**/publish/
+*.zip
+deploy.zip
+
+# Publish Profiles
+*.pubxml
+*.pubxml.user
+Properties/PublishProfiles/
 
